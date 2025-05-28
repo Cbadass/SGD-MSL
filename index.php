@@ -1,8 +1,39 @@
 <?php
 
 // Conexión a base de datos
-include("ConexionMultisenluz.php");
 
+// Recuperar la cadena de conexión del entorno
+$connectionString = getenv("SQLAZURECONNSTR_ConexionBD");
+
+// Parsear la cadena en componentes (Server, Database, User Id, Password)
+$parts = parse_url(str_replace(";", "&", $connectionString));
+
+// Para Azure SQL, a veces parse_url no separa todo, mejor parsearlo "a mano"
+$connectionParams = [];
+foreach (explode(";", $connectionString) as $part) {
+    $kv = explode("=", $part, 2);
+    if (count($kv) == 2) {
+        $connectionParams[trim($kv[0])] = trim($kv[1]);
+    }
+}
+
+// Extraer los valores
+$serverName = $connectionParams["Server"];
+$database = $connectionParams["Database"];
+$username = $connectionParams["User Id"];
+$password = $connectionParams["Password"];
+
+// Crear conexión
+$conn = new mysqli($serverName, $username, $password, $database);
+
+// Verificar conexión
+if ($conn->connect_error) {
+    die("Error de conexión: " . $conn->connect_error);
+}
+
+echo "Conexión exitosa a la base de datos.";
+
+// inicializar la sección por defecto
 $seccion = $_GET['seccion'] ?? 'usuarios'; // por defecto: 'usuarios'
 
 ?>
@@ -686,105 +717,215 @@ $seccion = $_GET['seccion'] ?? 'usuarios'; // por defecto: 'usuarios'
                         break;
 
 
-                    case 'subir_documento':
-                        echo "<h2>Gestión de Documentos</h2>";
-
-                        // Carpeta para almacenar archivos
-                        $uploadDir = "uploads/documentos/";
-                        if (!is_dir($uploadDir)) {
-                            mkdir($uploadDir, 0777, true);
-                        }
-
-                        // Cargar listas para selects (estudiantes y profesionales)
-                        $listaEstudiantes = [];
-                        $listaProfesionales = [];
-
-                        $resEst = $conn->query("SELECT Id_estudiante, Nombre_estudiante, Apellido_estudiante FROM estudiantes ORDER BY Nombre_estudiante");
-                        if ($resEst) {
-                            while ($row = $resEst->fetch_assoc()) {
-                                $listaEstudiantes[] = $row;
-                            }
-                        }
-
-                        $resProf = $conn->query("SELECT Id_profesional, Nombre_profesional, Apellido_profesional FROM profesionales ORDER BY Nombre_profesional");
-                        if ($resProf) {
-                            while ($row = $resProf->fetch_assoc()) {
-                                $listaProfesionales[] = $row;
-                            }
-                        }
-
-                        if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_FILES['archivo'])) {
-                            $nombre = $conn->real_escape_string($_POST['nombre_documento']);
-                            $tipo = $conn->real_escape_string($_POST['tipo_documento']);
-                            $idEstudiante = !empty($_POST['id_estudiante']) ? intval($_POST['id_estudiante']) : "NULL";
-                            $idProfesional = !empty($_POST['id_prof_doc']) ? intval($_POST['id_prof_doc']) : "NULL";
-
-                            $archivo = $_FILES['archivo'];
-
-                            if ($archivo['error'] === UPLOAD_ERR_OK) {
-                                $filename = basename($archivo['name']);
-                                $ruta = $uploadDir . time() . "_" . $filename;
-
-                                if (move_uploaded_file($archivo['tmp_name'], $ruta)) {
-                                    $fecha_actual = date('Y-m-d H:i:s');
-                                    $ruta_db = $conn->real_escape_string($ruta);
-
-                                    $sql = "INSERT INTO documentos (
-                                        Nombre_documento, Tipo_documento, Fecha_subido, Fecha_modificado, Ruta_documento, Id_estudiante, Id_prof_doc
-                                    ) VALUES (
-                                        '$nombre', '$tipo', '$fecha_actual', '$fecha_actual', '$ruta_db', $idEstudiante, $idProfesional
-                                    )";
-
+                        case 'subir_documento':
+                            echo "<div class='header'>Agregar nuevo documento</div>";
+                        
+                            if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['nombre'])) {
+                                $nombre = $conn->real_escape_string($_POST['nombre']);
+                                $rutEstudiante = !empty($_POST['rut_estudiante']) ? $conn->real_escape_string($_POST['rut_estudiante']) : null;
+                                $rutProfesional = !empty($_POST['rut_profesional']) ? $conn->real_escape_string($_POST['rut_profesional']) : null;
+                                $tipoDocumento = $conn->real_escape_string($_POST['tipo_documento']);
+                                $descripcion = $conn->real_escape_string($_POST['descripcion']);
+                        
+                                // Archivo subido
+                                $archivoNombre = basename($_FILES['documento']['name']);
+                                $archivoTmp = $_FILES['documento']['tmp_name'];
+                        
+                                // Datos de Azure Storage
+                                $accountName = "<nombre_cuenta>";
+                                $accountKey = "<clave_de_acceso>";
+                                $containerName = "<nombre_contenedor>";
+                                $blobName = $archivoNombre;
+                                $blobUrl = "https://$accountName.blob.core.windows.net/$containerName/$blobName";
+                        
+                                // Preparar firma
+                                $currentDate = gmdate("D, d M Y H:i:s T", time());
+                                $contentLength = filesize($archivoTmp);
+                                $blobType = "BlockBlob";
+                        
+                                $canonicalizedHeaders = "x-ms-blob-type:$blobType\nx-ms-date:$currentDate\nx-ms-version:2020-10-02";
+                                $canonicalizedResource = "/$accountName/$containerName/$blobName";
+                                $stringToSign = "PUT\n\n\n$contentLength\n\n\n\n\n\n\n\n$canonicalizedHeaders\n$canonicalizedResource";
+                                $signature = base64_encode(hash_hmac('sha256', $stringToSign, base64_decode($accountKey), true));
+                        
+                                $headers = [
+                                    "x-ms-blob-type: $blobType",
+                                    "x-ms-date: $currentDate",
+                                    "x-ms-version: 2020-10-02",
+                                    "Authorization: SharedKey $accountName:$signature",
+                                    "Content-Length: $contentLength"
+                                ];
+                        
+                                // Subir archivo con cURL
+                                $ch = curl_init($blobUrl);
+                                curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "PUT");
+                                curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+                                curl_setopt($ch, CURLOPT_HTTPHEADER, $headers);
+                                curl_setopt($ch, CURLOPT_INFILE, fopen($archivoTmp, 'r'));
+                                curl_setopt($ch, CURLOPT_INFILESIZE, $contentLength);
+                                $response = curl_exec($ch);
+                                $statusCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+                                curl_close($ch);
+                        
+                                if ($statusCode == 201) {
+                                    echo "<p style='color:green; font-weight:bold;'>Archivo subido a Azure Blob Storage.</p>";
+                        
+                                    // Buscar IDs
+                                    $idEstudiante = null;
+                                    $idProfesional = null;
+                        
+                                    if ($rutEstudiante) {
+                                        $resEst = $conn->query("SELECT Id_estudiante FROM estudiantes WHERE Rut_estudiante='$rutEstudiante'");
+                                        if ($resEst && $resEst->num_rows > 0) {
+                                            $rowEst = $resEst->fetch_assoc();
+                                            $idEstudiante = $rowEst['Id_estudiante'];
+                                        }
+                                    }
+                        
+                                    if ($rutProfesional) {
+                                        $resProf = $conn->query("SELECT Id_profesional FROM profesionales WHERE Rut_profesional='$rutProfesional'");
+                                        if ($resProf && $resProf->num_rows > 0) {
+                                            $rowProf = $resProf->fetch_assoc();
+                                            $idProfesional = $rowProf['Id_profesional'];
+                                        }
+                                    }
+                        
+                                    // Insertar en la tabla documentos
+                                    $sql = "INSERT INTO documentos 
+                                        (Nombre_documento, Tipo_documento, Fecha_subido, Url_documento, Descripcion, Id_estudiante_doc, Id_prof_doc)
+                                        VALUES ('$nombre', '$tipoDocumento', GETDATE(), '$blobUrl', '$descripcion', " .
+                                        ($idEstudiante !== null ? "'$idEstudiante'" : "NULL") . ", " .
+                                        ($idProfesional !== null ? "'$idProfesional'" : "NULL") . ")";
+                        
                                     if ($conn->query($sql)) {
-                                        echo "<p style='color:green;'>✅ Documento subido correctamente.</p>";
+                                        echo "<p style='color:green; font-weight:bold;'>Documento registrado en la base de datos.</p>";
                                     } else {
-                                        echo "<p style='color:red;'>❌ Error al guardar en base de datos: " . $conn->error . "</p>";
+                                        echo "<p style='color:red;'>Error al registrar en la base de datos: {$conn->error}</p>";
                                     }
                                 } else {
-                                    echo "<p style='color:red;'>❌ Error al mover el archivo al servidor.</p>";
+                                    echo "<p style='color:red;'>Error al subir a Azure Blob Storage. Código HTTP: $statusCode</p>";
                                 }
-                            } else {
-                                echo "<p style='color:red;'>❌ Error al subir archivo.</p>";
                             }
-                        }
+                        
+                            // Formulario
+                            echo "
+                            <div class='section'>
+                                <form method='POST' enctype='multipart/form-data'>
+                                    <div class='form-grid'>
+                                        <div class='form-group'>
+                                            <label for='nombre'>Nombre del Documento</label>
+                                            <input type='text' name='nombre' id='nombre' required>
+                                        </div>
+                        
+                                        <div class='form-group'>
+                                            <label for='rut_estudiante'>RUT del estudiante enlazado</label>
+                                            <input type='text' name='rut_estudiante' id='rut_estudiante' placeholder='Opcional'>
+                                        </div>
+                        
+                                        <div class='form-group'>
+                                            <label for='rut_profesional'>RUT del profesional enlazado</label>
+                                            <input type='text' name='rut_profesional' id='rut_profesional' placeholder='Opcional'>
+                                        </div>
+                        
+                                        <div class='form-group'>
+                                            <label for='tipo_documento'>Tipo de documento</label>
+                                            <select name='tipo_documento' id='tipo_documento' required>
+                                                <option value=''>Seleccione</option>
 
-                        // Formulario HTML
-                        echo '
-                        <form method="POST" enctype="multipart/form-data" style="padding: 20px; background: white; border-radius: 12px; max-width: 600px;">
-                            <div class="form-group"><label>Nombre del documento</label><input type="text" name="nombre_documento" required></div>
-                            <div class="form-group"><label>Tipo de documento</label>
-                                <select name="tipo_documento" required>
-                                    <option value="Informe">Informe</option>
-                                    <option value="Autorización">Autorización</option>
-                                    <option value="Acta">Acta</option>
-                                    <option value="Otro">Otro</option>
-                                </select>
+                                                <!-- Documentos de estudiantes -->
+                                                <optgroup label="Documentos de estudiantes">
+                                                    <option>Certificado de Nacimiento</option>
+                                                    <option>Ficha de Matrícula</option>
+                                                    <option>Certificado alumno prioritario</option>
+                                                    <option>Antecedentes en caso de emergencia</option>
+                                                    <option>Autorización para evaluar y reevaluar</option>
+                                                    <option>Autorización de la muda</option>
+                                                    <option>Informe Psicológico</option>
+                                                    <option>Protocolos de prueba aplicada</option>
+                                                    <option>Prueba de conducta adaptativa ICAAP</option>
+                                                    <option>Formulario de ingreso FUDEI</option>
+                                                    <option>Formulario NEEP</option>
+                                                    <option>Plan de Apoyo Individual PAI</option>
+                                                    <option>Formulario NEET</option>
+                                                    <option>Plan de Adecuaciones Curriculares Individualizado PACI</option>
+                                                    <option>Informe pedagógico curricular</option>
+                                                    <option>Informe a la Familia</option>
+                                                    <option>Informe Pedagógico 1er semestre</option>
+                                                    <option>Informe Pedagógico 2do semestre</option>
+                                                    <option>Informe Personalidad 1er semestre</option>
+                                                    <option>Informe Personalidad 2do semestre</option>
+                                                    <option>Informe Vocacional 1er semestre</option>
+                                                    <option>Informe vocacional 2do semestre</option>
+                                                    <option>Informe de Notas 1er semestre</option>
+                                                    <option>Informe de notas 2do semestre</option>
+                                                    <option>Certificado de estudios MINEDUC</option>
+                                                    <option>Valoración de salud</option>
+                                                    <option>Informe fonoaudiológico</option>
+                                                    <option>Informe kinesiológico</option>
+                                                    <option>Informe Terapeuta Ocupacional</option>
+                                                    <option>Derivaciones a especialistas</option>
+                                                    <option>Informes médicos</option>
+                                                    <option>Recetas médicas</option>
+                                                    <option>Antecedentes judiciales</option>
+                                                    <option>Pruebas diagnósticas</option>
+                                                    <option>Hoja de vida del estudiante</option>
+                                                    <option>Ficha desregulación emocional y conductual DEC</option>
+                                                    <option>Otros</option>
+                                                    <option>Declaración de matrícula</option>
+                                                    <option>Screening</option>
+                                                    <option>Test Comprensión auditiva del Lenguaje TECAL</option>
+                                                    <option>Test para evaluar procesos de simplificación fonológica TEPROSIF</option>
+                                                    <option>Test de la articulación a la repetición TAR</option>
+                                                    <option>Habilidades pragmáticas</option>
+                                                    <option>Órganos fonoarticulatorios</option>
+                                                    <option>Formulario NEEP reevaluación (diciembre)</option>
+                                                    <option>Informe a la Familia Marzo</option>
+                                                    <option>Estado de avance a la Familia Junio</option>
+                                                </optgroup>
+
+                                                <!-- Documentos de docentes -->
+                                                <optgroup label="Documentos de docentes">
+                                                    <option>Curriculum</option>
+                                                    <option>Certificado de título</option>
+                                                    <option>Certificado de registro MINEDUC</option>
+                                                    <option>Certificado de antecedentes para fines especiales</option>
+                                                    <option>Certificado de consulta de inhabilidades para trabajar con menores de edad</option>
+                                                    <option>Certificado de consulta de inhabilidades por maltrato relevante</option>
+                                                    <option>Ficha personal</option>
+                                                    <option>Contrato de trabajo</option>
+                                                    <option>Recepción del Reglamento Interno de Higiene y Seguridad</option>
+                                                    <option>Anexos de contratos</option>
+                                                    <option>Certificado de afiliación AFP</option>
+                                                    <option>Certificado de afiliación al sistema de salud</option>
+                                                    <option>Certificados de perfeccionamientos</option>
+                                                    <option>Carta aviso de cese de funciones</option>
+                                                    <option>Finiquito</option>
+                                                    <option>Certificado de estudios para fines laborales</option>
+                                                    <option>Licencia de Educación Media</option>
+                                                    <option>Certificado de inscripción en el Registro Nacional de Prestadores Individuales de Salud</option>
+                                                    <option>Hoja de vida conductor</option>
+                                                    <option>Licencia conducir legalizada</option>
+                                                </optgroup>
+                                            </select>
+                                        </div>
+                        
+                                        <div class='form-group'>
+                                            <label for='descripcion'>Descripción</label>
+                                            <textarea name='descripcion' id='descripcion' rows='3'></textarea>
+                                        </div>
+                        
+                                        <div class='form-group'>
+                                            <label for='documento'>Seleccionar Documento</label>
+                                            <input type='file' name='documento' id='documento' required>
+                                        </div>
+                                    </div>
+                        
+                                    <button type='submit' class='btn btn-green'>Subir documento</button>
+                                </form>
                             </div>
-                            <div class="form-group"><label>Archivo</label><input type="file" name="archivo" required></div>
-                            <div class="form-group"><label>Estudiante (opcional)</label>
-                                <select name="id_estudiante">
-                                    <option value="">-- Ninguno --</option>';
-                                    foreach ($listaEstudiantes as $est) {
-                                        echo '<option value="'.$est['Id_estudiante'].'">'.htmlspecialchars($est['Nombre_estudiante'].' '.$est['Apellido_estudiante']).'</option>';
-                                    }
-                        echo '  </select>
-                            </div>
-                            <div class="form-group"><label>Profesional (opcional)</label>
-                                <select name="id_prof_doc">
-                                    <option value="">-- Ninguno --</option>';
-                                    foreach ($listaProfesionales as $prof) {
-                                        echo '<option value="'.$prof['Id_profesional'].'">'.htmlspecialchars($prof['Nombre_profesional'].' '.$prof['Apellido_profesional']).'</option>';
-                                    }
-                        echo '  </select>
-                            </div>
-                            <button class="btn btn-green" type="submit">📁 Subir Documento</button>
-                        </form>';
-
-                        break;
-
-
-
-                    case 'asignaciones':
+                            ";
+                            break;
+                        case 'asignaciones':
                         echo "<h2>Gestión de Asignaciones</h2>";
                         break;
                 }
