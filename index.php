@@ -1,4 +1,5 @@
 <?php
+include("ConexionMultisenluz.php");
 
 // Conexión a base de datos
 
