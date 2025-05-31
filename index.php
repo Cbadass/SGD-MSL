@@ -1,38 +1,8 @@
 <?php
-// index.php
-
-// Inicia sesión
 session_start();
 
-// Conexión a la base de datos
-include("ConexionMultisenluz.php");
-
-// Recuperar conexión de entorno
-$connectionString = getenv("SQLAZURECONNSTR_ConexionBD");
-
-// Parsear datos de la conexión
-$connectionParams = [];
-foreach (explode(";", $connectionString) as $part) {
-    $kv = explode("=", $part, 2);
-    if (count($kv) == 2) {
-        $connectionParams[trim($kv[0])] = trim($kv[1]);
-    }
-}
-
-$serverName = $connectionParams["Server"];
-$database = $connectionParams["Database"];
-$username = $connectionParams["User Id"];
-$password = $connectionParams["Password"];
-
-// Crear conexión
-$conn = new mysqli($serverName, $username, $password, $database);
-if ($conn->connect_error) {
-    die("Error de conexión: " . $conn->connect_error);
-}
-
-// Obtener la sección a mostrar
-$seccion = $_GET['seccion'] ?? 'usuarios'; // por defecto: usuarios
-
+// Obtener la sección solicitada (por defecto 'usuarios')
+$seccion = $_GET['seccion'] ?? 'usuarios';
 ?>
 <!DOCTYPE html>
 <html lang="es">
@@ -40,7 +10,6 @@ $seccion = $_GET['seccion'] ?? 'usuarios'; // por defecto: usuarios
     <meta charset="UTF-8">
     <title>SGD Multisenluz</title>
     <style>
-        /* Aquí los estilos generales que tenías (sidebar, header, etc.) */
         body { margin: 0; font-family: 'Segoe UI', sans-serif; background-color: #e8e8fc; }
         .container { display: flex; }
         .sidebar { width: 250px; background-color: #d3d2f3; height: 100vh; padding: 20px 0; display: flex; flex-direction: column; justify-content: space-between; }
@@ -76,14 +45,19 @@ $seccion = $_GET['seccion'] ?? 'usuarios'; // por defecto: usuarios
     <div class="main">
         <div class="section">
             <?php
-            // Según la sección, cargar el archivo correspondiente
+            // Incluir la página correspondiente
             $allowedPages = [
                 'usuarios', 'registrar_usuario', 'cursos', 'estudiantes',
                 'registrar_estudiante', 'actividad', 'documentos', 'subir_documento', 'asignaciones'
             ];
 
             if (in_array($seccion, $allowedPages)) {
-                include "pages/$seccion.php";
+                $file = "pages/$seccion.php";
+                if (file_exists($file)) {
+                    include $file;
+                } else {
+                    echo "<h2>Página no encontrada</h2>";
+                }
             } else {
                 echo "<h2>Error 404 - Sección no encontrada</h2>";
             }
