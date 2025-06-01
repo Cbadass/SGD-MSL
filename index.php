@@ -19,10 +19,74 @@ $seccion = $_GET['seccion'] ?? 'usuarios';
         .main { flex: 1; padding: 20px 40px; }
         .header { background-color: #875ff5; color: white; padding: 15px 30px; font-size: 22px; font-weight: bold; }
         .section { margin-top: 30px; background-color: white; padding: 30px; border-radius: 10px; }
+                /* Modo oscuro */
+        body.dark-mode {background-color: #121212;color: #eee;}
+
+        .dark-mode .header {
+        background-color: #1f1f1f;
+        color: #f1f1f1;
+        }
+
+        .dark-mode .sidebar {
+        background-color: #1e1e2f;
+        }
+
+        .dark-mode .sidebar a {
+        color: #ccc;
+        }
+
+        .dark-mode .sidebar a.active,
+        .dark-mode .sidebar a:hover {
+        background-color: #333;
+        border-left: 5px solid #6e62f4;
+        }
+
+        .dark-mode .main .section {
+        background-color: #222;
+        color: #eee;
+        }
+
+        .dark-mode .btn {
+        background-color: #333;
+        color: #eee;
+        }
+
+        .dark-mode table th {
+        background-color: #444;
+        }
+
+        .dark-mode table td {
+        background-color: #333;
+        }
+
     </style>
 </head>
+<script>
+    function toggleDarkMode() {
+    document.body.classList.toggle('dark-mode');
+
+    // Guarda la preferencia en el navegador
+    if (document.body.classList.contains('dark-mode')) {
+        localStorage.setItem('modo-oscuro', 'true');
+    } else {
+        localStorage.setItem('modo-oscuro', 'false');
+    }
+    }
+
+    // Al cargar la página, aplica el modo oscuro si estaba activado antes
+    if (localStorage.getItem('modo-oscuro') === 'true') {
+    document.body.classList.add('dark-mode');
+    }
+</script>
+
 <body>
-<div class="header">SGD Multisenluz</div>
+<div class="header">
+  SGD Multisenluz
+  <button onclick="toggleDarkMode()" style="float: right; background: none; border: none; color: white; font-size: 16px; cursor: pointer;">
+    🌙 Modo Oscuro
+  </button>
+</div>
+
 <div class="container">
     <div class="sidebar">
         <div>
