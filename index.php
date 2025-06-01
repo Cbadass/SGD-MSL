@@ -38,6 +38,8 @@ $seccion = $_GET['seccion'] ?? 'usuarios';
   .dark-mode .btn { background-color: #333; color: #eee; }
   .dark-mode table th { background-color: #444; }
   .dark-mode table td { background-color: #333; }
+  .dark-mode .section { background-color: #222; color: #eee;}
+
 </style>
 </head>
 
