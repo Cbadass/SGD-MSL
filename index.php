@@ -6,6 +6,12 @@ $seccion = $_GET['seccion'] ?? 'usuarios';
 ?>
 <!DOCTYPE html>
 <html lang="es">
+<script>
+  if (localStorage.getItem('modo-oscuro') === 'true') {
+    document.documentElement.classList.add('dark-mode');
+  }
+</script>
+
 <head>
     <meta charset="UTF-8">
     <title>SGD Multisenluz</title>
