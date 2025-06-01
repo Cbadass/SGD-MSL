@@ -27,7 +27,22 @@ $seccion = $_GET['seccion'] ?? 'usuarios';
   .main { flex: 1; padding: 20px 40px; }
   .header { background-color: #875ff5; color: white; padding: 15px 30px; font-size: 22px; font-weight: bold; display: flex; justify-content: space-between; align-items: center; }
   .section { margin-top: 30px; background-color: white; padding: 30px; border-radius: 10px; }
-  
+
+  .filters { display: flex; gap: 20px; margin-bottom: 20px; }
+  select, input[type="text"], input[type="number"], input[type="email"], input[type="date"] {
+    padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; width: 100%;
+  }
+  table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+  table th, table td { padding: 12px; border: 1px solid #ddd; font-size: 14px; text-align: left; }
+  table th { background-color: #875ff5; color: white; }
+  .btn { background-color: #6b6cfb; color: white; padding: 8px 14px; border: none; border-radius: 6px; cursor: pointer; }
+  .btn:hover { background-color: #574cf0; }
+  .btn-green { background-color: #4cd964; margin-top: 20px; }
+  .form-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 20px; }
+  label { font-size: 14px; font-weight: 500; margin-bottom: 5px; display: block; }
+  .form-group { display: flex; flex-direction: column; }
+  h2 { margin-top: 0; }
+
   /* Modo oscuro */
   .dark-mode { background-color: #121212; color: #eee; }
   .dark-mode .header { background-color: #1f1f1f; color: #f1f1f1; }
@@ -39,8 +54,8 @@ $seccion = $_GET['seccion'] ?? 'usuarios';
   .dark-mode table th { background-color: #444; }
   .dark-mode table td { background-color: #333; }
   .dark-mode .section { background-color: #222; color: #eee;}
-
 </style>
+
 </head>
 
 <body>
