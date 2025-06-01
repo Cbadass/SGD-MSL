@@ -1,0 +1,35 @@
+/* Base */
+body { margin: 0; font-family: 'Segoe UI', sans-serif; transition: background 0.3s, color 0.3s; }
+.header { background: #875ff5; color: #fff; padding: 15px 30px; display: flex; justify-content: space-between; align-items: center; }
+.toggle-darkmode { background: none; border: none; color: inherit; font-size: 1.2em; cursor: pointer; }
+.container { display: flex; min-height: 100vh; }
+.sidebar { width: 250px; background: #d3d2f3; display: flex; flex-direction: column; }
+.sidebar h3 { margin: 10px 20px; color: #3b3b8c; font-size: 14px; text-transform: uppercase; }
+.sidebar a { display: block; padding: 10px 20px; color: #333; text-decoration: none; font-size: 14px; }
+.sidebar a:hover, .sidebar a.active { background: #bcbaf3; border-left: 5px solid #6e62f4; }
+.main { flex: 1; display: flex; flex-direction: column; padding: 20px; }
+.section { background: #fff; border-radius: 10px; padding: 20px; flex: 1; overflow-x: auto; }
+table { width: 100%; border-collapse: collapse; }
+th, td { padding: 10px; border: 1px solid #ddd; white-space: nowrap; }
+th { background: #875ff5; color: #fff; }
+.btn { background: #6b6cfb; color: #fff; padding: 8px 12px; border-radius: 6px; cursor: pointer; border: none; }
+.btn:hover { background: #574cf0; }
+
+/* Dark mode */
+body.dark-mode { background: #121212; color: #eee; }
+body.dark-mode .header { background: #1f1f1f; }
+body.dark-mode .sidebar { background: #1e1e2f; }
+body.dark-mode .section { background: #222; }
+body.dark-mode th { background: #444; }
+body.dark-mode td { background: #333; }
+
+/* Responsive */
+@media (max-width: 768px) {
+  .container { flex-direction: column; }
+  .sidebar { flex-direction: row; overflow-x: auto; }
+  .header { flex-direction: column; text-align: center; }
+}
+@media (max-width: 480px) {
+  .header { font-size: 18px; }
+  th, td { padding: 6px; font-size: 12px; }
+}
