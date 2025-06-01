@@ -100,7 +100,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 echo '<h2>Registrar nuevo usuario</h2>
 <form method="POST" class="form-grid">
     <div class="form-group"><label>Nombres</label><input name="nombre" required></div>
-    <div class="form-group"><label>Apellidos</label><input name="apellido" required></div>
+    <div class="form-group"><label>Apellidos</label><input name="apellido" type="text" required></div>
     <div class="form-group"><label>Correo Electrónico</label><input name="correo" type="email" required></div>
     <div class="form-group"><label>Número</label><input name="telefono" required></div>
     <div class="form-group"><label>RUT</label><input name="rut" required></div>
