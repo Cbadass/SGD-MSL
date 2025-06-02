@@ -36,23 +36,24 @@ if (
     die("No tienes permisos para descargar este archivo.");
 }
 
-// ¡Ahora la URL es pública y la descargamos directamente!
+// Descargar el archivo desde la URL pública
 $urlBlobPublico = $documento['Url_documento'];
+$nombreArchivo = basename($documento['Nombre_documento']); // Usa el nombre real y con extensión
 
-// Descargar y enviar al navegador
+// Descargar el archivo a un archivo temporal
 $tempFile = tempnam(sys_get_temp_dir(), 'blob_');
 file_put_contents($tempFile, file_get_contents($urlBlobPublico));
 
-// Servir como descarga
+// Servir el archivo como descarga
 header('Content-Description: File Transfer');
 header('Content-Type: application/octet-stream');
-header('Content-Disposition: attachment; filename="' . basename($documento['Nombre_documento']) . '"');
+header('Content-Disposition: attachment; filename="' . $nombreArchivo . '"');
 header('Expires: 0');
 header('Cache-Control: must-revalidate');
 header('Pragma: public');
 readfile($tempFile);
 
-// Borrar archivo temporal
+// Borrar el archivo temporal
 unlink($tempFile);
 exit;
 ?>

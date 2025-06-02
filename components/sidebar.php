@@ -13,7 +13,7 @@
     <h3>Documentos</h3>
     <a href="?seccion=documentos" class="<?= $seccion === 'documentos' ? 'active' : '' ?>">Documentos</a>
     <a href="?seccion=subir_documento" class="<?= $seccion === 'subir_documento' ? 'active' : '' ?>">Subir Documento</a>
-    <a href="?seccion=modificar_documento" class="<?= $seccion === 'modificar_documento' ? 'active' : '' ?>">Modificar Documento</a>
+
 
     <h3>Actividad</h3>
     <a href="?seccion=actividad" class="<?= $seccion === 'actividad' ? 'active' : '' ?>">Registro de actividad</a>
