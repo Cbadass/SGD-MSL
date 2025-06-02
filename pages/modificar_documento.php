@@ -200,6 +200,21 @@ document.getElementById('buscar_profesional').addEventListener('input', function
   buscar('buscar_profesionales.php', this.value.trim(), document.getElementById('resultados_profesional'), 'id_profesional');
 });
 </script>
+<script>
+document.getElementById('archivo').addEventListener('change', function() {
+  const archivo = this.files[0];
+  if (!archivo) return;
+
+  const nombreArchivo = archivo.name.toLowerCase();
+  const extensionesPermitidas = ['doc', 'docx', 'odt', 'pdf', 'txt', 'xls', 'xlsx', 'ods', 'ppt', 'pptx', 'odp', 'jpg', 'jpeg', 'png', 'gif'];
+
+  const extension = nombreArchivo.split('.').pop();
+  if (!extensionesPermitidas.includes(extension)) {
+    alert('Tipo de archivo no permitido. Solo se permiten documentos de Office, PDF, TXT e imágenes.');
+    this.value = ''; // Limpiar el campo para forzar la selección de uno válido
+  }
+});
+</script>
 
 </body>
 </html>
