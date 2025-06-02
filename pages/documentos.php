@@ -110,40 +110,41 @@ try {
 
 <!-- Buscador avanzado -->
 <div class="card p-4 mb-4">
-  <form method="GET" class="row g-3 align-items-end">
+    <form method="GET" class="d-flex flex-wrap gap-3 align-items-end">
+
     <input type="hidden" name="seccion" value="documentos">
 
-    <div class="col-md-3">
+    <div style="flex: 1 1 240px;">
       <label for="nombre" class="form-label">Nombre documento</label>
       <input type="text" name="nombre" id="nombre" class="form-control" placeholder="Ej: Informe..." value="<?= htmlspecialchars($_GET['nombre'] ?? '') ?>">
     </div>
 
-    <div class="col-md-3">
+    <div style="flex: 1 1 240px;">
       <label for="tipo" class="form-label">Tipo documento</label>
       <input type="text" name="tipo" id="tipo" class="form-control" placeholder="Ej: Certificado..." value="<?= htmlspecialchars($_GET['tipo'] ?? '') ?>">
     </div>
 
-    <div class="col-md-3">
+    <div style="flex: 1 1 240px;">
       <label for="estudiante" class="form-label">Nombre/RUT Estudiante</label>
       <input type="text" name="estudiante" id="estudiante" class="form-control" placeholder="Ej: Juan Perez..." value="<?= htmlspecialchars($_GET['estudiante'] ?? '') ?>">
     </div>
 
-    <div class="col-md-3">
+    <div style="flex: 1 1 240px;">
       <label for="profesional" class="form-label">Nombre/RUT Profesional</label>
       <input type="text" name="profesional" id="profesional" class="form-control" placeholder="Ej: Maria Lopez..." value="<?= htmlspecialchars($_GET['profesional'] ?? '') ?>">
     </div>
 
-    <div class="col-md-3">
+    <div style="flex: 1 1 240px;">
       <label for="fecha_subida_desde" class="form-label">Fecha subida (desde)</label>
       <input type="date" name="fecha_subida_desde" id="fecha_subida_desde" class="form-control" value="<?= htmlspecialchars($_GET['fecha_subida_desde'] ?? '') ?>">
     </div>
 
-    <div class="col-md-3">
+    <div style="flex: 1 1 240px;">
       <label for="fecha_subida_hasta" class="form-label">Fecha subida (hasta)</label>
       <input type="date" name="fecha_subida_hasta" id="fecha_subida_hasta" class="form-control" value="<?= htmlspecialchars($_GET['fecha_subida_hasta'] ?? '') ?>">
     </div>
 
-    <div class="col-md-3">
+    <div style="flex: 1 1 240px;">
       <label for="orden" class="form-label">Ordenar por</label>
       <select name="orden" id="orden" class="form-select">
         <option value="subido" <?= ($_GET['orden'] ?? '') === 'subido' ? 'selected' : '' ?>>Fecha de subida</option>
@@ -151,10 +152,10 @@ try {
       </select>
     </div>
 
-    <div class="col-md-3">
+    <div style="flex: 1 1 240px;">
       <button type="submit" class="btn btn-primary w-100">Buscar</button>
     </div>
-  </form>
+  </for>
 </div>
 
 <?php if (!empty($errorMsg)): ?>
