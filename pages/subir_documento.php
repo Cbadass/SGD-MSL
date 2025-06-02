@@ -12,20 +12,8 @@ if (!isset($_SESSION['usuario'])) {
 <meta charset="UTF-8">
 <title>Subir Documento</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-<style>
-.resultado {
-  cursor: pointer;
-  padding: 6px 10px;
-  border-bottom: 1px solid #ddd;
-}
-.resultado:hover {
-  background-color: #f0f0f0;
-}
-.seleccionado {
-  background-color: #d1e7dd !important;
-  font-weight: bold;
-}
-</style>
+<link rel="stylesheet" href="style.css">
+
 </head>
 <body class="container mt-4">
 
