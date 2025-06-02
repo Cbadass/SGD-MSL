@@ -11,7 +11,7 @@ use MicrosoftAzure\Storage\Common\Exceptions\ServiceException;
 
 class AzureBlobStorage {
     private $blobClient;
-    private $containerName = "documentossgd"; // 
+    private $containerName = "documentos"; // 
 
     /**
      * Constructor: inicializa el cliente con la cadena de conexión
