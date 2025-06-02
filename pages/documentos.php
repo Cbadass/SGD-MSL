@@ -103,7 +103,8 @@ try {
 <head>
 <meta charset="UTF-8">
 <title>Lista de Documentos</title>
-<link rel="stylesheet" href="style.css"></head>
+<link rel="stylesheet" href="style.css">
+</head>
 <body class="container mt-4">
 
 <h2 class="mb-4">Lista de Documentos</h2>
