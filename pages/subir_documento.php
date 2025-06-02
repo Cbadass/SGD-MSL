@@ -136,11 +136,13 @@ if (!empty($_GET['busqueda_profesional'])) {
   <div class="col-md-5">
     <h5>🔍 Buscar Estudiante</h5>
     <form method="get" action="" class="mb-3">
-      <div class="input-group mb-2">
-        <input type="text" name="busqueda_estudiante" class="form-control" placeholder="Nombre/RUT/Escuela/Curso">
-        <button class="btn btn-outline-primary" type="submit">Buscar</button>
-      </div>
+        <input type="hidden" name="seccion" value="subir_documento">
+        <div class="input-group mb-2">
+            <input type="text" name="busqueda_estudiante" class="form-control" placeholder="Nombre/RUT/Escuela/Curso">
+            <button class="btn btn-outline-primary" type="submit">Buscar</button>
+        </div>
     </form>
+
     <?php if ($estudiantesEncontrados): ?>
       <ul class="list-group mb-4">
         <?php foreach ($estudiantesEncontrados as $e): ?>
@@ -159,11 +161,13 @@ if (!empty($_GET['busqueda_profesional'])) {
 
     <h5>🔍 Buscar Profesional</h5>
     <form method="get" action="">
-      <div class="input-group mb-2">
-        <input type="text" name="busqueda_profesional" class="form-control" placeholder="Nombre/RUT/Cargo/Escuela">
-        <button class="btn btn-outline-primary" type="submit">Buscar</button>
-      </div>
+        <input type="hidden" name="seccion" value="subir_documento">
+        <div class="input-group mb-2">
+            <input type="text" name="busqueda_profesional" class="form-control" placeholder="Nombre/RUT/Cargo/Escuela">
+            <button class="btn btn-outline-primary" type="submit">Buscar</button>
+        </div>
     </form>
+
     <?php if ($profesionalesEncontrados): ?>
       <ul class="list-group">
         <?php foreach ($profesionalesEncontrados as $p): ?>
