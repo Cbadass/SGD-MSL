@@ -48,32 +48,33 @@ class AzureBlobStorage {
         $accountName = getenv('AZURE_STORAGE_ACCOUNT_NAME');
         $accountKey = base64_decode(getenv('AZURE_STORAGE_ACCOUNT_KEY'));
         $container = $this->containerName;
-        $resource = 'b'; // b=blob
-        $permissions = 'r'; // lectura
+        $permissions = 'r';
         $expiry = gmdate('Y-m-d\TH:i:s\Z', strtotime("+$duracionMinutos minutes"));
-
-        // Construir string-to-sign
+    
         $stringToSign = implode("\n", [
             $permissions,
             '', // start time
             $expiry,
             "/blob/$accountName/$container/$blobName",
-            '', '', '', '', '', '', '', '', '', '', ''
+            '', // sip
+            '', // spr
+            '2021-08-06', // sv
+            'b', // sr
+            '', '', '', '', '' // rscc, rscd, rsce, rscl, rsct
         ]);
-
-        // Firma HMAC-SHA256
+    
         $signature = base64_encode(hash_hmac('sha256', $stringToSign, $accountKey, true));
-
-        // Query final
+    
         $queryString = http_build_query([
-            'sv' => '2021-08-06', // versión API
-            'sr' => $resource,
+            'sv' => '2021-08-06',
+            'sr' => 'b',
             'sig' => $signature,
             'se' => $expiry,
             'sp' => $permissions
         ]);
-
+    
         return "https://$accountName.blob.core.windows.net/$container/$blobName?$queryString";
     }
+    
 }
 ?>
