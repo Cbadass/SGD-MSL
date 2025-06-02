@@ -5,7 +5,7 @@ try {
 
     // Inicializa la clase de Azure Blob Storage
     $azure = new AzureBlobStorage();
-
+    
     // Variables para errores y resultados
     $errorMsg = '';
     $documentos = [];

@@ -11,6 +11,7 @@ if (!$stmt) {
 $documentos = $stmt->fetchAll();
 
 echo "<pre>";
+print_r("hola mundo");
 print_r($documentos);
 echo "</pre>";
 ?>
