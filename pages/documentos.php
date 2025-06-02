@@ -1,7 +1,7 @@
 <?php
 try {
     require_once 'includes/db.php';
-    require_once '/includes/storage.php';
+    require_once 'includes/storage.php';
 
     // Inicializa la clase de Azure Blob Storage
     $azure = new AzureBlobStorage();

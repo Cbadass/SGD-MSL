@@ -1,5 +1,5 @@
 <?php
-require_once __DIR__ . '/../includes/bd.php';
+require_once 'includes/bd.php';
 
 $sql = "SELECT * FROM documentos";
 $stmt = $conn->query($sql);
