@@ -32,7 +32,7 @@ try {
     // Actualizar información general del documento
     try {
         $sql = "UPDATE documentos
-                SET Nombre_documento = ?, Tipo_documento = ?, Descripcion = ?, Id_usuario_ultimo_editor = ?, Fecha_modificacion = GETDATE()
+                SET Nombre_documento = ?, Tipo_documento = ?, Descripcion = ?, Id_usuario_subido  = ?, Fecha_modificacion = GETDATE()
                 WHERE Id_documento = ?";
         $stmt = $conn->prepare($sql);
         $stmt->execute([$nombre, $tipo, $descripcion, $id_editor, $id]);
