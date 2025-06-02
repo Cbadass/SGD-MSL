@@ -2,11 +2,11 @@
 require_once 'includes/db.php';
 session_start();
 
-// Verificar si está logueado
+/* // Verificar si está logueado
 if (!isset($_SESSION['usuario'])) {
     header("Location: login.php");
     exit;
-}
+} */
 
 // Filtros
 $escuela_filtro = $_GET['escuela'] ?? '';
