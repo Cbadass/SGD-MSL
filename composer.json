@@ -3,7 +3,8 @@
     "description": "Sistema de gestión documental para Corporación Educacional Multisenluz",
     "type": "project",
     "require": {
-      "microsoft/azure-storage-blob": "^1.5"
+      "microsoft/azure-storage-blob": "^1.5",
+        "microsoft/azure-storage-common": "^1.5"
     },
     "autoload": {
       "psr-4": {
@@ -12,4 +13,3 @@
     },
     "license": "proprietary"
   }
-  
