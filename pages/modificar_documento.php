@@ -59,9 +59,10 @@ if (!empty($doc['Id_prof_doc'])) {
 
 <form method="POST" action="/guardar_modificacion_documento.php" enctype="multipart/form-data">
   <input type="hidden" name="id_documento" value="<?= $doc['Id_documento'] ?>">
+  <input type="hidden" name="id_estudiante" id="id_estudiante" value="<?= htmlspecialchars($doc['Id_estudiante_doc'] ?? '') ?>">
+  <input type="hidden" name="id_profesional" id="id_profesional" value="<?= htmlspecialchars($doc['Id_prof_doc'] ?? '') ?>">
 
   <div class="container-form">
-    <!-- Datos del documento -->
     <div class="flex-fill">
       <div class="mb-3">
         <label for="nombre" class="form-label">Nombre</label>
@@ -82,9 +83,20 @@ if (!empty($doc['Id_prof_doc'])) {
         <label for="archivo" class="form-label">Actualizar archivo (opcional)</label>
         <input type="file" class="form-control" name="archivo" id="archivo">
       </div>
+
+      <div class="mb-3">
+        <label for="buscar_estudiante" class="form-label">Buscar Estudiante</label>
+        <input type="text" class="form-control" id="buscar_estudiante" placeholder="RUT o Nombre">
+        <div id="resultados_estudiante" class="mt-2"></div>
+      </div>
+
+      <div class="mb-3">
+        <label for="buscar_profesional" class="form-label">Buscar Profesional</label>
+        <input type="text" class="form-control" id="buscar_profesional" placeholder="RUT o Nombre">
+        <div id="resultados_profesional" class="mt-2"></div>
+      </div>
     </div>
 
-    <!-- Estudiante y Profesional -->
     <div class="flex-fill">
       <h5>Estudiante asociado</h5>
       <div class="card-usuario">
@@ -107,6 +119,54 @@ if (!empty($doc['Id_prof_doc'])) {
     <a href="index.php?seccion=documentos" class="btn btn-secondary">Cancelar</a>
   </div>
 </form>
+
+<script>
+document.getElementById('buscar_estudiante').addEventListener('input', function() {
+  const query = this.value.trim();
+  if (query.length >= 3) {
+    fetch('buscar_estudiantes.php?q=' + encodeURIComponent(query))
+      .then(res => res.json())
+      .then(data => {
+        const resultados = document.getElementById('resultados_estudiante');
+        resultados.innerHTML = '';
+        data.forEach(est => {
+          const div = document.createElement('div');
+          div.textContent = `${est.Rut_estudiante} - ${est.Nombre_estudiante} ${est.Apellido_estudiante}`;
+          div.classList.add('list-group-item', 'list-group-item-action');
+          div.style.cursor = 'pointer';
+          div.onclick = () => {
+            document.getElementById('id_estudiante').value = est.Id_estudiante;
+            resultados.innerHTML = `<small class="text-success">Seleccionado: ${est.Nombre_estudiante}</small>`;
+          };
+          resultados.appendChild(div);
+        });
+      });
+  }
+});
+
+document.getElementById('buscar_profesional').addEventListener('input', function() {
+  const query = this.value.trim();
+  if (query.length >= 3) {
+    fetch('buscar_profesionales.php?q=' + encodeURIComponent(query))
+      .then(res => res.json())
+      .then(data => {
+        const resultados = document.getElementById('resultados_profesional');
+        resultados.innerHTML = '';
+        data.forEach(prof => {
+          const div = document.createElement('div');
+          div.textContent = `${prof.Rut_profesional} - ${prof.Nombre_profesional} ${prof.Apellido_profesional}`;
+          div.classList.add('list-group-item', 'list-group-item-action');
+          div.style.cursor = 'pointer';
+          div.onclick = () => {
+            document.getElementById('id_profesional').value = prof.Id_profesional;
+            resultados.innerHTML = `<small class="text-success">Seleccionado: ${prof.Nombre_profesional}</small>`;
+          };
+          resultados.appendChild(div);
+        });
+      });
+  }
+});
+</script>
 
 </body>
 </html>
