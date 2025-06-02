@@ -31,7 +31,18 @@ $modo_oscuro = $_COOKIE['modo_oscuro'] ?? 'false';
   <main class="main">
     <section class="section">
       <?php
-      $allowed = ['usuarios', 'cursos', 'estudiantes', 'registrar_usuario', 'registrar_estudiante', 'actividad', 'documentos', 'subir_documento', 'asignaciones'];
+      $allowed = [
+        'usuarios',
+        'cursos',
+        'estudiantes',
+        'registrar_usuario',
+        'registrar_estudiante',
+        'actividad',
+        'documentos',
+        'subir_documento',
+        'asignaciones',
+        'modificar_documento'
+      ];
       $file = in_array($seccion, $allowed) ? "pages/$seccion.php" : "pages/error404.php";
       include $file;
       ?>

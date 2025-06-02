@@ -83,9 +83,10 @@ try {
                 <th>Subido</th>
                 <th>Modificado</th>
                 <th>Descripción</th>
-                <th>Estudiante</th>
-                <th>Profesional</th>
-                <th>Descargar</th>
+                <th>Estudiante asignado</th>
+                <th>Profesional asignado</th>
+                <th>Usuario último editor</th>
+                <th>Descargar/Modificar</th>
             </tr>
         </thead>
         <tbody>
@@ -104,6 +105,7 @@ try {
                 <td>
                     <?php $nombreBlob = basename($doc['Url_documento']); ?>
                     <?php if (!empty($doc['Id_documento'])): ?>
+                    <a href="modificar_documento.php?id_documento=<?= htmlspecialchars($doc['Id_documento']) ?>" class="btn btn-warning btn-sm">Modificar</a>
                     <a href="descargar.php?id_documento=<?= htmlspecialchars($doc['Id_documento']) ?>" class="btn btn-primary btn-sm">Descargar</a>
                     <?php endif; ?>
                 </td>
