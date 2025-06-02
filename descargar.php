@@ -59,7 +59,7 @@ header('Cache-Control: must-revalidate');
 header('Pragma: public');
 readfile($tempFile);
 
-// Borrar archivo temporal
+// Borrar archivo temporal bien...
 unlink($tempFile);
 exit;
 ?>
