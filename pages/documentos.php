@@ -22,15 +22,25 @@ try {
 
     $offset = ($paginaActual - 1) * $documentosPorPagina;
     $sql = "
-    SELECT d.Id_documento, d.Nombre_documento, d.Tipo_documento, d.Fecha_subido, d.Fecha_modificacion,
-           d.Url_documento, d.Descripcion,
-           e.Nombre_estudiante + ' ' + e.Apellido_estudiante AS Nombre_estudiante,
-           p.Nombre_profesional + ' ' + p.Apellido_profesional AS Nombre_profesional
-    FROM documentos d
-    LEFT JOIN estudiantes e ON d.Id_estudiante_doc = e.Id_estudiante
-    LEFT JOIN profesionales p ON d.Id_prof_doc = p.Id_profesional
-    ORDER BY d.Id_documento DESC
-    OFFSET $offset ROWS FETCH NEXT $documentosPorPagina ROWS ONLY
+        SELECT d.Id_documento,
+            d.Nombre_documento,
+            d.Tipo_documento,
+            d.Fecha_subido,
+            d.Fecha_modificacion,
+            d.Url_documento,
+            d.Descripcion,
+            d.Id_estudiante_doc,
+            d.Id_prof_doc,
+            d.Id_usuario_subido,
+            u.Nombre_usuario AS Usuario_que_subio,
+            e.Nombre_estudiante + ' ' + e.Apellido_estudiante AS Nombre_estudiante,
+            p.Nombre_profesional + ' ' + p.Apellido_profesional AS Nombre_profesional
+        FROM documentos d
+        LEFT JOIN usuarios u ON d.Id_usuario_subido = u.Id_usuario
+        LEFT JOIN estudiantes e ON d.Id_estudiante_doc = e.Id_estudiante
+        LEFT JOIN profesionales p ON d.Id_prof_doc = p.Id_profesional
+        ORDER BY d.Id_documento DESC;
+
     ";
 
     $stmt = $conn->query($sql);
@@ -89,6 +99,8 @@ try {
                 <td><?= htmlspecialchars($doc['Descripcion']) ?></td>
                 <td><?= htmlspecialchars($doc['Nombre_estudiante'] ?? '-') ?></td>
                 <td><?= htmlspecialchars($doc['Nombre_profesional'] ?? '-') ?></td>
+                <td><?= htmlspecialchars($doc['Usuario_que_subio'] ?? 'Desconocido') ?></td>
+
                 <td>
                     <?php $nombreBlob = basename($doc['Url_documento']); ?>
                     <?php if (!empty($doc['Id_documento'])): ?>

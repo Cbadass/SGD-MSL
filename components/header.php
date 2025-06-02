@@ -19,10 +19,6 @@ $usuario = $_SESSION['usuario'];
 </header>
 
 <!-- Script para alternar modo oscuro (si no lo tienes ya en otro lado) -->
-<script>
-document.getElementById('modoToggle').addEventListener('click', () => {
-  document.body.classList.toggle('dark-mode');
-  const dark = document.body.classList.contains('dark-mode');
-  document.cookie = `modo_oscuro=${dark}; path=/; max-age=31536000`;
-});
-</script>
+
+
+
