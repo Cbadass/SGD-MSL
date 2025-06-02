@@ -164,8 +164,8 @@ try {
 <?php elseif (empty($documentos)): ?>
   <div class="alert alert-warning">No se encontraron documentos.</div>
 <?php else: ?>
-  <div class="table-responsive">
-    <table class="table table-striped table-hover">
+  <div class="table-responsive overflow-y: auto;">
+    <table class="table table-striped table-hover table-bordered">
       <thead>
         <tr>
           <th>ID</th>
