@@ -91,8 +91,8 @@ try {
                 <td><?= htmlspecialchars($doc['Nombre_profesional'] ?? '-') ?></td>
                 <td>
                     <?php $nombreBlob = basename($doc['Url_documento']); ?>
-                    <?php if (!empty($row['Id_documento'])): ?>
-                    <a href="descargar_interno.php?id_documento=<?= htmlspecialchars($row['Id_documento']) ?>" class="btn btn-primary btn-sm">Descargar</a>
+                    <?php if (!empty($doc['Id_documento'])): ?>
+                    <a href="descargar.php?id_documento=<?= htmlspecialchars($row['Id_documento']) ?>" class="btn btn-primary btn-sm">Descargar</a>
                     <?php endif; ?>
                 </td>
             </tr>
