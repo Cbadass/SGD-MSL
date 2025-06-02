@@ -51,20 +51,19 @@ class AzureBlobStorage {
         $permissions = 'r';
         $expiry = gmdate('Y-m-d\TH:i:s\Z', strtotime("+$duracionMinutos minutes"));
     
+        // Construir stringToSign con exactamente 5 campos
         $stringToSign = implode("\n", [
-            $permissions,
-            '', // start time
-            $expiry,
-            "/blob/$accountName/$container/$blobName",
-            '', // sip
-            '', // spr
-            '2021-08-06', // sv
-            'b', // sr
-            '', '', '', '', '' // rscc, rscd, rsce, rscl, rsct
+            $permissions,                         // sp
+            $expiry,                              // se
+            "/blob/$accountName/$container/$blobName", // canonicalized resource
+            '2021-08-06',                         // sv
+            'b'                                   // sr
         ]);
     
+        // Firma HMAC-SHA256
         $signature = base64_encode(hash_hmac('sha256', $stringToSign, $accountKey, true));
     
+        // Query final
         $queryString = http_build_query([
             'sv' => '2021-08-06',
             'sr' => 'b',
@@ -75,6 +74,7 @@ class AzureBlobStorage {
     
         return "https://$accountName.blob.core.windows.net/$container/$blobName?$queryString";
     }
+    
     
 }
 ?>
