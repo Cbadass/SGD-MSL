@@ -75,9 +75,9 @@ try {
     }
 
     echo "Proceso completado. Redirigiendo...";
-    header("Refresh: 3; URL=index.php?seccion=documentos");
+    echo "<script>setTimeout(() => { window.location.href = 'index.php?seccion=documentos'; }, 3000);</script>";
     exit;
-
+    
 } catch (Exception $e) {
     echo "Error general: " . $e->getMessage() . "<br>";
 }
