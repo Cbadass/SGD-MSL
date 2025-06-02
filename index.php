@@ -1,5 +1,9 @@
 <?php
 session_start();
+if (!isset($_SESSION['usuario'])) {
+    header("Location: login.php");
+    exit;
+}
 $seccion = $_GET['seccion'] ?? 'usuarios';
 $modo_oscuro = $_COOKIE['modo_oscuro'] ?? 'false';
 ?>
