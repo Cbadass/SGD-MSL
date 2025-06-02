@@ -1,6 +1,6 @@
 <?php
 try {
-    require_once __DIR__ . '/../bd.php';
+    require_once __DIR__ . '/../includes/bd.php';
     require_once __DIR__ . '/../includes/storage.php';
 
     // Inicializa la clase de Azure Blob Storage
