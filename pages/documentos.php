@@ -1,13 +1,14 @@
 <?php
-require_once __DIR__ . '/../bd.php';
-require_once __DIR__ . '/../includes/storage.php';
-
-$errorMsg = '';
-$documentos = [];
-
 try {
+    require_once __DIR__ . '/../bd.php';
+    require_once __DIR__ . '/../includes/storage.php';
+
     // Inicializa la clase de Azure Blob Storage
     $azure = new AzureBlobStorage();
+
+    // Variables para errores y resultados
+    $errorMsg = '';
+    $documentos = [];
 
     // Paginación
     $documentosPorPagina = 20;
@@ -16,14 +17,17 @@ try {
 
     // Calcular total de documentos
     $totalDocumentosQuery = "SELECT COUNT(*) FROM documentos";
-    $totalDocumentos = $conn->query($totalDocumentosQuery)->fetchColumn();
+    $stmtTotal = $conn->query($totalDocumentosQuery);
+    if (!$stmtTotal) {
+        throw new Exception("Error al contar documentos: " . implode(", ", $conn->errorInfo()));
+    }
+    $totalDocumentos = $stmtTotal->fetchColumn();
 
-    $totalPaginas = ceil($totalDocumentos / $documentosPorPagina);
+    $totalPaginas = ($totalDocumentos > 0) ? ceil($totalDocumentos / $documentosPorPagina) : 1;
     if ($paginaActual > $totalPaginas) $paginaActual = $totalPaginas;
 
-    // Consulta paginada con JOINs a estudiantes y profesionales
+    // Consulta paginada con JOINs
     $offset = ($paginaActual - 1) * $documentosPorPagina;
-
     $sql = "
     SELECT d.Id_documento, d.Nombre_documento, d.Tipo_documento, d.Fecha_subido, d.Fecha_modificacion,
            d.Url_documento, d.Descripcion,
@@ -37,10 +41,13 @@ try {
     ";
 
     $stmt = $conn->query($sql);
+    if (!$stmt) {
+        throw new Exception("Error en la consulta principal: " . implode(", ", $conn->errorInfo()));
+    }
     $documentos = $stmt->fetchAll();
 
 } catch (PDOException $e) {
-    $errorMsg = "Error en la base de datos: " . $e->getMessage();
+    $errorMsg = "Error de la base de datos: " . $e->getMessage();
 } catch (Exception $e) {
     $errorMsg = "Error general: " . $e->getMessage();
 }
@@ -49,23 +56,23 @@ try {
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <title>Lista de Documentos</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<meta charset="UTF-8">
+<title>Lista de Documentos</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 </head>
 <body class="container mt-4">
 
-<?php if ($errorMsg): ?>
-<div class="alert alert-danger">
-    <?= htmlspecialchars($errorMsg) ?>
-</div>
+<?php if (!empty($errorMsg)): ?>
+    <div class="alert alert-danger">
+        <?= htmlspecialchars($errorMsg) ?>
+    </div>
 <?php endif; ?>
 
 <h2 class="mb-4">Lista de Documentos</h2>
 
-<?php if (empty($documentos)): ?>
-    <div class="alert alert-warning">No se encontraron documentos o hubo un error.</div>
-<?php else: ?>
+<?php if (empty($documentos) && empty($errorMsg)): ?>
+    <div class="alert alert-warning">No se encontraron documentos.</div>
+<?php elseif (!empty($documentos)): ?>
     <table class="table table-striped">
         <thead>
             <tr>
@@ -91,7 +98,9 @@ try {
                 <td><?= htmlspecialchars($doc['Descripcion']) ?></td>
                 <td><?= htmlspecialchars($doc['Nombre_estudiante'] ?? '-') ?></td>
                 <td><?= htmlspecialchars($doc['Nombre_profesional'] ?? '-') ?></td>
-                <td><a href="<?= htmlspecialchars($doc['Url_documento']) ?>" class="btn btn-primary btn-sm" target="_blank">Descargar</a></td>
+                <td>
+                    <a href="<?= htmlspecialchars($doc['Url_documento']) ?>" class="btn btn-primary btn-sm" target="_blank">Descargar</a>
+                </td>
             </tr>
             <?php endforeach; ?>
         </tbody>
@@ -110,7 +119,7 @@ try {
             <?php endif; ?>
 
             <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
-            <li class="page-item <?= $i === $paginaActual ? 'active' : '' ?>">
+            <li class="page-item <?= ($i === $paginaActual) ? 'active' : '' ?>">
                 <a class="page-link" href="?pagina=<?= $i ?>"><?= $i ?></a>
             </li>
             <?php endfor; ?>
