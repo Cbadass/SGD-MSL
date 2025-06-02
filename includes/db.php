@@ -1,5 +1,6 @@
 <?php
 try {
+
     // Lee las variables de entorno (ya configuradas en Azure)
     $serverName = getenv("DB_SERVER");  
     $database   = getenv("DB_DATABASE"); 

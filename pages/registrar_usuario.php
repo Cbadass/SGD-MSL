@@ -99,18 +99,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // FORMULARIO HTML
 echo '<h2>Registrar nuevo usuario</h2>
 <form method="POST" class="form-grid">
-    <div class="form-group"><label>Nombres</label><input name="nombre" required></div>
+    <div class="form-group"><label>Nombres</label><input name="nombre" type="text" required></div>
     <div class="form-group"><label>Apellidos</label><input name="apellido" type="text" required></div>
     <div class="form-group"><label>Correo Electrónico</label><input name="correo" type="email" required></div>
-    <div class="form-group"><label>Número</label><input name="telefono" required></div>
-    <div class="form-group"><label>RUT</label><input name="rut" required></div>
+    <div class="form-group"><label>Número</label><input name="telefono"  type="text" required></div>
+    <div class="form-group"><label>RUT</label><input name="rut"  type="text" required></div>
     <div class="form-group"><label>Fecha de nacimiento</label><input name="fecha_nacimiento" type="date" required></div>
     <div class="form-group"><label>Tipo de profesional</label>
         <select name="tipo_profesional">
             <option>Docente</option><option>Administrativo</option><option>Asistente</option>
         </select>
     </div>
-    <div class="form-group"><label>Cargo</label><input name="cargo"></div>
+    <div class="form-group"><label>Cargo</label><input  type="text" name="cargo"></div>
     <div class="form-group"><label>Horas laborales</label><input name="horas" type="number"></div>
     <div class="form-group"><label>Fecha de inicio</label><input name="fecha_ingreso" type="date"></div>
     <div class="form-group"><label>Domicilio</label><input name="domicilio"></div>

@@ -1,0 +1,13 @@
+{
+    "name": "multisenluz/gestion-documental",
+    "description": "Sistema de gestión documental para Corporación Educacional Multisenluz",
+    "type": "project",
+    "require": {
+      "microsoft/azure-storage-blob": "^1.5"
+    },
+    "autoload": {
+      "psr-4": {
+        "App\\": "includes/"
+      }
+    }
+  }
