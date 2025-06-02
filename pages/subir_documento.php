@@ -1,80 +1,140 @@
 <?php
-require_once 'includes/db.php';
-require_once 'includes/storage.php';
-
-$errorMsg = '';
-$successMsg = '';
-
-// Procesar formulario de subida
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    $nombreDocumento = trim($_POST['nombre_documento'] ?? '');
-    $tipoDocumento = trim($_POST['tipo_documento'] ?? '');
-    $descripcion = trim($_POST['descripcion'] ?? '');
-    $idEstudiante = $_POST['id_estudiante'] ?: null;
-    $idProfesional = $_POST['id_profesional'] ?: null;
-
-    if (!isset($_FILES['archivo']) || $_FILES['archivo']['error'] !== UPLOAD_ERR_OK) {
-        $errorMsg = "Por favor, selecciona un archivo válido.";
-    } elseif (empty($nombreDocumento) || empty($tipoDocumento)) {
-        $errorMsg = "Completa todos los campos obligatorios.";
-    } else {
-        try {
-            // Subir archivo al contenedor
-            $archivoTmp = $_FILES['archivo']['tmp_name'];
-            $archivoNombre = basename($_FILES['archivo']['name']);
-            $contenido = fopen($archivoTmp, 'r');
-
-            // Inicializar Azure
-            $azure = new AzureBlobStorage();
-            $exito = $azure->subirBlob($archivoNombre, $contenido);
-
-            if ($exito) {
-                // Guardar en la base de datos la URL pública (sin SAS, solo para referencia interna)
-                $url = "https://documentossgd.blob.core.windows.net/documentos/{$archivoNombre}";
-                $sql = "INSERT INTO documentos (Nombre_documento, Tipo_documento, Fecha_subido, Url_documento, Descripcion, Id_estudiante_doc, Id_prof_doc)
-                        VALUES (?, ?, GETDATE(), ?, ?, ?, ?)";
-                $stmt = $conn->prepare($sql);
-                $stmt->execute([
-                    $nombreDocumento,
-                    $tipoDocumento,
-                    $url,
-                    $descripcion,
-                    $idEstudiante,
-                    $idProfesional
-                ]);
-
-                $successMsg = "Documento subido exitosamente.";
-            } else {
-                $errorMsg = "Error al subir el archivo a Azure.";
-            }
-        } catch (PDOException $e) {
-            $errorMsg = "Error en la base de datos: " . $e->getMessage();
-        } catch (Exception $e) {
-            $errorMsg = "Error general: " . $e->getMessage();
-        }
-    }
+session_start();
+if (!isset($_SESSION['usuario'])) {
+    header("Location: login.php");
+    exit;
 }
 ?>
 
-<h2 class="mb-4">Subir Nuevo Documento</h2>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Subir Documento</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+<style>
+.resultado {
+  cursor: pointer;
+  padding: 6px 10px;
+  border-bottom: 1px solid #ddd;
+}
+.resultado:hover {
+  background-color: #f0f0f0;
+}
+.seleccionado {
+  background-color: #d1e7dd !important;
+  font-weight: bold;
+}
+</style>
+</head>
+<body class="container mt-4">
 
-<?php if (!empty($errorMsg)): ?>
-<div class="alert alert-danger"><?= htmlspecialchars($errorMsg) ?></div>
-<?php elseif (!empty($successMsg)): ?>
-<div class="alert alert-success"><?= htmlspecialchars($successMsg) ?></div>
-<?php endif; ?>
+<h2 class="mb-4">Subir Documento</h2>
 
-<form method="post" enctype="multipart/form-data" class="bg-light p-4 rounded shadow-sm">
+<form method="POST" action="procesar_subir_documento.php" enctype="multipart/form-data">
   <div class="mb-3">
-    <label for="nombre_documento" class="form-label">Nombre del Documento <span class="text-danger">*</span></label>
-    <input type="text" name="nombre_documento" id="nombre_documento" class="form-control" required>
+    <label for="nombre" class="form-label">Nombre del Documento</label>
+    <input type="text" class="form-control" name="nombre" id="nombre" required>
   </div>
 
   <div class="mb-3">
-    <label for="tipo_documento" class="form-label">Tipo de Documento <span class="text-danger">*</span></label>
-    <input type="text" name="tipo_documento" id="tipo_documento" class="form-control" required>
+    <label for="tipo_documento" class="form-label">Tipo de documento</label>
+    <select name="tipo_documento" id="tipo_documento" class="form-select" required>
+      <optgroup label="Estudiantes">
+        <option value="Certificado de Nacimiento">Certificado de Nacimiento</option>
+        <!-- ...otros tipos igual que en modificar_documento.php... -->
+        <option value="Estado de avance a la Familia Junio">Estado de avance a la Familia Junio</option>
+      </optgroup>
+      <optgroup label="Docentes">
+        <option value="Curriculum">Curriculum</option>
+        <!-- ...otros tipos igual que en modificar_documento.php... -->
+        <option value="Licencia conducir legalizada">Licencia conducir legalizada</option>
+      </optgroup>
+    </select>
   </div>
 
   <div class="mb-3">
-    <label for="descripcion" class="form-label">Descripción (opcional)</label>
-    <textarea name="descripcion" id="de
+    <label for="descripcion" class="form-label">Descripción</label>
+    <textarea class="form-control" name="descripcion" id="descripcion"></textarea>
+  </div>
+
+  <div class="mb-3">
+    <label for="archivo" class="form-label">Archivo</label>
+    <input type="file" class="form-control" name="archivo" id="archivo" required>
+  </div>
+
+  <!-- Buscador Estudiante -->
+  <div class="mb-3">
+    <label class="form-label">Buscar Estudiante</label>
+    <input type="text" id="buscar_estudiante" class="form-control" placeholder="RUT o Nombre">
+    <input type="hidden" name="id_estudiante" id="id_estudiante">
+    <div id="resultados_estudiante" class="border mt-1"></div>
+  </div>
+
+  <!-- Buscador Profesional -->
+  <div class="mb-3">
+    <label class="form-label">Buscar Profesional</label>
+    <input type="text" id="buscar_profesional" class="form-control" placeholder="RUT o Nombre">
+    <input type="hidden" name="id_profesional" id="id_profesional">
+    <div id="resultados_profesional" class="border mt-1"></div>
+  </div>
+
+  <button type="submit" class="btn btn-success">Subir Documento</button>
+</form>
+
+<script>
+function buscar(endpoint, query, contenedor, idInput) {
+  if (query.length < 3) {
+    contenedor.innerHTML = '';
+    return;
+  }
+  fetch(`${endpoint}?q=${encodeURIComponent(query)}`)
+    .then(res => res.json())
+    .then(data => {
+      contenedor.innerHTML = '';
+      if (data.length === 0) {
+        contenedor.innerHTML = '<div class="p-2 text-muted">Sin resultados</div>';
+        return;
+      }
+      data.forEach(item => {
+        const div = document.createElement('div');
+        if (endpoint.includes('estudiantes')) {
+          div.textContent = `${item.rut} - ${item.nombre} ${item.apellido} (${item.Tipo_curso || ''} ${item.Grado_curso || ''} / ${item.Nombre_escuela || ''})`;
+        } else {
+          div.textContent = `${item.rut} - ${item.nombre} ${item.apellido} (${item.Cargo_profesional || ''} / ${item.Nombre_escuela || ''})`;
+        }
+        div.className = 'resultado';
+        div.onclick = () => {
+          document.getElementById(idInput).value = item.id;
+          div.classList.add('seleccionado');
+          contenedor.innerHTML = `<div class="resultado seleccionado">${div.textContent} (Seleccionado)</div>`;
+        };
+        contenedor.appendChild(div);
+      });
+    });
+}
+
+document.getElementById('buscar_estudiante').addEventListener('input', function() {
+  buscar('buscar_estudiantes.php', this.value.trim(), document.getElementById('resultados_estudiante'), 'id_estudiante');
+});
+
+document.getElementById('buscar_profesional').addEventListener('input', function() {
+  buscar('buscar_profesionales.php', this.value.trim(), document.getElementById('resultados_profesional'), 'id_profesional');
+});
+
+document.getElementById('archivo').addEventListener('change', function() {
+  const archivo = this.files[0];
+  if (!archivo) return;
+
+  const nombreArchivo = archivo.name.toLowerCase();
+  const extensionesPermitidas = ['doc', 'docx', 'odt', 'pdf', 'txt', 'xls', 'xlsx', 'ods', 'ppt', 'pptx', 'odp', 'jpg', 'jpeg', 'png', 'gif'];
+  const extension = nombreArchivo.split('.').pop();
+  if (!extensionesPermitidas.includes(extension)) {
+    alert('Tipo de archivo no permitido. Solo se permiten documentos de Office, PDF, TXT e imágenes.');
+    this.value = '';
+  }
+});
+</script>
+
+</body>
+</html>
