@@ -103,11 +103,16 @@ function buscar(endpoint, query, contenedor, idInput) {
       }
       data.forEach(item => {
         const div = document.createElement('div');
+        if (endpoint.includes('estudiantes')) {
+          div.textContent = `${item.rut} - ${item.nombre} ${item.apellido} (${item.Tipo_curso || ''} ${item.Grado_curso || ''} / ${item.Nombre_escuela || ''})`;
+        } else {
+          div.textContent = `${item.rut} - ${item.nombre} ${item.apellido} (${item.Cargo_profesional || ''} / ${item.Nombre_escuela || ''})`;
+        }
         div.className = 'resultado';
-        div.textContent = `${item.rut} - ${item.nombre} ${item.apellido}`;
         div.onclick = () => {
           document.getElementById(idInput).value = item.id;
-          contenedor.innerHTML = `<div class="resultado seleccionado">${item.rut} - ${item.nombre} ${item.apellido} (Seleccionado)</div>`;
+          div.classList.add('seleccionado');
+          contenedor.innerHTML = `<div class="resultado seleccionado">${div.textContent} (Seleccionado)</div>`;
         };
         contenedor.appendChild(div);
       });
