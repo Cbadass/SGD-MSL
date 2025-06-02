@@ -103,7 +103,6 @@ try {
 <head>
 <meta charset="UTF-8">
 <title>Lista de Documentos</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 </head>
 <body class="container mt-4">
@@ -112,41 +111,41 @@ try {
 
 <!-- Buscador avanzado -->
 <div class="card p-4 mb-4">
-  <form method="GET" class="d-flex flex-wrap gap-3 align-items-end">
+  <form method="GET" class="form-grid">
     <input type="hidden" name="seccion" value="documentos">
 
     <div style="flex: 1 1 240px;">
-      <label for="nombre" class="form-label">Nombre documento</label>
+      <label for="nombre" class="form-group">Nombre documento</label>
       <input type="text" name="nombre" id="nombre" class="form-control" placeholder="Ej: Informe..." value="<?= htmlspecialchars($_GET['nombre'] ?? '') ?>">
     </div>
 
     <div style="flex: 1 1 240px;">
-      <label for="tipo" class="form-label">Tipo documento</label>
+      <label for="tipo" class="form-group">Tipo documento</label>
       <input type="text" name="tipo" id="tipo" class="form-control" placeholder="Ej: Certificado..." value="<?= htmlspecialchars($_GET['tipo'] ?? '') ?>">
     </div>
 
     <div style="flex: 1 1 240px;">
-      <label for="estudiante" class="form-label">Nombre/RUT Estudiante</label>
+      <label for="estudiante" class="form-group">Nombre/RUT Estudiante</label>
       <input type="text" name="estudiante" id="estudiante" class="form-control" placeholder="Ej: Juan Perez..." value="<?= htmlspecialchars($_GET['estudiante'] ?? '') ?>">
     </div>
 
     <div style="flex: 1 1 240px;">
-      <label for="profesional" class="form-label">Nombre/RUT Profesional</label>
+      <label for="profesional" class="form-group">Nombre/RUT Profesional</label>
       <input type="text" name="profesional" id="profesional" class="form-control" placeholder="Ej: Maria Lopez..." value="<?= htmlspecialchars($_GET['profesional'] ?? '') ?>">
     </div>
 
     <div style="flex: 1 1 240px;">
-      <label for="fecha_subida_desde" class="form-label">Fecha subida (desde)</label>
+      <label for="fecha_subida_desde" class="form-group">Fecha subida (desde)</label>
       <input type="date" name="fecha_subida_desde" id="fecha_subida_desde" class="form-control" value="<?= htmlspecialchars($_GET['fecha_subida_desde'] ?? '') ?>">
     </div>
 
     <div style="flex: 1 1 240px;">
-      <label for="fecha_subida_hasta" class="form-label">Fecha subida (hasta)</label>
+      <label for="fecha_subida_hasta" class="form-group">Fecha subida (hasta)</label>
       <input type="date" name="fecha_subida_hasta" id="fecha_subida_hasta" class="form-control" value="<?= htmlspecialchars($_GET['fecha_subida_hasta'] ?? '') ?>">
     </div>
 
     <div style="flex: 1 1 240px;">
-      <label for="orden" class="form-label">Ordenar por</label>
+      <label for="orden" class="form-group">Ordenar por</label>
       <select name="orden" id="orden" class="form-select">
         <option value="subido" <?= ($_GET['orden'] ?? '') === 'subido' ? 'selected' : '' ?>>Fecha de subida</option>
         <option value="modificado" <?= ($_GET['orden'] ?? '') === 'modificado' ? 'selected' : '' ?>>Fecha de modificación</option>
@@ -154,7 +153,7 @@ try {
     </div>
 
     <div style="flex: 1 1 240px;">
-      <button type="submit" class="btn btn-primary w-100">Buscar</button>
+      <button type="submit" class="btn btn-primary w-100 form-group">Buscar</button>
     </div>
   </form>
 </div>

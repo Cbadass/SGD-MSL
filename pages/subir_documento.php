@@ -11,7 +11,6 @@ if (!isset($_SESSION['usuario'])) {
 <head>
 <meta charset="UTF-8">
 <title>Subir Documento</title>
-<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <link rel="stylesheet" href="style.css">
 
 </head>
@@ -21,13 +20,13 @@ if (!isset($_SESSION['usuario'])) {
 
 <form method="POST" action="procesar_subir_documento.php" enctype="multipart/form-data" class="form-grid">
     <div class="mb-3">
-        <label for="nombre" class="form-label">Nombre del Documento</label>
+        <label for="nombre" class="form-group">Nombre del Documento</label>
         <input type="text" class="form-control" name="nombre" id="nombre" required>
     </div>
 
 
     <div class="mb-3">
-        <label for="tipo_documento" class="form-label">Tipo de documento</label>
+        <label for="tipo_documento" class="form-group">Tipo de documento</label>
         <select name="tipo_documento" id="tipo_documento" class="form-select" required>
             <optgroup label="Estudiantes">
                 <option value="Certificado de Nacimiento">Certificado de Nacimiento</option>
