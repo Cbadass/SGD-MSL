@@ -107,112 +107,116 @@ try {
 </head>
 <body class="container mt-4">
 
-<?php if (!empty($errorMsg)): ?>
-    <div class="alert alert-danger"><?= htmlspecialchars($errorMsg) ?></div>
-<?php endif; ?>
-
 <h2 class="mb-4">Lista de Documentos</h2>
 
 <!-- Buscador avanzado -->
-<form method="GET" class="mb-4 row g-3">
-  <input type="hidden" name="seccion" value="documentos">
+<div class="card p-4 mb-4">
+  <form method="GET" class="row g-3 align-items-end">
+    <input type="hidden" name="seccion" value="documentos">
 
-  <div class="col-md-3">
-    <input type="text" name="nombre" class="form-control" placeholder="Nombre documento" value="<?= htmlspecialchars($_GET['nombre'] ?? '') ?>">
-  </div>
+    <div class="col-md-3">
+      <label for="nombre" class="form-label">Nombre documento</label>
+      <input type="text" name="nombre" id="nombre" class="form-control" placeholder="Ej: Informe..." value="<?= htmlspecialchars($_GET['nombre'] ?? '') ?>">
+    </div>
 
-  <div class="col-md-3">
-    <input type="text" name="tipo" class="form-control" placeholder="Tipo documento" value="<?= htmlspecialchars($_GET['tipo'] ?? '') ?>">
-  </div>
+    <div class="col-md-3">
+      <label for="tipo" class="form-label">Tipo documento</label>
+      <input type="text" name="tipo" id="tipo" class="form-control" placeholder="Ej: Certificado..." value="<?= htmlspecialchars($_GET['tipo'] ?? '') ?>">
+    </div>
 
-  <div class="col-md-3">
-    <input type="text" name="estudiante" class="form-control" placeholder="Nombre/RUT Estudiante" value="<?= htmlspecialchars($_GET['estudiante'] ?? '') ?>">
-  </div>
+    <div class="col-md-3">
+      <label for="estudiante" class="form-label">Nombre/RUT Estudiante</label>
+      <input type="text" name="estudiante" id="estudiante" class="form-control" placeholder="Ej: Juan Perez..." value="<?= htmlspecialchars($_GET['estudiante'] ?? '') ?>">
+    </div>
 
-  <div class="col-md-3">
-    <input type="text" name="profesional" class="form-control" placeholder="Nombre/RUT Profesional" value="<?= htmlspecialchars($_GET['profesional'] ?? '') ?>">
-  </div>
+    <div class="col-md-3">
+      <label for="profesional" class="form-label">Nombre/RUT Profesional</label>
+      <input type="text" name="profesional" id="profesional" class="form-control" placeholder="Ej: Maria Lopez..." value="<?= htmlspecialchars($_GET['profesional'] ?? '') ?>">
+    </div>
 
-  <div class="col-md-3">
-    <label class="form-label">Fecha subida (desde)</label>
-    <input type="date" name="fecha_subida_desde" class="form-control" value="<?= htmlspecialchars($_GET['fecha_subida_desde'] ?? '') ?>">
-  </div>
+    <div class="col-md-3">
+      <label for="fecha_subida_desde" class="form-label">Fecha subida (desde)</label>
+      <input type="date" name="fecha_subida_desde" id="fecha_subida_desde" class="form-control" value="<?= htmlspecialchars($_GET['fecha_subida_desde'] ?? '') ?>">
+    </div>
 
-  <div class="col-md-3">
-    <label class="form-label">Fecha subida (hasta)</label>
-    <input type="date" name="fecha_subida_hasta" class="form-control" value="<?= htmlspecialchars($_GET['fecha_subida_hasta'] ?? '') ?>">
-  </div>
+    <div class="col-md-3">
+      <label for="fecha_subida_hasta" class="form-label">Fecha subida (hasta)</label>
+      <input type="date" name="fecha_subida_hasta" id="fecha_subida_hasta" class="form-control" value="<?= htmlspecialchars($_GET['fecha_subida_hasta'] ?? '') ?>">
+    </div>
 
-  <div class="col-md-3">
-    <label class="form-label">Ordenar por</label>
-    <select name="orden" class="form-select">
-      <option value="subido" <?= ($_GET['orden'] ?? '') === 'subido' ? 'selected' : '' ?>>Fecha de subida</option>
-      <option value="modificado" <?= ($_GET['orden'] ?? '') === 'modificado' ? 'selected' : '' ?>>Fecha de modificación</option>
-    </select>
-  </div>
+    <div class="col-md-3">
+      <label for="orden" class="form-label">Ordenar por</label>
+      <select name="orden" id="orden" class="form-select">
+        <option value="subido" <?= ($_GET['orden'] ?? '') === 'subido' ? 'selected' : '' ?>>Fecha de subida</option>
+        <option value="modificado" <?= ($_GET['orden'] ?? '') === 'modificado' ? 'selected' : '' ?>>Fecha de modificación</option>
+      </select>
+    </div>
 
-  <div class="col-md-3 align-self-end">
-    <button type="submit" class="btn btn-primary w-100">Buscar</button>
-  </div>
-</form>
+    <div class="col-md-3">
+      <button type="submit" class="btn btn-primary w-100">Buscar</button>
+    </div>
+  </form>
+</div>
 
-<?php if (empty($documentos) && empty($errorMsg)): ?>
-    <div class="alert alert-warning">No se encontraron documentos.</div>
-<?php elseif (!empty($documentos)): ?>
-    <table class="table table-striped">
-        <thead>
-            <tr>
-                <th>ID</th>
-                <th>Nombre</th>
-                <th>Tipo</th>
-                <th>Subido</th>
-                <th>Modificado</th>
-                <th>Descripción</th>
-                <th>Estudiante</th>
-                <th>Profesional</th>
-                <th>Usuario último editor</th>
-                <th>Acciones</th>
-            </tr>
-        </thead>
-        <tbody>
-            <?php foreach ($documentos as $doc): ?>
-            <tr>
-                <td><?= htmlspecialchars($doc['Id_documento']) ?></td>
-                <td><?= htmlspecialchars($doc['Nombre_documento']) ?></td>
-                <td><?= htmlspecialchars($doc['Tipo_documento']) ?></td>
-                <td><?= htmlspecialchars($doc['Fecha_subido']) ?></td>
-                <td><?= htmlspecialchars($doc['Fecha_modificacion'] ?? '-') ?></td>
-                <td><?= htmlspecialchars($doc['Descripcion']) ?></td>
-                <td><?= htmlspecialchars($doc['Nombre_estudiante'] ?? '-') ?></td>
-                <td><?= htmlspecialchars($doc['Nombre_profesional'] ?? '-') ?></td>
-                <td><?= htmlspecialchars($doc['Usuario_que_subio'] ?? 'Desconocido') ?></td>
-                <td>
-                    <a href="?seccion=modificar_documento&id_documento=<?= htmlspecialchars($doc['Id_documento']) ?>" class="btn btn-warning btn-sm">Modificar</a>
-                    <a href="descargar.php?id_documento=<?= htmlspecialchars($doc['Id_documento']) ?>" class="btn btn-primary btn-sm">Descargar</a>
-                </td>
-            </tr>
-            <?php endforeach; ?>
-        </tbody>
+<?php if (!empty($errorMsg)): ?>
+  <div class="alert alert-danger"><?= htmlspecialchars($errorMsg) ?></div>
+<?php elseif (empty($documentos)): ?>
+  <div class="alert alert-warning">No se encontraron documentos.</div>
+<?php else: ?>
+  <div class="table-responsive">
+    <table class="table table-striped table-hover">
+      <thead>
+        <tr>
+          <th>ID</th>
+          <th>Nombre</th>
+          <th>Tipo</th>
+          <th>Subido</th>
+          <th>Modificado</th>
+          <th>Descripción</th>
+          <th>Estudiante</th>
+          <th>Profesional</th>
+          <th>Usuario último editor</th>
+          <th>Acciones</th>
+        </tr>
+      </thead>
+      <tbody>
+        <?php foreach ($documentos as $doc): ?>
+        <tr>
+          <td><?= htmlspecialchars($doc['Id_documento']) ?></td>
+          <td><?= htmlspecialchars($doc['Nombre_documento']) ?></td>
+          <td><?= htmlspecialchars($doc['Tipo_documento']) ?></td>
+          <td><?= htmlspecialchars($doc['Fecha_subido']) ?></td>
+          <td><?= htmlspecialchars($doc['Fecha_modificacion'] ?? '-') ?></td>
+          <td><?= htmlspecialchars($doc['Descripcion']) ?></td>
+          <td><?= htmlspecialchars($doc['Nombre_estudiante'] ?? '-') ?></td>
+          <td><?= htmlspecialchars($doc['Nombre_profesional'] ?? '-') ?></td>
+          <td><?= htmlspecialchars($doc['Usuario_que_subio'] ?? 'Desconocido') ?></td>
+          <td>
+            <a href="?seccion=modificar_documento&id_documento=<?= htmlspecialchars($doc['Id_documento']) ?>" class="btn btn-warning btn-sm">Modificar</a>
+            <a href="descargar.php?id_documento=<?= htmlspecialchars($doc['Id_documento']) ?>" class="btn btn-primary btn-sm">Descargar</a>
+          </td>
+        </tr>
+        <?php endforeach; ?>
+      </tbody>
     </table>
+  </div>
 
-    <!-- Paginación -->
-    <nav>
-        <ul class="pagination">
-            <?php if ($paginaActual > 1): ?>
-            <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=1">Primera</a></li>
-            <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=<?= $paginaActual - 1 ?>">Anterior</a></li>
-            <?php endif; ?>
-            <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
-            <li class="page-item <?= ($i === $paginaActual) ? 'active' : '' ?>">
-                <a class="page-link" href="?seccion=documentos&pagina=<?= $i ?>"><?= $i ?></a>
-            </li>
-            <?php endfor; ?>
-            <?php if ($paginaActual < $totalPaginas): ?>
-            <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=<?= $paginaActual + 1 ?>">Siguiente</a></li>
-            <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=<?= $totalPaginas ?>">Última</a></li>
-            <?php endif; ?>
-        </ul>
-    </nav>
+  <!-- Paginación -->
+  <nav>
+    <ul class="pagination justify-content-center">
+      <?php if ($paginaActual > 1): ?>
+      <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=1">Primera</a></li>
+      <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=<?= $paginaActual - 1 ?>">Anterior</a></li>
+      <?php endif; ?>
+      <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
+      <li class="page-item <?= ($i === $paginaActual) ? 'active' : '' ?>"><a class="page-link" href="?seccion=documentos&pagina=<?= $i ?>"><?= $i ?></a></li>
+      <?php endfor; ?>
+      <?php if ($paginaActual < $totalPaginas): ?>
+      <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=<?= $paginaActual + 1 ?>">Siguiente</a></li>
+      <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=<?= $totalPaginas ?>">Última</a></li>
+      <?php endif; ?>
+    </ul>
+  </nav>
 <?php endif; ?>
 
 </body>
