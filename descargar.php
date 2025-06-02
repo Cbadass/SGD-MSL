@@ -36,24 +36,30 @@ if (
     die("No tienes permisos para descargar este archivo.");
 }
 
+// Obtener la extensión real del archivo (a partir de la URL)
+$ext = pathinfo($documento['Url_documento'], PATHINFO_EXTENSION);
+
+// Armar el nombre final para la descarga (con extensión)
+$nombreUsuario = pathinfo($documento['Nombre_documento'], PATHINFO_FILENAME); // solo nombre, sin extensión
+$nombreDescarga = $nombreUsuario . ($ext ? '.' . $ext : ''); // agrega extensión real
+
 // Descargar el archivo desde la URL pública
 $urlBlobPublico = $documento['Url_documento'];
-$nombreArchivo = basename($documento['Nombre_documento']); // Usa el nombre real y con extensión
 
 // Descargar el archivo a un archivo temporal
 $tempFile = tempnam(sys_get_temp_dir(), 'blob_');
 file_put_contents($tempFile, file_get_contents($urlBlobPublico));
 
-// Servir el archivo como descarga
+// Servir como descarga
 header('Content-Description: File Transfer');
 header('Content-Type: application/octet-stream');
-header('Content-Disposition: attachment; filename="' . $nombreArchivo . '"');
+header('Content-Disposition: attachment; filename="' . $nombreDescarga . '"');
 header('Expires: 0');
 header('Cache-Control: must-revalidate');
 header('Pragma: public');
 readfile($tempFile);
 
-// Borrar el archivo temporal
+// Borrar archivo temporal
 unlink($tempFile);
 exit;
 ?>
