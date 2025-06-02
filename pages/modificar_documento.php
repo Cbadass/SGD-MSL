@@ -57,7 +57,7 @@ if (!empty($doc['Id_prof_doc'])) {
 
 <h2 class="mb-4">Modificar Documento</h2>
 
-<form method="POST" action="guardar_modificacion_documento.php" enctype="multipart/form-data">
+<form method="POST" action="/guardar_modificacion_documento.php" enctype="multipart/form-data">
   <input type="hidden" name="id_documento" value="<?= $doc['Id_documento'] ?>">
 
   <div class="container-form">
