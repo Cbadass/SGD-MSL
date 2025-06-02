@@ -3,7 +3,7 @@
         'name' => 'multisenluz/gestion-documental',
         'pretty_version' => 'dev-main',
         'version' => 'dev-main',
-        'reference' => '0ca0d1efef727060a63c604c866aeb425747a454',
+        'reference' => '5c9ddd958f36920d5ced7b2438b00773120b67e5',
         'type' => 'project',
         'install_path' => __DIR__ . '/../../',
         'aliases' => array(),
@@ -58,7 +58,7 @@
         'multisenluz/gestion-documental' => array(
             'pretty_version' => 'dev-main',
             'version' => 'dev-main',
-            'reference' => '0ca0d1efef727060a63c604c866aeb425747a454',
+            'reference' => '5c9ddd958f36920d5ced7b2438b00773120b67e5',
             'type' => 'project',
             'install_path' => __DIR__ . '/../../',
             'aliases' => array(),

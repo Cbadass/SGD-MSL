@@ -3,30 +3,23 @@ try {
     require_once 'includes/db.php';
     require_once 'includes/storage.php';
 
-    // Inicializa la clase de Azure Blob Storage
     $azure = new AzureBlobStorage();
-    
-    // Variables para errores y resultados
     $errorMsg = '';
     $documentos = [];
 
-    // Paginación
     $documentosPorPagina = 20;
     $paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
     if ($paginaActual < 1) $paginaActual = 1;
 
-    // Calcular total de documentos
     $totalDocumentosQuery = "SELECT COUNT(*) FROM documentos";
     $stmtTotal = $conn->query($totalDocumentosQuery);
     if (!$stmtTotal) {
         throw new Exception("Error al contar documentos: " . implode(", ", $conn->errorInfo()));
     }
     $totalDocumentos = $stmtTotal->fetchColumn();
-
     $totalPaginas = ($totalDocumentos > 0) ? ceil($totalDocumentos / $documentosPorPagina) : 1;
     if ($paginaActual > $totalPaginas) $paginaActual = $totalPaginas;
 
-    // Consulta paginada con JOINs
     $offset = ($paginaActual - 1) * $documentosPorPagina;
     $sql = "
     SELECT d.Id_documento, d.Nombre_documento, d.Tipo_documento, d.Fecha_subido, d.Fecha_modificacion,
@@ -63,9 +56,7 @@ try {
 <body class="container mt-4">
 
 <?php if (!empty($errorMsg)): ?>
-    <div class="alert alert-danger">
-        <?= htmlspecialchars($errorMsg) ?>
-    </div>
+    <div class="alert alert-danger"><?= htmlspecialchars($errorMsg) ?></div>
 <?php endif; ?>
 
 <h2 class="mb-4">Lista de Documentos</h2>
@@ -94,43 +85,36 @@ try {
                 <td><?= htmlspecialchars($doc['Nombre_documento']) ?></td>
                 <td><?= htmlspecialchars($doc['Tipo_documento']) ?></td>
                 <td><?= htmlspecialchars($doc['Fecha_subido']) ?></td>
-                <td><?= htmlspecialchars($doc['Fecha_modificacion']) ?></td>
+                <td><?= htmlspecialchars($doc['Fecha_modificacion'] ?? '-') ?></td>
                 <td><?= htmlspecialchars($doc['Descripcion']) ?></td>
                 <td><?= htmlspecialchars($doc['Nombre_estudiante'] ?? '-') ?></td>
                 <td><?= htmlspecialchars($doc['Nombre_profesional'] ?? '-') ?></td>
                 <td>
-                    <a href="<?= htmlspecialchars($doc['Url_documento']) ?>" class="btn btn-primary btn-sm" target="_blank">Descargar</a>
+                    <?php
+                    $nombreBlob = basename($doc['Url_documento']);
+                    $urlSegura = $azure->generarSASManual($nombreBlob, 60);
+                    ?>
+                    <a href="<?= htmlspecialchars($urlSegura) ?>" class="btn btn-primary btn-sm" target="_blank">Descargar</a>
                 </td>
             </tr>
             <?php endforeach; ?>
         </tbody>
     </table>
 
-    <!-- Paginación -->
     <nav>
         <ul class="pagination">
             <?php if ($paginaActual > 1): ?>
-            <li class="page-item">
-                <a class="page-link" href="?pagina=1">Primera</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="?pagina=<?= $paginaActual - 1 ?>">Anterior</a>
-            </li>
+            <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=1">Primera</a></li>
+            <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=<?= $paginaActual - 1 ?>">Anterior</a></li>
             <?php endif; ?>
-
             <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
             <li class="page-item <?= ($i === $paginaActual) ? 'active' : '' ?>">
-                <a class="page-link" href="?pagina=<?= $i ?>"><?= $i ?></a>
+                <a class="page-link" href="?seccion=documentos&pagina=<?= $i ?>"><?= $i ?></a>
             </li>
             <?php endfor; ?>
-
             <?php if ($paginaActual < $totalPaginas): ?>
-            <li class="page-item">
-                <a class="page-link" href="?pagina=<?= $paginaActual + 1 ?>">Siguiente</a>
-            </li>
-            <li class="page-item">
-                <a class="page-link" href="?pagina=<?= $totalPaginas ?>">Última</a>
-            </li>
+            <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=<?= $paginaActual + 1 ?>">Siguiente</a></li>
+            <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=<?= $totalPaginas ?>">Última</a></li>
             <?php endif; ?>
         </ul>
     </nav>
