@@ -3,7 +3,10 @@ try {
     require_once 'includes/db.php';
     require_once 'includes/storage.php';
 
+    // Inicializa la clase de Azure Blob Storage
     $azure = new AzureBlobStorage();
+    
+    // Variables para errores y resultados
     $errorMsg = '';
     $documentos = [];
 
@@ -50,13 +53,26 @@ try {
 }
 ?>
 
-<h2 class="mb-4">Lista de Documentos</h2>
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<title>Lista de Documentos</title>
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body class="container mt-4">
 
 <?php if (!empty($errorMsg)): ?>
-    <div class="alert alert-danger"><?= htmlspecialchars($errorMsg) ?></div>
-<?php elseif (empty($documentos)): ?>
+    <div class="alert alert-danger">
+        <?= htmlspecialchars($errorMsg) ?>
+    </div>
+<?php endif; ?>
+
+<h2 class="mb-4">Lista de Documentos</h2>
+
+<?php if (empty($documentos) && empty($errorMsg)): ?>
     <div class="alert alert-warning">No se encontraron documentos.</div>
-<?php else: ?>
+<?php elseif (!empty($documentos)): ?>
     <table class="table table-striped">
         <thead>
             <tr>
@@ -78,16 +94,12 @@ try {
                 <td><?= htmlspecialchars($doc['Nombre_documento']) ?></td>
                 <td><?= htmlspecialchars($doc['Tipo_documento']) ?></td>
                 <td><?= htmlspecialchars($doc['Fecha_subido']) ?></td>
-                <td><?= htmlspecialchars($doc['Fecha_modificacion'] ?? '-') ?></td>
+                <td><?= htmlspecialchars($doc['Fecha_modificacion']) ?></td>
                 <td><?= htmlspecialchars($doc['Descripcion']) ?></td>
                 <td><?= htmlspecialchars($doc['Nombre_estudiante'] ?? '-') ?></td>
                 <td><?= htmlspecialchars($doc['Nombre_profesional'] ?? '-') ?></td>
                 <td>
-                    <?php
-                        $nombreBlob = basename($doc['Url_documento']);
-                        $urlDescarga = $azure->obtenerBlobUrlConSAS($nombreBlob, 60);
-                    ?>
-                    <a href="<?= htmlspecialchars($urlDescarga) ?>" class="btn btn-primary btn-sm" target="_blank">Descargar</a>
+                    <a href="<?= htmlspecialchars($doc['Url_documento']) ?>" class="btn btn-primary btn-sm" target="_blank">Descargar</a>
                 </td>
             </tr>
             <?php endforeach; ?>
@@ -99,27 +111,30 @@ try {
         <ul class="pagination">
             <?php if ($paginaActual > 1): ?>
             <li class="page-item">
-                <a class="page-link" href="?seccion=documentos&pagina=1">Primera</a>
+                <a class="page-link" href="?pagina=1">Primera</a>
             </li>
             <li class="page-item">
-                <a class="page-link" href="?seccion=documentos&pagina=<?= $paginaActual - 1 ?>">Anterior</a>
+                <a class="page-link" href="?pagina=<?= $paginaActual - 1 ?>">Anterior</a>
             </li>
             <?php endif; ?>
 
             <?php for ($i = 1; $i <= $totalPaginas; $i++): ?>
             <li class="page-item <?= ($i === $paginaActual) ? 'active' : '' ?>">
-                <a class="page-link" href="?seccion=documentos&pagina=<?= $i ?>"><?= $i ?></a>
+                <a class="page-link" href="?pagina=<?= $i ?>"><?= $i ?></a>
             </li>
             <?php endfor; ?>
 
             <?php if ($paginaActual < $totalPaginas): ?>
             <li class="page-item">
-                <a class="page-link" href="?seccion=documentos&pagina=<?= $paginaActual + 1 ?>">Siguiente</a>
+                <a class="page-link" href="?pagina=<?= $paginaActual + 1 ?>">Siguiente</a>
             </li>
             <li class="page-item">
-                <a class="page-link" href="?seccion=documentos&pagina=<?= $totalPaginas ?>">Última</a>
+                <a class="page-link" href="?pagina=<?= $totalPaginas ?>">Última</a>
             </li>
             <?php endif; ?>
         </ul>
     </nav>
 <?php endif; ?>
+
+</body>
+</html>
