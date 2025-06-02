@@ -206,7 +206,7 @@ document.getElementById('archivo').addEventListener('change', function() {
   if (!archivo) return;
 
   const nombreArchivo = archivo.name.toLowerCase();
-  const extensionesPermitidas = ['doc', 'docx', 'odt', 'pdf', 'txt', 'xls', 'xlsx', 'ods', 'ppt', 'pptx', 'odp', 'jpg', 'jpeg', 'png', 'gif'];
+  const extensionesPermitidas = ['doc', 'docx', 'odt', 'pdf', 'txt', 'xls', 'xlsx', 'ods', 'ppt', 'pptx', 'odp', 'jpg', 'jpeg', 'png'];
 
   const extension = nombreArchivo.split('.').pop();
   if (!extensionesPermitidas.includes(extension)) {

@@ -39,6 +39,14 @@ try {
         $nombreArchivo = basename($archivo['name']);
         $contenidoArchivo = file_get_contents($archivo['tmp_name']);
 
+        // Validar extensión en el servidor también
+        $extensionesPermitidas = ['doc', 'docx', 'odt', 'pdf', 'txt', 'xls', 'xlsx', 'ods', 'ppt', 'pptx', 'odp', 'jpg', 'jpeg', 'png', 'gif'];
+        $extensionArchivo = strtolower(pathinfo($nombreArchivo, PATHINFO_EXTENSION));
+
+        if (!in_array($extensionArchivo, $extensionesPermitidas)) {
+            throw new Exception("El tipo de archivo '$extensionArchivo' no está permitido.");
+        }
+
         // Subir a Azure Blob Storage
         $azure = new AzureBlobStorage();
         $subido = $azure->subirBlob($nombreArchivo, $contenidoArchivo);
