@@ -19,7 +19,7 @@ if (!isset($_SESSION['usuario'])) {
 
 <h2 class="mb-4">Subir Documento</h2>
 
-<form method="POST" action="procesar_subir_documento.php" enctype="multipart/form-data">
+<form method="POST" action="procesar_subir_documento.php" enctype="multipart/form-data" class="form-grid">
     <div class="mb-3">
         <label for="nombre" class="form-label">Nombre del Documento</label>
         <input type="text" class="form-control" name="nombre" id="nombre" required>
