@@ -47,13 +47,31 @@ try {
             throw new Exception("El tipo de archivo '$extensionArchivo' no está permitido.");
         }
 
+        // Obtener nombres para generar el nombre único
+        $stmtEst = $conn->prepare("SELECT Nombre_estudiante, Apellido_estudiante FROM estudiantes WHERE Id_estudiante = ?");
+        $stmtEst->execute([$id_estudiante]);
+        $estudiante = $stmtEst->fetch();
+
+        $stmtProf = $conn->prepare("SELECT Nombre_profesional, Apellido_profesional FROM profesionales WHERE Id_profesional = ?");
+        $stmtProf->execute([$id_profesional]);
+        $profesional = $stmtProf->fetch();
+
+        // Generar nombre único
+        $tipoLimpio = preg_replace('/[^a-zA-Z0-9]/', '', $tipo);
+        $fechaHora = date('YmdHis');
+
+        $nombreEstudiante = $estudiante ? preg_replace('/[^a-zA-Z0-9]/', '', $estudiante['Nombre_estudiante'] . $estudiante['Apellido_estudiante']) : 'SinEstudiante';
+        $nombreProfesional = $profesional ? preg_replace('/[^a-zA-Z0-9]/', '', $profesional['Nombre_profesional'] . $profesional['Apellido_profesional']) : 'SinProfesional';
+
+        $nombreBlob = "{$tipoLimpio}-{$fechaHora}-{$nombreEstudiante}-{$nombreProfesional}.{$extensionArchivo}";
+
         // Subir a Azure Blob Storage
         $azure = new AzureBlobStorage();
-        $subido = $azure->subirBlob($nombreArchivo, $contenidoArchivo);
+        $subido = $azure->subirBlob($nombreBlob, $contenidoArchivo);
 
         if ($subido) {
             // Actualizar la URL del documento en la base de datos
-            $urlDocumento = "https://documentossgd.blob.core.windows.net/documentos/$nombreArchivo";
+            $urlDocumento = "https://documentossgd.blob.core.windows.net/documentos/$nombreBlob";
             $stmt = $conn->prepare("UPDATE documentos SET Url_documento = ? WHERE Id_documento = ?");
             $stmt->execute([$urlDocumento, $id]);
 
