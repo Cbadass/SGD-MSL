@@ -15,24 +15,6 @@ $stmt->execute([$id_documento]);
 $doc = $stmt->fetch();
 
 if (!$doc) die("Documento no encontrado.");
-
-// Obtener datos de estudiante (si existe)
-if (!empty($doc['Id_estudiante_doc'])) {
-    $stmtEst = $conn->prepare("SELECT * FROM estudiantes WHERE Id_estudiante = ?");
-    $stmtEst->execute([$doc['Id_estudiante_doc']]);
-    $estudiante = $stmtEst->fetch();
-} else {
-    $estudiante = null;
-}
-
-// Obtener datos de profesional (si existe)
-if (!empty($doc['Id_prof_doc'])) {
-    $stmtProf = $conn->prepare("SELECT * FROM profesionales WHERE Id_profesional = ?");
-    $stmtProf->execute([$doc['Id_prof_doc']]);
-    $profesional = $stmtProf->fetch();
-} else {
-    $profesional = null;
-}
 ?>
 
 <!DOCTYPE html>
@@ -42,14 +24,17 @@ if (!empty($doc['Id_prof_doc'])) {
 <title>Modificar Documento</title>
 <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <style>
-.container-form {
-  display: flex;
-  gap: 20px;
+.resultado {
+  cursor: pointer;
+  padding: 6px 10px;
+  border-bottom: 1px solid #ddd;
 }
-.card-usuario {
-  border: 1px solid #ddd;
-  padding: 10px;
-  border-radius: 8px;
+.resultado:hover {
+  background-color: #f0f0f0;
+}
+.seleccionado {
+  background-color: #d1e7dd !important;
+  font-weight: bold;
 }
 </style>
 </head>
@@ -62,109 +47,79 @@ if (!empty($doc['Id_prof_doc'])) {
   <input type="hidden" name="id_estudiante" id="id_estudiante" value="<?= htmlspecialchars($doc['Id_estudiante_doc'] ?? '') ?>">
   <input type="hidden" name="id_profesional" id="id_profesional" value="<?= htmlspecialchars($doc['Id_prof_doc'] ?? '') ?>">
 
-  <div class="container-form">
-    <div class="flex-fill">
-      <div class="mb-3">
-        <label for="nombre" class="form-label">Nombre</label>
-        <input type="text" class="form-control" name="nombre" id="nombre" value="<?= htmlspecialchars($doc['Nombre_documento']) ?>" required>
-      </div>
-
-      <div class="mb-3">
-        <label for="tipo" class="form-label">Tipo de documento</label>
-        <input type="text" class="form-control" name="tipo_documento" id="tipo" value="<?= htmlspecialchars($doc['Tipo_documento']) ?>">
-      </div>
-
-      <div class="mb-3">
-        <label for="descripcion" class="form-label">Descripción</label>
-        <textarea class="form-control" name="descripcion" id="descripcion"><?= htmlspecialchars($doc['Descripcion']) ?></textarea>
-      </div>
-
-      <div class="mb-3">
-        <label for="archivo" class="form-label">Actualizar archivo (opcional)</label>
-        <input type="file" class="form-control" name="archivo" id="archivo">
-      </div>
-
-      <div class="mb-3">
-        <label for="buscar_estudiante" class="form-label">Buscar Estudiante</label>
-        <input type="text" class="form-control" id="buscar_estudiante" placeholder="RUT o Nombre">
-        <div id="resultados_estudiante" class="mt-2"></div>
-      </div>
-
-      <div class="mb-3">
-        <label for="buscar_profesional" class="form-label">Buscar Profesional</label>
-        <input type="text" class="form-control" id="buscar_profesional" placeholder="RUT o Nombre">
-        <div id="resultados_profesional" class="mt-2"></div>
-      </div>
-    </div>
-
-    <div class="flex-fill">
-      <h5>Estudiante asociado</h5>
-      <div class="card-usuario">
-        <p><strong>RUT:</strong> <?= htmlspecialchars($estudiante['Rut_estudiante'] ?? '-') ?></p>
-        <p><strong>Nombre:</strong> <?= htmlspecialchars($estudiante['Nombre_estudiante'] ?? '-') ?></p>
-        <p><strong>Curso:</strong> <?= htmlspecialchars($estudiante['Id_curso'] ?? '-') ?></p>
-      </div>
-
-      <h5 class="mt-3">Profesional asociado</h5>
-      <div class="card-usuario">
-        <p><strong>RUT:</strong> <?= htmlspecialchars($profesional['Rut_profesional'] ?? '-') ?></p>
-        <p><strong>Nombre:</strong> <?= htmlspecialchars($profesional['Nombre_profesional'] ?? '-') ?></p>
-        <p><strong>Cargo:</strong> <?= htmlspecialchars($profesional['Cargo_profesional'] ?? '-') ?></p>
-      </div>
-    </div>
+  <div class="mb-3">
+    <label for="nombre" class="form-label">Nombre del Documento</label>
+    <input type="text" class="form-control" name="nombre" value="<?= htmlspecialchars($doc['Nombre_documento']) ?>" required>
   </div>
 
-  <div class="mt-4">
+  <div class="mb-3">
+    <label for="tipo" class="form-label">Tipo de Documento</label>
+    <input type="text" class="form-control" name="tipo_documento" value="<?= htmlspecialchars($doc['Tipo_documento']) ?>">
+  </div>
+
+  <div class="mb-3">
+    <label for="descripcion" class="form-label">Descripción</label>
+    <textarea class="form-control" name="descripcion"><?= htmlspecialchars($doc['Descripcion']) ?></textarea>
+  </div>
+
+  <div class="mb-3">
+    <label for="archivo" class="form-label">Actualizar archivo (opcional)</label>
+    <input type="file" class="form-control" name="archivo">
+  </div>
+
+  <!-- Buscador Estudiante -->
+  <div class="mb-3">
+    <label class="form-label">Buscar Estudiante</label>
+    <input type="text" id="buscar_estudiante" class="form-control" placeholder="RUT o Nombre">
+    <div id="resultados_estudiante" class="border mt-1"></div>
+  </div>
+
+  <!-- Buscador Profesional -->
+  <div class="mb-3">
+    <label class="form-label">Buscar Profesional</label>
+    <input type="text" id="buscar_profesional" class="form-control" placeholder="RUT o Nombre">
+    <div id="resultados_profesional" class="border mt-1"></div>
+  </div>
+
+  <div class="mt-3">
     <button type="submit" class="btn btn-success">Guardar cambios</button>
     <a href="index.php?seccion=documentos" class="btn btn-secondary">Cancelar</a>
   </div>
 </form>
 
 <script>
-document.getElementById('buscar_estudiante').addEventListener('input', function() {
-  const query = this.value.trim();
-  if (query.length >= 3) {
-    fetch('buscar_estudiantes.php?q=' + encodeURIComponent(query))
-      .then(res => res.json())
-      .then(data => {
-        const resultados = document.getElementById('resultados_estudiante');
-        resultados.innerHTML = '';
-        data.forEach(est => {
-          const div = document.createElement('div');
-          div.textContent = `${est.Rut_estudiante} - ${est.Nombre_estudiante} ${est.Apellido_estudiante}`;
-          div.classList.add('list-group-item', 'list-group-item-action');
-          div.style.cursor = 'pointer';
-          div.onclick = () => {
-            document.getElementById('id_estudiante').value = est.Id_estudiante;
-            resultados.innerHTML = `<small class="text-success">Seleccionado: ${est.Nombre_estudiante}</small>`;
-          };
-          resultados.appendChild(div);
-        });
-      });
+function buscar(endpoint, query, contenedor, idInput) {
+  if (query.length < 3) {
+    contenedor.innerHTML = '';
+    return;
   }
+  fetch(`${endpoint}?q=${encodeURIComponent(query)}`)
+    .then(res => res.json())
+    .then(data => {
+      contenedor.innerHTML = '';
+      if (data.length === 0) {
+        contenedor.innerHTML = '<div class="p-2 text-muted">Sin resultados</div>';
+        return;
+      }
+      data.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'resultado';
+        div.textContent = `${item.rut} - ${item.nombre} ${item.apellido}`;
+        div.onclick = () => {
+          document.getElementById(idInput).value = item.id;
+          contenedor.innerHTML = `<div class="resultado seleccionado">${item.rut} - ${item.nombre} ${item.apellido} (Seleccionado)</div>`;
+        };
+        contenedor.appendChild(div);
+      });
+    });
+}
+
+document.getElementById('buscar_estudiante').addEventListener('input', function() {
+  buscar('buscar_estudiantes.php', this.value.trim(), document.getElementById('resultados_estudiante'), 'id_estudiante');
 });
 
 document.getElementById('buscar_profesional').addEventListener('input', function() {
-  const query = this.value.trim();
-  if (query.length >= 3) {
-    fetch('buscar_profesionales.php?q=' + encodeURIComponent(query))
-      .then(res => res.json())
-      .then(data => {
-        const resultados = document.getElementById('resultados_profesional');
-        resultados.innerHTML = '';
-        data.forEach(prof => {
-          const div = document.createElement('div');
-          div.textContent = `${prof.Rut_profesional} - ${prof.Nombre_profesional} ${prof.Apellido_profesional}`;
-          div.classList.add('list-group-item', 'list-group-item-action');
-          div.style.cursor = 'pointer';
-          div.onclick = () => {
-            document.getElementById('id_profesional').value = prof.Id_profesional;
-            resultados.innerHTML = `<small class="text-success">Seleccionado: ${prof.Nombre_profesional}</small>`;
-          };
-          resultados.appendChild(div);
-        });
-      });
-  }
+  buscar('buscar_profesionales.php', this.value.trim(), document.getElementById('resultados_profesional'), 'id_profesional');
 });
 </script>
 
