@@ -91,7 +91,7 @@ try {
                 <td><?= htmlspecialchars($doc['Nombre_profesional'] ?? '-') ?></td>
                 <td>
                     <?php $nombreBlob = basename($doc['Url_documento']); ?>
-                    <a href="descargar.php?archivo=<?= urlencode($nombreBlob) ?>" class="btn btn-primary btn-sm" target="_blank">Descargar</a>
+                    <a href="descargar.php?id_documento=<?= $row['Id_documento'] ?>" class="btn btn-primary btn-sm">Descargar</a>
                 </td>
             </tr>
             <?php endforeach; ?>
