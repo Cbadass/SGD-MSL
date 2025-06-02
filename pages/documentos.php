@@ -11,16 +11,59 @@ try {
     $paginaActual = isset($_GET['pagina']) ? (int)$_GET['pagina'] : 1;
     if ($paginaActual < 1) $paginaActual = 1;
 
-    $totalDocumentosQuery = "SELECT COUNT(*) FROM documentos";
-    $stmtTotal = $conn->query($totalDocumentosQuery);
-    if (!$stmtTotal) {
-        throw new Exception("Error al contar documentos: " . implode(", ", $conn->errorInfo()));
+    // Filtros de búsqueda avanzada
+    $where = "1=1";
+    $params = [];
+
+    if (!empty($_GET['nombre'])) {
+        $where .= " AND d.Nombre_documento LIKE ?";
+        $params[] = "%" . $_GET['nombre'] . "%";
     }
+
+    if (!empty($_GET['tipo'])) {
+        $where .= " AND d.Tipo_documento LIKE ?";
+        $params[] = "%" . $_GET['tipo'] . "%";
+    }
+
+    if (!empty($_GET['estudiante'])) {
+        $where .= " AND (e.Nombre_estudiante LIKE ? OR e.Rut_estudiante LIKE ?)";
+        $params[] = "%" . $_GET['estudiante'] . "%";
+        $params[] = "%" . $_GET['estudiante'] . "%";
+    }
+
+    if (!empty($_GET['profesional'])) {
+        $where .= " AND (p.Nombre_profesional LIKE ? OR p.Rut_profesional LIKE ?)";
+        $params[] = "%" . $_GET['profesional'] . "%";
+        $params[] = "%" . $_GET['profesional'] . "%";
+    }
+
+    if (!empty($_GET['fecha_subida_desde'])) {
+        $where .= " AND d.Fecha_subido >= ?";
+        $params[] = $_GET['fecha_subida_desde'];
+    }
+    if (!empty($_GET['fecha_subida_hasta'])) {
+        $where .= " AND d.Fecha_subido <= ?";
+        $params[] = $_GET['fecha_subida_hasta'];
+    }
+
+    // Ordenar por fecha
+    $orden = "d.Fecha_subido DESC"; // predeterminado
+    if ($_GET['orden'] ?? '' === 'modificado') {
+        $orden = "d.Fecha_modificacion DESC";
+    }
+
+    // Contar total de documentos
+    $stmtTotal = $conn->prepare("SELECT COUNT(*) FROM documentos d
+        LEFT JOIN estudiantes e ON d.Id_estudiante_doc = e.Id_estudiante
+        LEFT JOIN profesionales p ON d.Id_prof_doc = p.Id_profesional
+        WHERE $where");
+    $stmtTotal->execute($params);
     $totalDocumentos = $stmtTotal->fetchColumn();
     $totalPaginas = ($totalDocumentos > 0) ? ceil($totalDocumentos / $documentosPorPagina) : 1;
     if ($paginaActual > $totalPaginas) $paginaActual = $totalPaginas;
 
     $offset = ($paginaActual - 1) * $documentosPorPagina;
+
     $sql = "
         SELECT d.Id_documento,
             d.Nombre_documento,
@@ -39,14 +82,13 @@ try {
         LEFT JOIN usuarios u ON d.Id_usuario_subido = u.Id_usuario
         LEFT JOIN estudiantes e ON d.Id_estudiante_doc = e.Id_estudiante
         LEFT JOIN profesionales p ON d.Id_prof_doc = p.Id_profesional
-        ORDER BY d.Id_documento DESC;
-
+        WHERE $where
+        ORDER BY $orden
+        OFFSET $offset ROWS FETCH NEXT $documentosPorPagina ROWS ONLY
     ";
 
-    $stmt = $conn->query($sql);
-    if (!$stmt) {
-        throw new Exception("Error en la consulta principal: " . implode(", ", $conn->errorInfo()));
-    }
+    $stmt = $conn->prepare($sql);
+    $stmt->execute($params);
     $documentos = $stmt->fetchAll();
 
 } catch (PDOException $e) {
@@ -71,6 +113,49 @@ try {
 
 <h2 class="mb-4">Lista de Documentos</h2>
 
+<!-- Buscador avanzado -->
+<form method="GET" class="mb-4 row g-3">
+  <input type="hidden" name="seccion" value="documentos">
+
+  <div class="col-md-3">
+    <input type="text" name="nombre" class="form-control" placeholder="Nombre documento" value="<?= htmlspecialchars($_GET['nombre'] ?? '') ?>">
+  </div>
+
+  <div class="col-md-3">
+    <input type="text" name="tipo" class="form-control" placeholder="Tipo documento" value="<?= htmlspecialchars($_GET['tipo'] ?? '') ?>">
+  </div>
+
+  <div class="col-md-3">
+    <input type="text" name="estudiante" class="form-control" placeholder="Nombre/RUT Estudiante" value="<?= htmlspecialchars($_GET['estudiante'] ?? '') ?>">
+  </div>
+
+  <div class="col-md-3">
+    <input type="text" name="profesional" class="form-control" placeholder="Nombre/RUT Profesional" value="<?= htmlspecialchars($_GET['profesional'] ?? '') ?>">
+  </div>
+
+  <div class="col-md-3">
+    <label class="form-label">Fecha subida (desde)</label>
+    <input type="date" name="fecha_subida_desde" class="form-control" value="<?= htmlspecialchars($_GET['fecha_subida_desde'] ?? '') ?>">
+  </div>
+
+  <div class="col-md-3">
+    <label class="form-label">Fecha subida (hasta)</label>
+    <input type="date" name="fecha_subida_hasta" class="form-control" value="<?= htmlspecialchars($_GET['fecha_subida_hasta'] ?? '') ?>">
+  </div>
+
+  <div class="col-md-3">
+    <label class="form-label">Ordenar por</label>
+    <select name="orden" class="form-select">
+      <option value="subido" <?= ($_GET['orden'] ?? '') === 'subido' ? 'selected' : '' ?>>Fecha de subida</option>
+      <option value="modificado" <?= ($_GET['orden'] ?? '') === 'modificado' ? 'selected' : '' ?>>Fecha de modificación</option>
+    </select>
+  </div>
+
+  <div class="col-md-3 align-self-end">
+    <button type="submit" class="btn btn-primary w-100">Buscar</button>
+  </div>
+</form>
+
 <?php if (empty($documentos) && empty($errorMsg)): ?>
     <div class="alert alert-warning">No se encontraron documentos.</div>
 <?php elseif (!empty($documentos)): ?>
@@ -83,10 +168,10 @@ try {
                 <th>Subido</th>
                 <th>Modificado</th>
                 <th>Descripción</th>
-                <th>Estudiante asignado</th>
-                <th>Profesional asignado</th>
+                <th>Estudiante</th>
+                <th>Profesional</th>
                 <th>Usuario último editor</th>
-                <th>Descargar/Modificar</th>
+                <th>Acciones</th>
             </tr>
         </thead>
         <tbody>
@@ -101,19 +186,16 @@ try {
                 <td><?= htmlspecialchars($doc['Nombre_estudiante'] ?? '-') ?></td>
                 <td><?= htmlspecialchars($doc['Nombre_profesional'] ?? '-') ?></td>
                 <td><?= htmlspecialchars($doc['Usuario_que_subio'] ?? 'Desconocido') ?></td>
-
                 <td>
-                    <?php if (!empty($doc['Id_documento'])): ?>
                     <a href="?seccion=modificar_documento&id_documento=<?= htmlspecialchars($doc['Id_documento']) ?>" class="btn btn-warning btn-sm">Modificar</a>
                     <a href="descargar.php?id_documento=<?= htmlspecialchars($doc['Id_documento']) ?>" class="btn btn-primary btn-sm">Descargar</a>
-                    <?php endif; ?>
                 </td>
-
             </tr>
             <?php endforeach; ?>
         </tbody>
     </table>
 
+    <!-- Paginación -->
     <nav>
         <ul class="pagination">
             <?php if ($paginaActual > 1): ?>
