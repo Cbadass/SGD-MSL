@@ -3,13 +3,13 @@ body {
   margin: 0;
   font-family: 'Segoe UI', sans-serif;
   background-color: #e8e8fc;
+  color: #333;
 }
 
 .container {
   display: flex;
 }
 
-/* Sidebar */
 .sidebar {
   width: 250px;
   background-color: #d3d2f3;
@@ -58,22 +58,17 @@ body {
   border-radius: 50%;
 }
 
-/* Header */
+.main {
+  flex: 1;
+  padding: 20px 40px;
+}
+
 .header {
   background-color: #875ff5;
   color: white;
   padding: 15px 30px;
   font-size: 22px;
   font-weight: bold;
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-/* Main content */
-.main {
-  flex: 1;
-  padding: 20px 40px;
 }
 
 .section {
@@ -83,35 +78,12 @@ body {
   border-radius: 10px;
 }
 
-/* Tables */
-.table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
+.filters {
+  display: flex;
+  gap: 20px;
+  margin-bottom: 20px;
 }
 
-.table th, .table td {
-  padding: 12px;
-  border: 1px solid #ddd;
-  font-size: 14px;
-  text-align: left;
-}
-
-.table th {
-  background-color: #875ff5;
-  color: white;
-}
-
-.table thead th {
-  background-color: #f8f9fa;
-  font-weight: 600;
-}
-
-.table-responsive {
-  overflow-x: auto;
-}
-
-/* Form controls */
 select, input[type="text"], input[type="number"], input[type="email"], input[type="date"] {
   padding: 10px;
   border-radius: 6px;
@@ -120,27 +92,29 @@ select, input[type="text"], input[type="number"], input[type="email"], input[typ
   width: 100%;
 }
 
-/* Labels */
-label {
+td .btn {
+  display: inline-block;
+  margin: 3px 0;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 10px;
+}
+
+table th, table td {
+  padding: 12px;
+  border: 1px solid #ddd;
   font-size: 14px;
-  font-weight: 500;
-  margin-bottom: 5px;
-  display: block;
+  text-align: left;
 }
 
-/* Form groups */
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 20px;
+table th {
+  background-color: #875ff5;
+  color: white;
 }
 
-.form-group {
-  display: flex;
-  flex-direction: column;
-}
-
-/* Buttons */
 .btn {
   background-color: #6b6cfb;
   color: white;
@@ -149,7 +123,7 @@ label {
   border-radius: 6px;
   cursor: pointer;
   display: inline-block;
-  margin: 3px 0; /* Separación vertical para que no se solapen */
+  margin-bottom: 4px;
 }
 
 .btn:hover {
@@ -161,6 +135,47 @@ label {
   margin-top: 20px;
 }
 
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+label {
+  font-size: 14px;
+  font-weight: 500;
+  margin-bottom: 5px;
+  display: block;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+}
+
+.toggle-darkmode {
+  background: none;
+  border: none;
+  color: inherit;
+  font-size: 1.2em;
+  cursor: pointer;
+}
+
+h2 {
+  margin-top: 0;
+}
+
+.card {
+  background-color: #fff;
+  border: 1px solid #ddd;
+  border-radius: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.form-label {
+  font-weight: 600;
+}
+
 .btn-primary {
   background-color: #3b3b8c;
   border-color: #3b3b8c;
@@ -170,23 +185,36 @@ label {
   background-color: #2d2d6c;
 }
 
-.btn-outline-light {
-  background: transparent;
-  border: 1px solid #f1f1f1;
-  color: #f1f1f1;
-}
-
-/* Card for search */
-.card {
-  background-color: #fff;
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-  padding: 20px;
-}
-
-.form-label {
+.table thead th {
+  background-color: #875ff5;
+  color: white;
   font-weight: 600;
+}
+
+input[type="text"],
+input[type="number"],
+input[type="email"],
+input[type="date"],
+select {
+  padding: 10px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-size: 14px;
+  width: 100%;
+}
+
+/* Estilos adicionales para los resultados de búsqueda */
+.resultado {
+  cursor: pointer;
+  padding: 6px 10px;
+  border-bottom: 1px solid #ddd;
+}
+.resultado:hover {
+  background-color: #f0f0f0;
+}
+.seleccionado {
+  background-color: #d1e7dd !important;
+  font-weight: bold;
 }
 
 /* Dark mode */
@@ -194,7 +222,6 @@ body.dark-mode {
   background: #121212;
   color: #eee;
 }
-
 body.dark-mode .header { background: #1f1f1f; color: #f1f1f1; }
 body.dark-mode .sidebar { background: #1e1e2f; }
 body.dark-mode .sidebar a { color: #ccc; }
@@ -205,20 +232,7 @@ body.dark-mode th { background: #444; }
 body.dark-mode td { background: #333; }
 body.dark-mode .btn { background: #333; color: #eee; }
 body.dark-mode .btn-green { background: #388e3c; }
-
-/* Toggle dark mode icon */
-.toggle-darkmode {
-  background: none;
-  border: none;
-  color: inherit;
-  font-size: 1.2em;
-  cursor: pointer;
-}
-
-/* Heading */
-h2 {
-  margin-top: 0;
-}
+body.dark-mode .card { background: #1f1f1f; border-color: #333; }
 
 /* Responsive */
 @media (max-width: 768px) {
@@ -231,17 +245,4 @@ h2 {
 @media (max-width: 480px) {
   .header { font-size: 18px; }
   th, td { padding: 8px; font-size: 12px; }
-}
-/* Estilos de resultados de búsqueda */
-.resultado {
-  cursor: pointer;
-  padding: 6px 10px;
-  border-bottom: 1px solid #ddd;
-}
-.resultado:hover {
-  background-color: #f0f0f0;
-}
-.seleccionado {
-  background-color: #d1e7dd !important;
-  font-weight: bold;
 }

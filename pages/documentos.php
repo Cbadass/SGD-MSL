@@ -47,7 +47,7 @@ try {
     }
 
     // Ordenar por fecha
-    $orden = "d.Fecha_subido DESC"; // predeterminado
+    $orden = "d.Fecha_subido DESC";
     if ($_GET['orden'] ?? '' === 'modificado') {
         $orden = "d.Fecha_modificacion DESC";
     }
@@ -111,8 +111,7 @@ try {
 
 <!-- Buscador avanzado -->
 <div class="card p-4 mb-4">
-    <form method="GET" class="d-flex flex-wrap gap-3 align-items-end">
-
+  <form method="GET" class="d-flex flex-wrap gap-3 align-items-end">
     <input type="hidden" name="seccion" value="documentos">
 
     <div style="flex: 1 1 240px;">
@@ -156,7 +155,7 @@ try {
     <div style="flex: 1 1 240px;">
       <button type="submit" class="btn btn-primary w-100">Buscar</button>
     </div>
-  </for>
+  </form>
 </div>
 
 <?php if (!empty($errorMsg)): ?>
@@ -164,8 +163,8 @@ try {
 <?php elseif (empty($documentos)): ?>
   <div class="alert alert-warning">No se encontraron documentos.</div>
 <?php else: ?>
-  <div class="table-responsive overflow-y: auto;">
-    <table class="table table-striped table-hover table-bordered">
+  <div class="table-responsive">
+    <table class="table table-striped table-hover">
       <thead>
         <tr>
           <th>ID</th>
