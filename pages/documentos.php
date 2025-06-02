@@ -103,12 +103,12 @@ try {
                 <td><?= htmlspecialchars($doc['Usuario_que_subio'] ?? 'Desconocido') ?></td>
 
                 <td>
-                    <?php $nombreBlob = basename($doc['Url_documento']); ?>
                     <?php if (!empty($doc['Id_documento'])): ?>
-                        <a href="?seccion=modificar_documento&id_documento=<?= htmlspecialchars($doc['Id_documento']) ?>" class="btn btn-warning btn-sm">Modificar</a>
-                        <a href="descargar.php?id_documento=<?= htmlspecialchars($doc['Id_documento']) ?>" class="btn btn-primary btn-sm">Descargar</a>
+                    <a href="?seccion=modificar_documento&id_documento=<?= htmlspecialchars($doc['Id_documento']) ?>" class="btn btn-warning btn-sm">Modificar</a>
+                    <a href="descargar.php?id_documento=<?= htmlspecialchars($doc['Id_documento']) ?>" class="btn btn-primary btn-sm">Descargar</a>
                     <?php endif; ?>
                 </td>
+
             </tr>
             <?php endforeach; ?>
         </tbody>
