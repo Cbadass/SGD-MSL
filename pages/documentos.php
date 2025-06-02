@@ -92,7 +92,7 @@ try {
                 <td>
                     <?php $nombreBlob = basename($doc['Url_documento']); ?>
                     <?php if (!empty($doc['Id_documento'])): ?>
-                    <a href="descargar.php?id_documento=<?= htmlspecialchars($row['Id_documento']) ?>" class="btn btn-primary btn-sm">Descargar</a>
+                    <a href="descargar.php?id_documento=<?= htmlspecialchars($doc['Id_documento']) ?>" class="btn btn-primary btn-sm">Descargar</a>
                     <?php endif; ?>
                 </td>
             </tr>
