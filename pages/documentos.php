@@ -257,7 +257,6 @@ try {
       <tbody>
         <?php foreach ($documentos as $doc): ?>
         <tr>
-          <td><?= htmlspecialchars($doc['Id_documento']) ?></td>
           <td><?= htmlspecialchars($doc['Nombre_documento']) ?></td>
           <td><?= htmlspecialchars($doc['Tipo_documento']) ?></td>
           <td><?= htmlspecialchars($doc['Fecha_subido']) ?></td>
