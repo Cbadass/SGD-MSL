@@ -242,7 +242,6 @@ try {
     <table class="table table-striped table-hover">
       <thead>
         <tr>
-          <th>ID</th>
           <th>Nombre</th>
           <th>Tipo</th>
           <th>Subido</th>

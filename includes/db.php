@@ -4,7 +4,7 @@ try {
     // Lee las variables de entorno (ya configuradas en Azure)
     $serverName = getenv("DB_SERVER");  
     $database   = getenv("DB_DATABASE"); 
-    $username   = getenv("DB_USERNAME"); 
+    $username   = getenv(name: "DB_USERNAME"); 
     $password   = getenv("DB_PASSWORD"); 
 
     // Construir DSN (Data Source Name)
