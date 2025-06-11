@@ -55,78 +55,49 @@ if (!$doc) die("Documento no encontrado.");
     <div class="mb-3">
         <label for="tipo_documento" class="form-label">Tipo de documento</label>
         <select name="tipo_documento" id="tipo_documento" class="form-select" required>
-            <optgroup label="Estudiantes">
-                <option value="Certificado de Nacimiento">Certificado de Nacimiento</option>
-                <option value="Ficha de Matrícula">Ficha de Matrícula</option>
-                <option value="Certificado alumno prioritario">Certificado alumno prioritario</option>
-                <option value="Antecedentes en caso de emergencia">Antecedentes en caso de emergencia</option>
-                <option value="Autorización para evaluar y reevaluar">Autorización para evaluar y reevaluar</option>
-                <option value="Autorización de la muda">Autorización de la muda</option>
-                <option value="Informe Psicológico">Informe Psicológico</option>
-                <option value="Protocolos de prueba aplicada">Protocolos de prueba aplicada</option>
-                <option value="Prueba de conducta adaptativa ICAAP">Prueba de conducta adaptativa ICAAP</option>
-                <option value="Formulario de ingreso FUDEI">Formulario de ingreso FUDEI</option>
-                <option value="Formulario NEEP">Formulario NEEP</option>
-                <option value="Plan de Apoyo Individual PAI">Plan de Apoyo Individual PAI</option>
-                <option value="Formulario NEET">Formulario NEET</option>
-                <option value="Plan de Adecuaciones Curriculares Individualizado PACI">Plan de Adecuaciones Curriculares Individualizado PACI</option>
-                <option value="Informe pedagógico curricular">Informe pedagógico curricular</option>
-                <option value="Informe a la Familia">Informe a la Familia</option>
-                <option value="Informe Pedagógico 1er semestre">Informe Pedagógico 1er semestre</option>
-                <option value="Informe Pedagógico 2do semestre">Informe Pedagógico 2do semestre</option>
-                <option value="Informe Personalidad 1er semestre">Informe Personalidad 1er semestre</option>
-                <option value="Informe Personalidad 2do semestre">Informe Personalidad 2do semestre</option>
-                <option value="Informe Vocacional 1er semestre">Informe Vocacional 1er semestre</option>
-                <option value="Informe vocacional 2do semestre">Informe vocacional 2do semestre</option>
-                <option value="Informe de Notas 1er semestre">Informe de Notas 1er semestre</option>
-                <option value="Informe de notas 2do semestre">Informe de notas 2do semestre</option>
-                <option value="Certificado de estudios MINEDUC">Certificado de estudios MINEDUC</option>
-                <option value="Valoración de salud">Valoración de salud</option>
-                <option value="Informe fonoaudiológico">Informe fonoaudiológico</option>
-                <option value="Informe kinesiológico">Informe kinesiológico</option>
-                <option value="Informe Terapeuta Ocupacional">Informe Terapeuta Ocupacional</option>
-                <option value="Derivaciones a especialistas">Derivaciones a especialistas</option>
-                <option value="Informes médicos">Informes médicos</option>
-                <option value="Recetas médicas">Recetas médicas</option>
-                <option value="Antecedentes judiciales">Antecedentes judiciales</option>
-                <option value="Pruebas diagnósticas">Pruebas diagnósticas</option>
-                <option value="Hoja de vida del estudiante">Hoja de vida del estudiante</option>
-                <option value="Ficha desregulación emocional y conductual DEC">Ficha desregulación emocional y conductual DEC</option>
-                <option value="Otros">Otros</option>
-                <option value="Declaración de matrícula">Declaración de matrícula</option>
-                <option value="Screening">Screening</option>
-                <option value="Test Comprensión auditiva del Lenguaje TECAL">Test Comprensión auditiva del Lenguaje TECAL</option>
-                <option value="Test para evaluar procesos de simplificación fonológica TEPROSIF">Test para evaluar procesos de simplificación fonológica TEPROSIF</option>
-                <option value="Test de la articulación a la repetición TAR">Test de la articulación a la repetición TAR</option>
-                <option value="Habilidades pragmáticas">Habilidades pragmáticas</option>
-                <option value="Órganos fonoarticulatorios">Órganos fonoarticulatorios</option>
-                <option value="Formulario NEEP reevaluación (diciembre)">Formulario NEEP reevaluación (diciembre)</option>
-                <option value="Informe a la Familia Marzo">Informe a la Familia Marzo</option>
-                <option value="Estado de avance a la Familia Junio">Estado de avance a la Familia Junio</option>
-            </optgroup>
-                <optgroup label="Docentes">
-                <option value="Curriculum">Curriculum</option>
-                <option value="Certificado de título">Certificado de título</option>
-                <option value="Certificado de registro MINEDUC">Certificado de registro MINEDUC</option>
-                <option value="Certificado de antecedentes para fines especiales">Certificado de antecedentes para fines especiales</option>
-                <option value="Certificado de consulta de inhabilidades para trabajar con menores de edad">Certificado de consulta de inhabilidades para trabajar con menores de edad</option>
-                <option value="Certificado de consulta de inhabilidades por maltrato relevante">Certificado de consulta de inhabilidades por maltrato relevante</option>
-                <option value="Ficha personal">Ficha personal</option>
-                <option value="Contrato de trabajo">Contrato de trabajo</option>
-                <option value="Recepción del Reglamento Interno de Higiene y Seguridad">Recepción del Reglamento Interno de Higiene y Seguridad</option>
-                <option value="Anexos de contratos">Anexos de contratos</option>
-                <option value="Certificado de afiliación AFP">Certificado de afiliación AFP</option>
-                <option value="Certificado de afiliación al sistema de salud">Certificado de afiliación al sistema de salud</option>
-                <option value="Certificados de perfeccionamientos">Certificados de perfeccionamientos</option>
-                <option value="Carta aviso de cese de funciones">Carta aviso de cese de funciones</option>
-                <option value="Finiquito">Finiquito</option>
-                <option value="Certificado de estudios para fines laborales">Certificado de estudios para fines laborales</option>
-                <option value="Licencia de Educación Media">Licencia de Educación Media</option>
-                <option value="Certificado de inscripción en el Registro Nacional de Prestadores Individuales de Salud">Certificado de inscripción en el Registro Nacional de Prestadores Individuales de Salud</option>
-                <option value="Hoja de vida conductr">Hoja de vida conductr</option>
-                <option value="Licencia conducir legalizada">Licencia conducir legalizada</option>
-            </optgroup>
+          <?php
+          $tipos_estudiantes = [
+            "Certificado de Nacimiento", "Ficha de Matrícula", "Certificado alumno prioritario", "Antecedentes en caso de emergencia",
+            "Autorización para evaluar y reevaluar", "Autorización de la muda", "Informe Psicológico", "Protocolos de prueba aplicada",
+            "Prueba de conducta adaptativa ICAAP", "Formulario de ingreso FUDEI", "Formulario NEEP", "Plan de Apoyo Individual PAI",
+            "Formulario NEET", "Plan de Adecuaciones Curriculares Individualizado PACI", "Informe pedagógico curricular",
+            "Informe a la Familia", "Informe Pedagógico 1er semestre", "Informe Pedagógico 2do semestre", "Informe Personalidad 1er semestre",
+            "Informe Personalidad 2do semestre", "Informe Vocacional 1er semestre", "Informe vocacional 2do semestre",
+            "Informe de Notas 1er semestre", "Informe de notas 2do semestre", "Certificado de estudios MINEDUC", "Valoración de salud",
+            "Informe fonoaudiológico", "Informe kinesiológico", "Informe Terapeuta Ocupacional", "Derivaciones a especialistas",
+            "Informes médicos", "Recetas médicas", "Antecedentes judiciales", "Pruebas diagnósticas", "Hoja de vida del estudiante",
+            "Ficha desregulación emocional y conductual DEC", "Otros", "Declaración de matrícula", "Screening",
+            "Test Comprensión auditiva del Lenguaje TECAL", "Test para evaluar procesos de simplificación fonológica TEPROSIF",
+            "Test de la articulación a la repetición TAR", "Habilidades pragmáticas", "Órganos fonoarticulatorios",
+            "Formulario NEEP reevaluación (diciembre)", "Informe a la Familia Marzo", "Estado de avance a la Familia Junio"
+          ];
+
+          $tipos_docentes = [
+            "Curriculum", "Certificado de título", "Certificado de registro MINEDUC", "Certificado de antecedentes para fines especiales",
+            "Certificado de consulta de inhabilidades para trabajar con menores de edad", "Certificado de consulta de inhabilidades por maltrato relevante",
+            "Ficha personal", "Contrato de trabajo", "Recepción del Reglamento Interno de Higiene y Seguridad", "Anexos de contratos",
+            "Certificado de afiliación AFP", "Certificado de afiliación al sistema de salud", "Certificados de perfeccionamientos",
+            "Carta aviso de cese de funciones", "Finiquito", "Certificado de estudios para fines laborales", "Licencia de Educación Media",
+            "Certificado de inscripción en el Registro Nacional de Prestadores Individuales de Salud", "Hoja de vida conductr",
+            "Licencia conducir legalizada"
+          ];
+
+          echo '<optgroup label="Estudiantes">';
+          foreach ($tipos_estudiantes as $tipo) {
+            $selected = ($doc['Tipo_documento'] === $tipo) ? 'selected' : '';
+            echo "<option value=\"$tipo\" $selected>$tipo</option>";
+          }
+          echo '</optgroup>';
+
+          echo '<optgroup label="Docentes">';
+          foreach ($tipos_docentes as $tipo) {
+            $selected = ($doc['Tipo_documento'] === $tipo) ? 'selected' : '';
+            echo "<option value=\"$tipo\" $selected>$tipo</option>";
+          }
+          echo '</optgroup>';
+          ?>
         </select>
+
     </div>
 
 
