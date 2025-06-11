@@ -1,4 +1,5 @@
 <?php
+
 session_start();
 require_once 'includes/db.php'; // Tu conexión PDO
 
@@ -59,7 +60,6 @@ header('Cache-Control: must-revalidate');
 header('Pragma: public');
 readfile($tempFile);
 
-// Borrar archivo temporal bien...
 unlink($tempFile);
 exit;
 ?>
