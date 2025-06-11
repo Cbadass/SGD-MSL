@@ -7,11 +7,9 @@ try {
     $errorMsg = '';
     $documentos = [];
 
-    // Configuración de paginación
     $documentosPorPagina = 20;
     $paginaActual = max((int)($_GET['pagina'] ?? 1), 1);
 
-    // Filtros
     $where = "1=1";
     $params = [];
 
@@ -24,7 +22,7 @@ try {
 
     agregarFiltro($where, $params, 'd.Nombre_documento', $_GET['nombre'] ?? '');
     agregarFiltro($where, $params, 'd.Tipo_documento', $_GET['tipo_documento'] ?? '');
-    
+
     if (!empty($_GET['estudiante'])) {
         $where .= " AND (e.Nombre_estudiante LIKE ? OR e.Rut_estudiante LIKE ?)";
         $params[] = "%" . $_GET['estudiante'] . "%";
@@ -47,14 +45,12 @@ try {
         $params[] = $_GET['fecha_subida_hasta'];
     }
 
-    // Ordenamiento seguro
     $ordenOpciones = [
         'subido' => 'd.Fecha_subido DESC',
         'modificado' => 'd.Fecha_modificacion DESC'
     ];
     $orden = $ordenOpciones[$_GET['orden'] ?? 'subido'] ?? $ordenOpciones['subido'];
 
-    // Total de documentos
     $stmtTotal = $conn->prepare("
         SELECT COUNT(*) FROM documentos d
         LEFT JOIN estudiantes e ON d.Id_estudiante_doc = e.Id_estudiante
@@ -113,13 +109,75 @@ try {
 
 <h2 class="mb-4">Lista de Documentos <?= $totalDocumentos ? "($totalDocumentos encontrados)" : '' ?></h2>
 
-<?php include 'buscador_documentos.php'; ?>
+<!-- Filtro de búsqueda -->
+<div class="card p-4 mb-4">
+  <form method="GET" class="form-grid">
+    <input type="hidden" name="seccion" value="documentos">
 
+    <div><label>Nombre documento</label>
+      <input type="text" name="nombre" value="<?= htmlspecialchars($_GET['nombre'] ?? '') ?>" class="form-control">
+    </div>
+
+    <div>
+      <label>Tipo de documento</label>
+      <select name="tipo_documento" class="form-select">
+        <option value="">Todos</option>
+        <?php
+        $tipos = [
+          "Certificado de Nacimiento", "Ficha de Matrícula", "Informe Psicológico", "Curriculum",
+          "Certificado de título", "Ficha personal", "Contrato de trabajo", "Certificados de perfeccionamientos"
+        ];
+        foreach ($tipos as $tipo) {
+          $selected = ($_GET['tipo_documento'] ?? '') === $tipo ? 'selected' : '';
+          echo "<option value=\"$tipo\" $selected>$tipo</option>";
+        }
+        ?>
+      </select>
+    </div>
+
+    <div>
+      <label>Nombre/RUT Estudiante</label>
+      <input type="text" name="estudiante" value="<?= htmlspecialchars($_GET['estudiante'] ?? '') ?>" class="form-control">
+    </div>
+
+    <div>
+      <label>Nombre/RUT Profesional</label>
+      <input type="text" name="profesional" value="<?= htmlspecialchars($_GET['profesional'] ?? '') ?>" class="form-control">
+    </div>
+
+    <div>
+      <label>Fecha subida (desde)</label>
+      <input type="date" name="fecha_subida_desde" value="<?= htmlspecialchars($_GET['fecha_subida_desde'] ?? '') ?>" class="form-control">
+    </div>
+
+    <div>
+      <label>Fecha subida (hasta)</label>
+      <input type="date" name="fecha_subida_hasta" value="<?= htmlspecialchars($_GET['fecha_subida_hasta'] ?? '') ?>" class="form-control">
+    </div>
+
+    <div>
+      <label>Ordenar por</label>
+      <select name="orden" class="form-select">
+        <option value="subido" <?= ($_GET['orden'] ?? '') === 'subido' ? 'selected' : '' ?>>Fecha de subida</option>
+        <option value="modificado" <?= ($_GET['orden'] ?? '') === 'modificado' ? 'selected' : '' ?>>Fecha de modificación</option>
+      </select>
+    </div>
+
+    <div>
+      <label style="display:block;">&nbsp;</label>
+      <button type="submit" class="btn btn-primary">Buscar</button>
+    </div>
+  </form>
+</div>
+
+<!-- Mensajes -->
 <?php if (!empty($errorMsg)): ?>
   <div class="alert alert-danger"><?= htmlspecialchars($errorMsg) ?></div>
 <?php elseif (empty($documentos)): ?>
   <div class="alert alert-warning">No se encontraron documentos.</div>
 <?php else: ?>
+
+<!-- Tabla de resultados -->
   <div class="table-responsive">
     <table class="table table-striped table-hover">
       <thead>
@@ -156,17 +214,16 @@ try {
     </table>
   </div>
 
+<!-- Paginación -->
   <nav>
     <ul class="pagination justify-content-center">
       <?php if ($paginaActual > 1): ?>
       <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=1">Primera</a></li>
       <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=<?= $paginaActual - 1 ?>">Anterior</a></li>
       <?php endif; ?>
-
       <?php for ($i = max(1, $paginaActual - 2); $i <= min($totalPaginas, $paginaActual + 2); $i++): ?>
       <li class="page-item <?= ($i === $paginaActual) ? 'active' : '' ?>"><a class="page-link" href="?seccion=documentos&pagina=<?= $i ?>"><?= $i ?></a></li>
       <?php endfor; ?>
-
       <?php if ($paginaActual < $totalPaginas): ?>
       <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=<?= $paginaActual + 1 ?>">Siguiente</a></li>
       <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=<?= $totalPaginas ?>">Última</a></li>
