@@ -127,14 +127,45 @@ try {
       <select name="tipo_documento" class="form-select">
         <option value="">Todos</option>
         <?php
-        $tipos = [
-          "Certificado de Nacimiento", "Ficha de Matrícula", "Informe Psicológico", "Curriculum",
-          "Certificado de título", "Ficha personal", "Contrato de trabajo", "Certificados de perfeccionamientos"
+        $tipos_estudiantes = [
+          "Certificado de Nacimiento", "Ficha de Matrícula", "Certificado alumno prioritario", "Antecedentes en caso de emergencia",
+          "Autorización para evaluar y reevaluar", "Autorización de la muda", "Informe Psicológico", "Protocolos de prueba aplicada",
+          "Prueba de conducta adaptativa ICAAP", "Formulario de ingreso FUDEI", "Formulario NEEP", "Plan de Apoyo Individual PAI",
+          "Formulario NEET", "Plan de Adecuaciones Curriculares Individualizado PACI", "Informe pedagógico curricular",
+          "Informe a la Familia", "Informe Pedagógico 1er semestre", "Informe Pedagógico 2do semestre", "Informe Personalidad 1er semestre",
+          "Informe Personalidad 2do semestre", "Informe Vocacional 1er semestre", "Informe vocacional 2do semestre",
+          "Informe de Notas 1er semestre", "Informe de notas 2do semestre", "Certificado de estudios MINEDUC", "Valoración de salud",
+          "Informe fonoaudiológico", "Informe kinesiológico", "Informe Terapeuta Ocupacional", "Derivaciones a especialistas",
+          "Informes médicos", "Recetas médicas", "Antecedentes judiciales", "Pruebas diagnósticas", "Hoja de vida del estudiante",
+          "Ficha desregulación emocional y conductual DEC", "Otros", "Declaración de matrícula", "Screening",
+          "Test Comprensión auditiva del Lenguaje TECAL", "Test para evaluar procesos de simplificación fonológica TEPROSIF",
+          "Test de la articulación a la repetición TAR", "Habilidades pragmáticas", "Órganos fonoarticulatorios",
+          "Formulario NEEP reevaluación (diciembre)", "Informe a la Familia Marzo", "Estado de avance a la Familia Junio"
         ];
-        foreach ($tipos as $tipo) {
-          $selected = ($_GET['tipo_documento'] ?? '') === $tipo ? 'selected' : '';
+        
+        $tipos_docentes = [
+          "Curriculum", "Certificado de título", "Certificado de registro MINEDUC", "Certificado de antecedentes para fines especiales",
+          "Certificado de consulta de inhabilidades para trabajar con menores de edad", "Certificado de consulta de inhabilidades por maltrato relevante",
+          "Ficha personal", "Contrato de trabajo", "Recepción del Reglamento Interno de Higiene y Seguridad", "Anexos de contratos",
+          "Certificado de afiliación AFP", "Certificado de afiliación al sistema de salud", "Certificados de perfeccionamientos",
+          "Carta aviso de cese de funciones", "Finiquito", "Certificado de estudios para fines laborales", "Licencia de Educación Media",
+          "Certificado de inscripción en el Registro Nacional de Prestadores Individuales de Salud", "Hoja de vida conductr",
+          "Licencia conducir legalizada"
+        ];
+        
+        echo '<optgroup label="Estudiantes">';
+        foreach ($tipos_estudiantes as $tipo) {
+          $selected = ($tipo === $documento['Tipo_documento']) ? 'selected' : '';
           echo "<option value=\"$tipo\" $selected>$tipo</option>";
         }
+        echo '</optgroup>';
+        
+        echo '<optgroup label="Docentes">';
+        foreach ($tipos_docentes as $tipo) {
+          $selected = ($tipo === $documento['Tipo_documento']) ? 'selected' : '';
+          echo "<option value=\"$tipo\" $selected>$tipo</option>";
+        }
+        echo '</optgroup>';
         ?>
       </select>
     </div>
