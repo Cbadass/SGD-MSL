@@ -46,11 +46,13 @@ try {
     }
 
     $ordenOpciones = [
-        'subido' => 'd.Fecha_subido DESC',
-        'modificado' => 'd.Fecha_modificacion DESC'
+      'subido_desc' => 'd.Fecha_subido DESC',
+      'subido_asc' => 'd.Fecha_subido ASC',
+      'modificado_desc' => 'd.Fecha_modificacion DESC',
+      'modificado_asc' => 'd.Fecha_modificacion ASC'
     ];
-    $orden = $ordenOpciones[$_GET['orden'] ?? 'subido'] ?? $ordenOpciones['subido'];
-
+    $orden = $ordenOpciones[$_GET['orden'] ?? 'subido_desc'] ?? $ordenOpciones['subido_desc'];
+    
     $stmtTotal = $conn->prepare("
         SELECT COUNT(*) FROM documentos d
         LEFT JOIN estudiantes e ON d.Id_estudiante_doc = e.Id_estudiante
@@ -111,10 +113,12 @@ try {
 
 <!-- Filtro de búsqueda -->
 <div class="card p-4 mb-4">
+<div class="card p-4 mb-4">
   <form method="GET" class="form-grid">
     <input type="hidden" name="seccion" value="documentos">
 
-    <div><label>Nombre documento</label>
+    <div>
+      <label>Nombre documento</label>
       <input type="text" name="nombre" value="<?= htmlspecialchars($_GET['nombre'] ?? '') ?>" class="form-control">
     </div>
 
@@ -158,16 +162,20 @@ try {
     <div>
       <label>Ordenar por</label>
       <select name="orden" class="form-select">
-        <option value="subido" <?= ($_GET['orden'] ?? '') === 'subido' ? 'selected' : '' ?>>Fecha de subida</option>
-        <option value="modificado" <?= ($_GET['orden'] ?? '') === 'modificado' ? 'selected' : '' ?>>Fecha de modificación</option>
+        <option value="subido_desc" <?= ($_GET['orden'] ?? '') === 'subido_desc' ? 'selected' : '' ?>>Subido (más reciente primero)</option>
+        <option value="subido_asc" <?= ($_GET['orden'] ?? '') === 'subido_asc' ? 'selected' : '' ?>>Subido (más antiguo primero)</option>
+        <option value="modificado_desc" <?= ($_GET['orden'] ?? '') === 'modificado_desc' ? 'selected' : '' ?>>Modificado (más reciente primero)</option>
+        <option value="modificado_asc" <?= ($_GET['orden'] ?? '') === 'modificado_asc' ? 'selected' : '' ?>>Modificado (más antiguo primero)</option>
       </select>
     </div>
 
-    <div>
-      <label style="display:block;">&nbsp;</label>
+    <div style="display: flex; gap: 10px; align-items: end;">
       <button type="submit" class="btn btn-primary">Buscar</button>
+      <a href="?seccion=documentos" class="btn btn-secondary">Limpiar filtros</a>
     </div>
   </form>
+</div>
+
 </div>
 
 <!-- Mensajes -->
