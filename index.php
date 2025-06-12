@@ -32,7 +32,7 @@ $modo_oscuro = $_COOKIE['modo_oscuro'] ?? 'false';
     <section class="section">
       <?php
       $allowed = [
-        'usuarios',
+        'profesionales',
         'cursos',
         'estudiantes',
         'registrar_usuario',

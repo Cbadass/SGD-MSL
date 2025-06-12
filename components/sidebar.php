@@ -1,8 +1,8 @@
 <aside class="sidebar">
   <nav>
-    <h3>Usuarios</h3>
-    <a href="?seccion=usuarios" class="<?= $seccion === 'usuarios' ? 'active' : '' ?>">Usuarios</a>
-    <a href="?seccion=registrar_usuario" class="<?= $seccion === 'registrar_usuario' ? 'active' : '' ?>">Registrar Usuario</a>
+    <h3>Profesionales</h3>
+    <a href="?seccion=usuarios" class="<?= $seccion === 'usuarios' ? 'active' : '' ?>">Profesionales</a>
+    <a href="?seccion=registrar_usuario" class="<?= $seccion === 'registrar_usuario' ? 'active' : '' ?>">Registrar Profesional</a>
     <a href="?seccion=asignaciones" class="<?= $seccion === 'asignaciones' ? 'active' : '' ?>">Asignaciones</a>
 
     <h3>Estudiantes</h3>
