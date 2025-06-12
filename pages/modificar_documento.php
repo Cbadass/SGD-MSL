@@ -111,19 +111,52 @@ if (!$doc) die("Documento no encontrado.");
     <input type="file" class="form-control" name="archivo" id="archivo">
     </div>
 
-  <!-- Buscador Estudiante -->
-  <div class="mb-3">
-    <label class="form-label">Buscar Estudiante</label>
-    <input type="text" id="buscar_estudiante" class="form-control" placeholder="RUT o Nombre">
-    <div id="resultados_estudiante" class="border mt-1"></div>
-  </div>
+<!-- Buscador Estudiante -->
+<div class="mb-3">
+  <label class="form-label">Buscar Estudiante</label>
+  <input type="text" id="buscar_estudiante" class="form-control" placeholder="RUT o Nombre">
+  <input type="hidden" name="id_estudiante" id="id_estudiante" value="<?= htmlspecialchars($doc['Id_estudiante_doc'] ?? '') ?>">
+  <div id="resultados_estudiante" class="border mt-1"></div>
+  <?php
+    if ($doc['Id_estudiante_doc']) {
+        $stmtEst = $conn->prepare("SELECT Rut_estudiante, Nombre_estudiante, Apellido_estudiante FROM estudiantes WHERE Id_estudiante = ?");
+        $stmtEst->execute([$doc['Id_estudiante_doc']]);
+        $est = $stmtEst->fetch();
+        if ($est) {
+            echo "<script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    document.getElementById('resultados_estudiante').innerHTML =
+                    `<div class='resultado seleccionado'>{$est['Rut_estudiante']} - {$est['Nombre_estudiante']} {$est['Apellido_estudiante']} (Seleccionado)</div>`;
+                });
+            </script>";
+        }
+    }
+  ?>
+</div>
 
-  <!-- Buscador Profesional -->
-  <div class="mb-3">
-    <label class="form-label">Buscar Profesional</label>
-    <input type="text" id="buscar_profesional" class="form-control" placeholder="RUT o Nombre">
-    <div id="resultados_profesional" class="border mt-1"></div>
-  </div>
+<!-- Buscador Profesional -->
+<div class="mb-3">
+  <label class="form-label">Buscar Profesional</label>
+  <input type="text" id="buscar_profesional" class="form-control" placeholder="RUT o Nombre">
+  <input type="hidden" name="id_profesional" id="id_profesional" value="<?= htmlspecialchars($doc['Id_prof_doc'] ?? '') ?>">
+  <div id="resultados_profesional" class="border mt-1"></div>
+  <?php
+    if ($doc['Id_prof_doc']) {
+        $stmtProf = $conn->prepare("SELECT Rut_profesional, Nombre_profesional, Apellido_profesional FROM profesionales WHERE Id_profesional = ?");
+        $stmtProf->execute([$doc['Id_prof_doc']]);
+        $prof = $stmtProf->fetch();
+        if ($prof) {
+            echo "<script>
+                document.addEventListener('DOMContentLoaded', function() {
+                    document.getElementById('resultados_profesional').innerHTML =
+                    `<div class='resultado seleccionado'>{$prof['Rut_profesional']} - {$prof['Nombre_profesional']} {$prof['Apellido_profesional']} (Seleccionado)</div>`;
+                });
+            </script>";
+        }
+    }
+  ?>
+</div>
+
 
   <div class="mt-3">
     <button type="submit" class="btn btn-success">Guardar cambios</button>
