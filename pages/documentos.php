@@ -2,7 +2,10 @@
 try {
     require_once 'includes/db.php';
     require_once 'includes/storage.php';
-
+    function normalizarRut($rut) {
+      return preg_replace('/[^0-9kK]/', '', $rut);
+    }
+  
     $azure = new AzureBlobStorage();
     $errorMsg = '';
     $documentos = [];
@@ -24,16 +27,21 @@ try {
     agregarFiltro($where, $params, 'd.Tipo_documento', $_GET['tipo_documento'] ?? '');
 
     if (!empty($_GET['estudiante'])) {
-        $where .= " AND (e.Nombre_estudiante LIKE ? OR e.Rut_estudiante LIKE ?)";
-        $params[] = "%" . $_GET['estudiante'] . "%";
-        $params[] = "%" . $_GET['estudiante'] . "%";
+      $filtroEst = $_GET['estudiante'];
+      $rutEstNormalizado = normalizarRut($filtroEst);
+      $where .= " AND (e.Nombre_estudiante LIKE ? OR REPLACE(REPLACE(REPLACE(LOWER(e.Rut_estudiante), '.', ''), '-', ''), 'k', 'K') LIKE ?)";
+      $params[] = "%" . $filtroEst . "%";
+      $params[] = "%" . strtolower($rutEstNormalizado) . "%";
     }
-
+    
     if (!empty($_GET['profesional'])) {
-        $where .= " AND (p.Nombre_profesional LIKE ? OR p.Rut_profesional LIKE ?)";
-        $params[] = "%" . $_GET['profesional'] . "%";
-        $params[] = "%" . $_GET['profesional'] . "%";
+        $filtroProf = $_GET['profesional'];
+        $rutProfNormalizado = normalizarRut($filtroProf);
+        $where .= " AND (p.Nombre_profesional LIKE ? OR REPLACE(REPLACE(REPLACE(LOWER(p.Rut_profesional), '.', ''), '-', ''), 'k', 'K') LIKE ?)";
+        $params[] = "%" . $filtroProf . "%";
+        $params[] = "%" . strtolower($rutProfNormalizado) . "%";
     }
+    
 
     if (!empty($_GET['fecha_subida_desde'])) {
         $where .= " AND d.Fecha_subido >= ?";
