@@ -98,7 +98,7 @@ echo "</table></div>";
   <div style="background:white; border-radius:12px; padding:25px; max-width:800px; width:96%;">
     <div class="d-flex justify-content-between align-items-center">
       <h2>Editar Usuario</h2>
-      <button onclick="cerrarModalUsuario()" style="font-size:24px; border:none; background:none;">&times;</button>
+      <button onclick="cerrarModalUsuario()" style="font-size:20px; border:none; background:none;">&times;</button>
     </div>
     <form id="formUsuarioEditar" style="display:grid; grid-template-columns:repeat(3,1fr); gap:18px;">
       <input type="hidden" name="Id_usuario" id="edit_Id_usuario">
