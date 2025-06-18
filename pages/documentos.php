@@ -16,7 +16,7 @@ try {
     $where = "1=1";
     $params = [];
 
-    function agregarFiltro(&$where, &$params, $campo, $valor) {
+     function agregarFiltro(&$where, &$params, $campo, $valor) {
         if (!empty($valor)) {
             $where .= " AND $campo LIKE ?";
             $params[] = "%$valor%";

@@ -14,7 +14,7 @@ $estado_filtro = $_GET['estado'] ?? '';
 $buscar_usuario = trim($_GET['buscar'] ?? '');
 
 // Formulario de búsqueda y filtros
-echo "<h2 class='mb-4'>Visualización de Usuarios</h2>";
+echo "<h2 class='mb-4'>Visualización de Profesionales</h2>";
 echo "<form method='GET' class='mb-3 d-flex flex-wrap gap-2'>
     <input type='hidden' name='seccion' value='usuarios'>
     <select name='escuela' class='form-select w-auto'>
