@@ -4,7 +4,7 @@ require_once 'includes/db.php';
 session_start();
 header('Content-Type: application/json');
 
-// 1) Validar sesión en producción
+// 1) Validar sesión
 if (!isset($_SESSION['usuario'])) {
     echo json_encode(['success'=>false,'error'=>'No autenticado']);
     exit;
@@ -31,6 +31,24 @@ $Nacimiento_profesional= trim($_POST['Nacimiento_profesional']?? '');
 $Celular_profesional   = trim($_POST['Celular_profesional']   ?? '');
 $Correo_profesional    = trim($_POST['Correo_profesional']    ?? '');
 $Cargo_profesional     = trim($_POST['Cargo_profesional']     ?? '');
+
+// 4) Validar Cargo_profesional
+$allowed_cargos = [
+    'Administradora',
+    'Directora',
+    'Profesor',
+    'Asistentes de la educación',
+    'Especialistas',
+    'Docente',
+    'Psicologa',
+    'Fonoaudiologo',
+    'Kinesiologo',
+    'Terapeuta Ocupacional'
+];
+if ($Cargo_profesional !== '' && !in_array($Cargo_profesional, $allowed_cargos)) {
+    echo json_encode(['success'=>false,'error'=>'Cargo profesional inválido']);
+    exit;
+}
 
 try {
     $conn->beginTransaction();

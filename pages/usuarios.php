@@ -3,37 +3,64 @@
 require_once 'includes/db.php';
 session_start();
 
-// /* Verificar si está logueado
-// if (!isset($_SESSION['usuario'])) {
-//     header("Location: login.php");
-//     exit;
-// } */
+// /* Descomenta en producción
+if (!isset($_SESSION['usuario'])) {
+    header("Location: login.php");
+    exit;
+}
+// */
 
 // 1) Parámetros de filtro
-$escuela_filtro   = $_GET['escuela'] ?? '';
-$estado_filtro    = $_GET['estado']  ?? '';
-$buscar_usuario   = trim($_GET['buscar'] ?? '');
+$escuela_filtro = $_GET['escuela'] ?? '';
+$estado_filtro  = $_GET['estado']  ?? '';
+$cargo_filtro   = $_GET['cargo']   ?? '';
+$buscar_usuario = trim($_GET['buscar'] ?? '');
 
-// 2) Formulario de filtro
+// Lista de cargos permitidos
+$allowed_cargos = [
+    'Administradora',
+    'Directora',
+    'Profesor',
+    'Asistentes de la educación',
+    'Especialistas',
+    'Docente',
+    'Psicologa',
+    'Fonoaudiologo',
+    'Kinesiologo',
+    'Terapeuta Ocupacional'
+];
+
+// 2) Formulario de filtros
 echo "<h2 class='mb-4'>Visualización de Profesionales</h2>";
 echo "<form method='GET' class='mb-3 d-flex flex-wrap gap-2'>
     <input type='hidden' name='seccion' value='usuarios'>
+
     <select name='escuela' class='form-select w-auto'>
-        <option value=''>Todas las escuelas</option>
-        <option value='1'" . ($escuela_filtro=='1' ? ' selected':'') . ">Sendero</option>
-        <option value='2'" . ($escuela_filtro=='2' ? ' selected':'') . ">Multiverso</option>
-        <option value='3'" . ($escuela_filtro=='3' ? ' selected':'') . ">Luz de Luna</option>
+      <option value=''>Todas las escuelas</option>
+      <option value='1'" . ($escuela_filtro=='1'?' selected':'') . ">Sendero</option>
+      <option value='2'" . ($escuela_filtro=='2'?' selected':'') . ">Multiverso</option>
+      <option value='3'" . ($escuela_filtro=='3'?' selected':'') . ">Luz de Luna</option>
     </select>
+
     <select name='estado' class='form-select w-auto'>
-        <option value=''>Todos los estados</option>
-        <option value='1'" . ($estado_filtro=='1' ? ' selected':'') . ">Activo</option>
-        <option value='0'" . ($estado_filtro=='0' ? ' selected':'') . ">Inactivo</option>
+      <option value=''>Todos los estados</option>
+      <option value='1'" . ($estado_filtro=='1'?' selected':'') . ">Activo</option>
+      <option value='0'" . ($estado_filtro=='0'?' selected':'') . ">Inactivo</option>
     </select>
+
+    <select name='cargo' class='form-select w-auto'>
+      <option value=''>Todos los cargos</option>";
+foreach ($allowed_cargos as $cargo) {
+    $sel = $cargo_filtro === $cargo ? ' selected' : '';
+    echo "<option value=\"" . htmlspecialchars($cargo) . "\"{$sel}>{$cargo}</option>";
+}
+echo "</select>
+
     <input type='text' name='buscar' class='form-control w-auto' placeholder='Buscar usuario o profesional' value='" . htmlspecialchars($buscar_usuario) . "'>
     <button class='btn btn-primary' type='submit'>Filtrar</button>
 </form>";
 
-// 3) Consulta con columnas explícitas (evitamos u.* y p.* para no duplicar Id_usuario)
+// 3) Consulta con columnas explícitas
 $sql = "
   SELECT
     u.Id_usuario,
@@ -54,27 +81,29 @@ $sql = "
   LEFT JOIN escuelas      e ON p.Id_escuela_prof = e.Id_escuela
   WHERE 1=1
 ";
-
 $params = [];
 if ($escuela_filtro !== '') {
-    $sql .= " AND p.Id_escuela_prof = ?";
+    $sql    .= " AND p.Id_escuela_prof = ?";
     $params[] = $escuela_filtro;
 }
 if ($estado_filtro !== '') {
-    $sql .= " AND u.Estado_usuario = ?";
+    $sql    .= " AND u.Estado_usuario = ?";
     $params[] = $estado_filtro;
 }
-if ($buscar_usuario !== '') {
-    $sql .= " AND (
-        u.Nombre_usuario    LIKE ? OR
-        p.Nombre_profesional LIKE ? OR
-        p.Apellido_profesional LIKE ? OR
-        p.Rut_profesional    LIKE ?
-    )";
-    $like = "%$buscar_usuario%";
-    $params = array_merge($params, [$like, $like, $like, $like]);
+if ($cargo_filtro !== '') {
+    $sql    .= " AND p.Cargo_profesional = ?";
+    $params[] = $cargo_filtro;
 }
-
+if ($buscar_usuario !== '') {
+    $sql    .= " AND (
+       u.Nombre_usuario    LIKE ? OR
+       p.Nombre_profesional LIKE ? OR
+       p.Apellido_profesional LIKE ? OR
+       p.Rut_profesional    LIKE ?
+    )";
+    $like    = "%$buscar_usuario%";
+    $params  = array_merge($params, [$like,$like,$like,$like]);
+}
 $sql .= " ORDER BY u.Id_usuario DESC
           OFFSET 0 ROWS FETCH NEXT 50 ROWS ONLY";
 
@@ -82,7 +111,7 @@ $stmt = $conn->prepare($sql);
 $stmt->execute($params);
 $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// 4) Mostrar tabla
+// 4) Render de la tabla
 echo "<div style='max-height:400px; overflow-y:auto; border-radius:10px;'>
 <table class='table table-striped table-bordered'>
   <thead class='table-dark'>
@@ -92,7 +121,6 @@ echo "<div style='max-height:400px; overflow-y:auto; border-radius:10px;'>
     </tr>
   </thead>
   <tbody>";
-
 if ($usuarios) {
     foreach ($usuarios as $row) {
         $json = htmlspecialchars(json_encode($row), ENT_QUOTES, 'UTF-8');
@@ -106,15 +134,13 @@ if ($usuarios) {
           <td>" . htmlspecialchars($row['Permisos']            ?? 'user') . "</td>
           <td>" . ($row['Estado_usuario']==1 ? 'Activo':'Inactivo')      . "</td>
           <td>
-            <button class='btn btn-sm btn-warning'
-                    onclick='mostrarModalUsuario($json)'>Editar</button>
+            <button class='btn btn-sm btn-warning' onclick='mostrarModalUsuario($json)'>Editar</button>
           </td>
         </tr>";
     }
 } else {
     echo "<tr><td colspan='9'>No se encontraron usuarios.</td></tr>";
 }
-
 echo "</tbody></table></div>";
 ?>
 
@@ -132,11 +158,22 @@ echo "</tbody></table></div>";
       <div class="form-group"><label>Usuario</label><input name="Nombre_usuario"     id="edit_Nombre_usuario"     class="form-control" required></div>
       <div class="form-group"><label>Nombres</label><input name="Nombre_profesional" id="edit_Nombre_profesional" class="form-control"></div>
       <div class="form-group"><label>Apellidos</label><input name="Apellido_profesional" id="edit_Apellido_profesional" class="form-control"></div>
-      <div class="form-group"><label>Correo</label><input name="Correo_profesional" id="edit_Correo_profesional" class="form-control" type="email"></div>
-      <div class="form-group"><label>Número</label><input name="Celular_profesional" id="edit_Celular_profesional" class="form-control"></div>
-      <div class="form-group"><label>RUT</label><input name="Rut_profesional"      id="edit_Rut_profesional"      class="form-control"></div>
+      <div class="form-group"><label>Correo</label><input name="Correo_profesional"   id="edit_Correo_profesional"   class="form-control" type="email"></div>
+      <div class="form-group"><label>Número</label><input name="Celular_profesional"  id="edit_Celular_profesional"  class="form-control"></div>
+      <div class="form-group"><label>RUT</label><input name="Rut_profesional"       id="edit_Rut_profesional"       class="form-control"></div>
       <div class="form-group"><label>Fecha de nacimiento</label><input name="Nacimiento_profesional" id="edit_Nacimiento_profesional" class="form-control" type="date"></div>
-      <div class="form-group"><label>Cargo</label><input name="Cargo_profesional"    id="edit_Cargo_profesional"    class="form-control"></div>
+
+      <div class="form-group">
+        <label>Cargo</label>
+        <select name="Cargo_profesional" id="edit_Cargo_profesional" class="form-select">
+          <option value="">Seleccione cargo</option>
+<?php foreach($allowed_cargos as $cargo): 
+        $sel = "value=\"".htmlspecialchars($cargo)."\"";
+        $sel .= (isset($row['Cargo_profesional']) && $row['Cargo_profesional']==$cargo)?" selected":''; ?>
+          <option <?php echo $sel; ?>><?php echo htmlspecialchars($cargo); ?></option>
+<?php endforeach; ?>
+        </select>
+      </div>
 
       <div class="form-group">
         <label>Permisos</label>
