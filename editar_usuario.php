@@ -1,5 +1,4 @@
 <?php
-// editar_usuario.php
 require_once 'includes/db.php';
 session_start();
 header('Content-Type: application/json');
@@ -18,7 +17,7 @@ if ($Id_usuario <= 0) {
 }
 $Id_profesional = intval($_POST['Id_profesional'] ?? 0);
 
-// 3) Capturar campos
+// 3) Campos
 $Nombre_usuario        = trim($_POST['Nombre_usuario']        ?? '');
 $Permisos              = in_array($_POST['Permisos'] ?? '', ['user','admin'])
                            ? $_POST['Permisos'] : 'user';
@@ -32,11 +31,12 @@ $Celular_profesional   = trim($_POST['Celular_profesional']   ?? '');
 $Correo_profesional    = trim($_POST['Correo_profesional']    ?? '');
 $Cargo_profesional     = trim($_POST['Cargo_profesional']     ?? '');
 
-// 4) Validar Cargo_profesional
+// 4) Validar cargo
 $allowed_cargos = [
     'Administradora',
     'Directora',
-    'Profesor',
+    'Profesor(a) Diferencial',
+    'Profesor(a)',
     'Asistentes de la educación',
     'Especialistas',
     'Docente',
@@ -46,7 +46,7 @@ $allowed_cargos = [
     'Terapeuta Ocupacional'
 ];
 if ($Cargo_profesional !== '' && !in_array($Cargo_profesional, $allowed_cargos)) {
-    echo json_encode(['success'=>false,'error'=>'Cargo profesional inválido']);
+    echo json_encode(['success'=>false,'error'=>'Cargo inválido']);
     exit;
 }
 
@@ -54,23 +54,23 @@ try {
     $conn->beginTransaction();
 
     // UPDATE usuarios
-    $sql1 = "
+    $stmt1 = $conn->prepare("
       UPDATE usuarios
       SET Nombre_usuario = :nomu,
           Permisos       = :perm,
           Estado_usuario = :est
-      WHERE Id_usuario = :idu";
-    $stmt1 = $conn->prepare($sql1);
+      WHERE Id_usuario = :idu
+    ");
     $stmt1->execute([
-        ':nomu' => $Nombre_usuario,
-        ':perm' => $Permisos,
-        ':est'  => $Estado_usuario,
-        ':idu'  => $Id_usuario
+        ':nomu'=>$Nombre_usuario,
+        ':perm'=>$Permisos,
+        ':est' =>$Estado_usuario,
+        ':idu' =>$Id_usuario
     ]);
 
-    // UPDATE profesionales (si aplica)
-    if ($Id_profesional > 0) {
-        $sql2 = "
+    // UPDATE profesionales si aplica
+    if ($Id_profesional>0) {
+        $stmt2 = $conn->prepare("
           UPDATE profesionales
           SET Nombre_profesional     = :nomp,
               Apellido_profesional   = :app,
@@ -79,17 +79,17 @@ try {
               Celular_profesional    = :cel,
               Correo_profesional     = :mail,
               Cargo_profesional      = :cargo
-          WHERE Id_profesional = :idp";
-        $stmt2 = $conn->prepare($sql2);
+          WHERE Id_profesional = :idp
+        ");
         $stmt2->execute([
-            ':nomp'  => $Nombre_profesional,
-            ':app'   => $Apellido_profesional,
-            ':rut'   => $Rut_profesional,
-            ':nac'   => $Nacimiento_profesional,
-            ':cel'   => $Celular_profesional,
-            ':mail'  => $Correo_profesional,
-            ':cargo' => $Cargo_profesional,
-            ':idp'   => $Id_profesional
+            ':nomp'  =>$Nombre_profesional,
+            ':app'   =>$Apellido_profesional,
+            ':rut'   =>$Rut_profesional,
+            ':nac'   =>$Nacimiento_profesional,
+            ':cel'   =>$Celular_profesional,
+            ':mail'  =>$Correo_profesional,
+            ':cargo' =>$Cargo_profesional,
+            ':idp'   =>$Id_profesional
         ]);
     }
 
