@@ -173,7 +173,7 @@ if ($usuarios) {
                 <td>".($row['Estado_usuario']==1 ? 'Activo':'Inactivo')."</td>
                 <td>
                   <a 
-                    href=\"modificar_profesional.php?Id_profesional={$row['Id_profesional']}\" 
+                    href=\"pages/modificar_profesional.php?Id_profesional={$row['Id_profesional']}\" 
                     class=\"btn btn-sm btn-warning\"
                   >Editar</a>
                 </td>
