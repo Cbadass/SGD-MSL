@@ -9,22 +9,18 @@ try {
         throw new Exception("No autorizado.");
     }
 
-    // 2) Capturar ID del documento
+    // ID por POST
     $id = intval($_POST['id_documento'] ?? 0);
-    if ($id <= 0) {
-        throw new Exception("ID inválido.");
-    }
+    if ($id <= 0) throw new Exception("ID inválido.");
 
-    // 3) Recuperar URL existente
+    // URL actual
     $stmt0 = $conn->prepare("SELECT Url_documento FROM documentos WHERE Id_documento = ?");
     $stmt0->execute([$id]);
     $orig = $stmt0->fetch(PDO::FETCH_ASSOC);
-    if (!$orig) {
-        throw new Exception("Documento no encontrado.");
-    }
+    if (!$orig) throw new Exception("Documento no encontrado.");
     $url_documento = $orig['Url_documento'];
 
-    // 4) Capturar campos del formulario
+    // Campos del formulario
     $nombre         = trim($_POST['nombre']            ?? '');
     $tipo           = trim($_POST['tipo_documento']   ?? '');
     $descripcion    = trim($_POST['descripcion']       ?? '');
@@ -35,20 +31,16 @@ try {
         throw new Exception("Nombre y tipo de documento son obligatorios.");
     }
 
-    // 5) Si llega un nuevo archivo, validarlo y subir a Azure
+    // Si llega archivo nuevo...
     if (!empty($_FILES['archivo']['name']) && $_FILES['archivo']['error'] === UPLOAD_ERR_OK) {
-        $archivo        = $_FILES['archivo'];
-        $nombreArchivo  = basename($archivo['name']);
-        $contenido      = file_get_contents($archivo['tmp_name']);
-        $ext            = strtolower(pathinfo($nombreArchivo, PATHINFO_EXTENSION));
-
-        // a) Validar extensión
-        $permitidas = ['doc','docx','odt','pdf','txt','xls','xlsx','ods','ppt','pptx','odp','jpg','jpeg','png','gif'];
+        $archivo       = $_FILES['archivo'];
+        $ext           = strtolower(pathinfo($archivo['name'], PATHINFO_EXTENSION));
+        $permitidas    = ['doc','docx','odt','pdf','txt','xls','xlsx','ods','ppt','pptx','odp','jpg','jpeg','png','gif'];
         if (!in_array($ext, $permitidas, true)) {
             throw new Exception("El tipo de archivo '$ext' no está permitido.");
         }
 
-        // b) Obtener datos de estudiante y profesional para el nombre del blob
+        // Generar nombre único
         $stmtEst = $conn->prepare("SELECT Nombre_estudiante, Apellido_estudiante FROM estudiantes WHERE Id_estudiante = ?");
         $stmtEst->execute([$id_estudiante]);
         $est = $stmtEst->fetch(PDO::FETCH_ASSOC);
@@ -59,32 +51,37 @@ try {
 
         $tipoL    = preg_replace('/[^a-zA-Z0-9]/', '', $tipo);
         $ts       = date('YmdHis');
-        $nEst     = $est ? preg_replace('/[^a-zA-Z0-9]/', '', $est['Nombre_estudiante'] . $est['Apellido_estudiante']) : 'SinEst';
-        $nProf    = $prof ? preg_replace('/[^a-zA-Z0-9]/', '', $prof['Nombre_profesional'] . $prof['Apellido_profesional']) : 'SinProf';
+        $nEst     = $est ? preg_replace('/[^a-zA-Z0-9]/', '',
+                     $est['Nombre_estudiante'] . $est['Apellido_estudiante']) : 'SinEst';
+        $nProf    = $prof ? preg_replace('/[^a-zA-Z0-9]/', '',
+                     $prof['Nombre_profesional'] . $prof['Apellido_profesional']) : 'SinProf';
 
         $blobName = "{$tipoL}-{$ts}-{$nEst}-{$nProf}.{$ext}";
-
+        $contenido= file_get_contents($archivo['tmp_name']);
         $azure    = new AzureBlobStorage();
 
-        // c) Borrar blob anterior (extraer nombre desde URL)
-        $path     = parse_url($url_documento, PHP_URL_PATH);
-        $parts    = explode('/', trim($path, '/'));
-        $oldBlob  = end($parts);
+        // Borrar blob anterior
+        $path    = parse_url($url_documento, PHP_URL_PATH);
+        $oldBlob = basename($path);
         if ($oldBlob && $oldBlob !== $blobName) {
             $azure->borrarBlob($oldBlob);
         }
 
-        // d) Subir nuevo blob
+        // Subir nuevo blob
         if (!$azure->subirBlob($blobName, $contenido)) {
             throw new Exception("Error al subir el archivo a Azure.");
         }
 
-        // e) Reconstruir URL pública
-        $account        = getenv('AZURE_STORAGE_ACCOUNT');
+        // Aquí el cambio: extraer AccountName de la connection string
+        $connectionString = getenv('AZURE_STORAGE_CONNECTION_STRING');
+        if (!preg_match('/AccountName=([^;]+);/', $connectionString, $m)) {
+            throw new Exception("No se pudo obtener el nombre de cuenta de la cadena de conexión.");
+        }
+        $account        = $m[1];
         $url_documento  = "https://{$account}.blob.core.windows.net/documentos/{$blobName}";
     }
 
-    // 6) Ejecutar UPDATE en la base de datos
+    // UPDATE documentos
     $sql = "
         UPDATE documentos
            SET Nombre_documento   = :nombre,
