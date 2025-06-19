@@ -1,70 +1,93 @@
 <?php
+session_start();
 require_once 'includes/db.php';
+require_once 'includes/storage.php';  // Nuestra clase AzureBlobStorage
 
-// Obtener ID del documento
-$id = intval($_GET['id_documento'] ?? 0);
+// 1) Validar sesión
+if (!isset($_SESSION['usuario'])) {
+    header("Location: login.php");
+    exit;
+}
+
+// 2) Capturar ID desde POST
+$id = intval($_POST['id_documento'] ?? 0);
 if ($id <= 0) {
     die("ID inválido.");
 }
 
-// Obtener datos del documento
-$stmt = $conn->prepare("SELECT * FROM documentos WHERE Id_documento = ?");
-$stmt->execute([$id]);
-$documento = $stmt->fetch(PDO::FETCH_ASSOC);
-if (!$documento) {
+// 3) Recuperar URL actual del documento
+$stmt0 = $conn->prepare("SELECT Url_documento FROM documentos WHERE Id_documento = ?");
+$stmt0->execute([$id]);
+$orig = $stmt0->fetch(PDO::FETCH_ASSOC);
+if (!$orig) {
     die("Documento no encontrado.");
 }
-?>
+$url_documento = $orig['Url_documento'];
 
-<h2>Modificar Documento</h2>
+// 4) Capturar resto de campos
+$nombre         = trim($_POST['nombre']            ?? '');
+$tipo           = trim($_POST['tipo_documento']   ?? '');
+$descripcion    = trim($_POST['descripcion']       ?? '');
+$id_estudiante  = intval($_POST['id_estudiante']   ?? 0) ?: null;
+$id_profesional = intval($_POST['id_profesional']  ?? 0) ?: null;
 
-<form action="guardar_modificacion.php" method="POST" enctype="multipart/form-data">
-  <input type="hidden" name="id_documento" value="<?= htmlspecialchars($documento['Id_documento']) ?>">
+// 5) Procesar archivo si se subió uno nuevo
+if (isset($_FILES['archivo']) && $_FILES['archivo']['error'] === UPLOAD_ERR_OK) {
+    $ext = strtolower(pathinfo($_FILES['archivo']['name'], PATHINFO_EXTENSION));
+    $allow = ['doc','docx','odt','pdf','txt','xls','xlsx','ods','ppt','pptx','odp','jpg','jpeg','png'];
+    if (!in_array($ext, $allow, true)) {
+        die("Extensión no permitida. Solo Office, PDF, TXT o imágenes.");
+    }
 
-  <div class="mb-3">
-    <label for="nombre">Nombre del Documento</label>
-    <input type="text" name="nombre" id="nombre" class="form-control" required value="<?= htmlspecialchars($documento['Nombre_documento']) ?>">
-  </div>
+    // Generar un nombre único para el blob
+    $blobName = time() . '_' . bin2hex(random_bytes(5)) . '.' . $ext;
+    $contenido = fopen($_FILES['archivo']['tmp_name'], 'r');
 
-  <div class="mb-3">
-    <label for="tipo_documento">Tipo de Documento</label>
-    <select name="tipo_documento" id="tipo_documento" class="form-select" required>
-      <option value="">Seleccione tipo</option>
-      <?php
-      $tipos = [
-        "Certificado de Nacimiento", "Ficha de Matrícula", "Informe Psicológico", "Informe Pedagógico 1er semestre",
-        "Recetas médicas", "Curriculum", "Contrato de trabajo", "Certificados de perfeccionamientos"
-        // Agrega todos los tipos usados en tu sistema aquí
-      ];
-      foreach ($tipos as $tipo) {
-          $selected = ($tipo === $documento['Tipo_documento']) ? 'selected' : '';
-          echo "<option value=\"$tipo\" $selected>$tipo</option>";
-      }
-      ?>
-    </select>
-  </div>
+    $storage = new AzureBlobStorage();
 
-  <div class="mb-3">
-    <label for="descripcion">Descripción</label>
-    <textarea name="descripcion" id="descripcion" class="form-control"><?= htmlspecialchars($documento['Descripcion']) ?></textarea>
-  </div>
+    // Si ya existía un blob anterior, opcionalmente extraer su nombre y borrarlo
+    // (dependerá de cómo guardaste la URL; aquí asumimos que el blobName es todo lo después del contenedor)
+    $parsed = parse_url($url_documento, PHP_URL_PATH);
+    $parts = explode('/', trim($parsed, '/'));
+    $oldBlob = end($parts);
+    if ($oldBlob && $oldBlob !== $blobName) {
+        $storage->borrarBlob($oldBlob);
+    }
 
-  <div class="mb-3">
-    <label for="archivo">Reemplazar archivo (opcional)</label>
-    <input type="file" name="archivo" id="archivo" class="form-control">
-    <small class="form-text text-muted">Archivo actual: <a href="<?= htmlspecialchars($documento['Url_documento']) ?>" target="_blank">Ver</a></small>
-  </div>
+    // Subir el nuevo blob
+    if (!$storage->subirBlob($blobName, $contenido)) {
+        die("Error al subir el archivo a Azure Blob.");
+    }
 
-  <div class="mb-3">
-    <label for="id_estudiante">ID Estudiante (si aplica)</label>
-    <input type="number" name="id_estudiante" id="id_estudiante" class="form-control" value="<?= htmlspecialchars($documento['Id_estudiante_doc']) ?>">
-  </div>
+    // Construir la nueva URL pública
+    $account = getenv('AZURE_STORAGE_ACCOUNT');  // define en .env o en el entorno
+    $url_documento = "https://{$account}.blob.core.windows.net/documentos/{$blobName}";
+}
 
-  <div class="mb-3">
-    <label for="id_profesional">ID Profesional (si aplica)</label>
-    <input type="number" name="id_profesional" id="id_profesional" class="form-control" value="<?= htmlspecialchars($documento['Id_prof_doc']) ?>">
-  </div>
+// 6) Ejecutar UPDATE
+$sql = "
+    UPDATE documentos
+    SET 
+      Nombre_documento   = :nombre,
+      Tipo_documento     = :tipo,
+      Descripcion        = :desc,
+      Url_documento      = :url,
+      Id_estudiante_doc  = :idest,
+      Id_prof_doc        = :idprof,
+      Fecha_modificacion = GETDATE()
+    WHERE Id_documento = :id
+";
+$stmt = $conn->prepare($sql);
+$stmt->execute([
+    ':nombre'  => $nombre,
+    ':tipo'    => $tipo,
+    ':desc'    => $descripcion,
+    ':url'     => $url_documento,
+    ':idest'   => $id_estudiante,
+    ':idprof'  => $id_profesional,
+    ':id'      => $id
+]);
 
-  <button type="submit" class="btn btn-success">Guardar Cambios</button>
-  <a href="index.php?seccion=documentos" class="btn btn-secondary">Cancelar</a>
-</form>
+// 7) Redirigir de vuelta
+header("Location: index.php?seccion=documentos");
+exit;
