@@ -42,11 +42,19 @@ $modo_oscuro = $_COOKIE['modo_oscuro'] ?? 'false';
         'subir_documento',
         'asignaciones',
         'modificar_documento',
-        'modificar_profesional' 
+        'modificar_profesional'   // <— aquí
       ];
-      $file = in_array($seccion, $allowed)
-        ? "pages/{$seccion}.php"
-        : "pages/error404.php";
+      
+      $seccion = $_GET['seccion'] ?? 'usuarios';
+      $file    = in_array($seccion, $allowed)
+               ? __DIR__ . "/pages/{$seccion}.php"
+               : __DIR__ . "/pages/error404.php";
+      
+      // DEBUG: muestra la ruta que intenta incluir
+      if (! file_exists($file)) {
+          die("ERROR: Archivo no encontrado: $file");
+      }
+      
       include $file;
       ?>
     </section>
