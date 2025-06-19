@@ -10,7 +10,7 @@ try {
     $errorMsg = '';
     $documentos = [];
 
-    $documentosPorPagina = 20;
+    $documentosPorPagina = 5;
     $paginaActual = max((int)($_GET['pagina'] ?? 1), 1);
 
     $where = "1=1";
