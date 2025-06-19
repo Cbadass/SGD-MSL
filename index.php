@@ -41,9 +41,12 @@ $modo_oscuro = $_COOKIE['modo_oscuro'] ?? 'false';
         'documentos',
         'subir_documento',
         'asignaciones',
-        'modificar_documento'
+        'modificar_documento',
+        'modificar_profesional' 
       ];
-      $file = in_array($seccion, $allowed) ? "pages/$seccion.php" : "pages/error404.php";
+      $file = in_array($seccion, $allowed)
+        ? "pages/{$seccion}.php"
+        : "pages/error404.php";
       include $file;
       ?>
     </section>
