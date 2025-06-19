@@ -12,25 +12,37 @@ $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $nombreUsuario = trim($_POST['nombre_usuario'] ?? '');
-    $contrasena = trim($_POST['contrasena'] ?? '');
+    $contrasena    = trim($_POST['contrasena']     ?? '');
 
     if (empty($nombreUsuario) || empty($contrasena)) {
         $error = "Por favor completa todos los campos.";
     } else {
-        $sql = "SELECT * FROM usuarios WHERE Nombre_usuario = :nombre AND Estado_usuario = 1";
+        // Buscar usuario activo
+        $sql = "
+            SELECT 
+                Id_usuario,
+                Nombre_usuario,
+                Contraseña,
+                Estado_usuario,
+                Permisos,
+                Id_profesional
+            FROM usuarios
+            WHERE Nombre_usuario = :nombre
+              AND Estado_usuario = 1
+        ";
         $stmt = $conn->prepare($sql);
         $stmt->bindParam(':nombre', $nombreUsuario);
         $stmt->execute();
-        $usuario = $stmt->fetch();
+        $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if ($usuario && $usuario['Contraseña'] === $contrasena) {
+        // Verificar contraseña hasheada
+        if ($usuario && password_verify($contrasena, $usuario['Contraseña'])) {
             $_SESSION['usuario'] = [
-                'id' => $usuario['Id_usuario'],
-                'nombre' => $usuario['Nombre_usuario'],
-                'permisos' => $usuario['Permisos'] ?? 'user',
-                'id_profesional' => $usuario['Id_profesional'] ?? null
+                'id'               => $usuario['Id_usuario'],
+                'nombre'           => $usuario['Nombre_usuario'],
+                'permisos'         => $usuario['Permisos'] ?? 'user',
+                'id_profesional'   => $usuario['Id_profesional'] ?? null
             ];
-
             header("Location: index.php");
             exit;
         } else {
@@ -51,14 +63,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       font-family: 'Segoe UI', sans-serif;
       margin: 0;
     }
-
     .login-container {
       display: flex;
       justify-content: center;
       align-items: center;
       height: 100vh;
     }
-
     .login-box {
       display: flex;
       background: white;
@@ -68,17 +78,14 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       max-width: 900px;
       width: 100%;
     }
-
     .login-form {
       padding: 40px;
       width: 50%;
     }
-
     .login-form h2 {
       margin-bottom: 25px;
       color: #3b3b8c;
     }
-
     .login-info {
       background: #bdb3f6;
       color: white;
@@ -89,32 +96,26 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       align-items: center;
       justify-content: center;
     }
-
     .login-info img {
       width: 120px;
       margin-bottom: 20px;
     }
-
     .form-control {
       border-radius: 6px;
     }
-
     .btn-primary {
       background-color: #875ff5;
       border: none;
       padding: 10px;
     }
-
     .btn-primary:hover {
       background-color: #6b4fe0;
     }
-
     .error-msg {
       color: red;
       font-size: 14px;
       margin-bottom: 10px;
     }
-
     @media (max-width: 768px) {
       .login-box {
         flex-direction: column;
@@ -136,11 +137,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="POST">
           <div class="mb-3">
             <label for="nombre_usuario" class="form-label">Nombre de usuario</label>
-            <input type="text" name="nombre_usuario" id="nombre_usuario" class="form-control" required>
+            <input
+              type="text"
+              name="nombre_usuario"
+              id="nombre_usuario"
+              class="form-control"
+              required
+              value="<?= isset($_POST['nombre_usuario']) ? htmlspecialchars($_POST['nombre_usuario']) : '' ?>"
+            >
           </div>
           <div class="mb-3">
             <label for="contrasena" class="form-label">Contraseña</label>
-            <input type="password" name="contrasena" id="contrasena" class="form-control" required>
+            <input
+              type="password"
+              name="contrasena"
+              id="contrasena"
+              class="form-control"
+              required
+            >
           </div>
           <button type="submit" class="btn btn-primary w-100">Ingresar</button>
         </form>
