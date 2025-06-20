@@ -146,7 +146,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         </form>
       </div>
       <div class="login-info">
-        <img src="img/logo-multisenluz.png" alt="Logo Multisenluz">
+        <img src="source/LogoMultisenluz.png" alt="Logo Multisenluz">
         <h4>Corporación Educacional Multisenluz</h4>
         <p class="text-center">Comprometidos con la formación integral y la innovación educativa.</p>
       </div>

@@ -2,65 +2,77 @@
 try {
     require_once 'includes/db.php';
     require_once 'includes/storage.php';
+
     function normalizarRut($rut) {
-      return preg_replace('/[^0-9kK]/', '', $rut);
+        return preg_replace('/[^0-9kK]/', '', $rut);
     }
-  
+
     $azure = new AzureBlobStorage();
     $errorMsg = '';
     $documentos = [];
 
-    $documentosPorPagina = 20;
+    $documentosPorPagina = 5;
     $paginaActual = max((int)($_GET['pagina'] ?? 1), 1);
 
-    $where = "1=1";
-    $params = [];
+    // Switch “Solo profesional”:
+    $soloProf = isset($_GET['solo_profesional']) && $_GET['solo_profesional'] === '1';
+    $id_prof  = intval($_GET['id_prof'] ?? 0);
+
+    if ($soloProf) {
+        // Sólo documentos de ese profesional y sin estudiante
+        $where  = "d.Id_prof_doc = ?";
+        $params = [ $id_prof ];
+        $where .= " AND d.Id_estudiante_doc IS NULL";
+    } else {
+        // Búsqueda normal
+        $where  = "1=1";
+        $params = [];
+    }
 
     function agregarFiltro(&$where, &$params, $campo, $valor) {
         if (!empty($valor)) {
-            $where .= " AND $campo LIKE ?";
+            $where   .= " AND $campo LIKE ?";
             $params[] = "%$valor%";
         }
     }
 
-    agregarFiltro($where, $params, 'd.Nombre_documento', $_GET['nombre'] ?? '');
-    agregarFiltro($where, $params, 'd.Tipo_documento', $_GET['tipo_documento'] ?? '');
+    agregarFiltro($where, $params, 'd.Nombre_documento',   $_GET['nombre']          ?? '');
+    agregarFiltro($where, $params, 'd.Tipo_documento',     $_GET['tipo_documento']  ?? '');
 
     if (!empty($_GET['estudiante'])) {
-      $filtroEst = $_GET['estudiante'];
-      $rutEstNormalizado = normalizarRut($filtroEst);
-      $where .= " AND (e.Nombre_estudiante LIKE ? OR REPLACE(REPLACE(REPLACE(LOWER(e.Rut_estudiante), '.', ''), '-', ''), 'k', 'K') LIKE ?)";
-      $params[] = "%" . $filtroEst . "%";
-      $params[] = "%" . strtolower($rutEstNormalizado) . "%";
+        $filtroEst         = $_GET['estudiante'];
+        $rutEstNormalizado = normalizarRut($filtroEst);
+        $where .= " AND (e.Nombre_estudiante LIKE ? OR REPLACE(REPLACE(REPLACE(LOWER(e.Rut_estudiante), '.', ''), '-', ''), 'k', 'K') LIKE ?)";
+        $params[] = "%{$filtroEst}%";
+        $params[] = "%".strtolower($rutEstNormalizado)."%";
     }
-    
+
     if (!empty($_GET['profesional'])) {
-        $filtroProf = $_GET['profesional'];
+        $filtroProf         = $_GET['profesional'];
         $rutProfNormalizado = normalizarRut($filtroProf);
         $where .= " AND (p.Nombre_profesional LIKE ? OR REPLACE(REPLACE(REPLACE(LOWER(p.Rut_profesional), '.', ''), '-', ''), 'k', 'K') LIKE ?)";
-        $params[] = "%" . $filtroProf . "%";
-        $params[] = "%" . strtolower($rutProfNormalizado) . "%";
+        $params[] = "%{$filtroProf}%";
+        $params[] = "%".strtolower($rutProfNormalizado)."%";
     }
-    
 
     if (!empty($_GET['fecha_subida_desde'])) {
-        $where .= " AND d.Fecha_subido >= ?";
+        $where   .= " AND d.Fecha_subido >= ?";
         $params[] = $_GET['fecha_subida_desde'];
     }
 
     if (!empty($_GET['fecha_subida_hasta'])) {
-        $where .= " AND d.Fecha_subido <= ?";
+        $where   .= " AND d.Fecha_subido <= ?";
         $params[] = $_GET['fecha_subida_hasta'];
     }
 
     $ordenOpciones = [
-      'subido_desc' => 'd.Fecha_subido DESC',
-      'subido_asc' => 'd.Fecha_subido ASC',
-      'modificado_desc' => 'd.Fecha_modificacion DESC',
-      'modificado_asc' => 'd.Fecha_modificacion ASC'
+        'subido_desc'     => 'd.Fecha_subido DESC',
+        'subido_asc'      => 'd.Fecha_subido ASC',
+        'modificado_desc' => 'd.Fecha_modificacion DESC',
+        'modificado_asc'  => 'd.Fecha_modificacion ASC'
     ];
     $orden = $ordenOpciones[$_GET['orden'] ?? 'subido_desc'] ?? $ordenOpciones['subido_desc'];
-    
+
     $stmtTotal = $conn->prepare("
         SELECT COUNT(*) FROM documentos d
         LEFT JOIN estudiantes e ON d.Id_estudiante_doc = e.Id_estudiante
@@ -69,7 +81,7 @@ try {
     ");
     $stmtTotal->execute($params);
     $totalDocumentos = (int)$stmtTotal->fetchColumn();
-    $totalPaginas = max(1, ceil($totalDocumentos / $documentosPorPagina));
+    $totalPaginas    = max(1, ceil($totalDocumentos / $documentosPorPagina));
     if ($paginaActual > $totalPaginas) $paginaActual = $totalPaginas;
 
     $offset = ($paginaActual - 1) * $documentosPorPagina;
@@ -89,15 +101,15 @@ try {
                CONCAT(e.Nombre_estudiante, ' ', e.Apellido_estudiante) AS Nombre_estudiante,
                CONCAT(p.Nombre_profesional, ' ', p.Apellido_profesional) AS Nombre_profesional
         FROM documentos d
-        LEFT JOIN usuarios u ON d.Id_usuario_subido = u.Id_usuario
-        LEFT JOIN estudiantes e ON d.Id_estudiante_doc = e.Id_estudiante
-        LEFT JOIN profesionales p ON d.Id_prof_doc = p.Id_profesional
+        LEFT JOIN usuarios     u ON d.Id_usuario_subido = u.Id_usuario
+        LEFT JOIN estudiantes  e ON d.Id_estudiante_doc   = e.Id_estudiante
+        LEFT JOIN profesionales p ON d.Id_prof_doc        = p.Id_profesional
         WHERE $where
         ORDER BY $orden
         OFFSET $offset ROWS FETCH NEXT $documentosPorPagina ROWS ONLY
     ";
 
-    $stmt = $conn->prepare($sql);
+    $stmt       = $conn->prepare($sql);
     $stmt->execute($params);
     $documentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
@@ -150,7 +162,6 @@ try {
           "Test de la articulación a la repetición TAR", "Habilidades pragmáticas", "Órganos fonoarticulatorios",
           "Formulario NEEP reevaluación (diciembre)", "Informe a la Familia Marzo", "Estado de avance a la Familia Junio"
         ];
-        
         $tipos_docentes = [
           "Curriculum", "Certificado de título", "Certificado de registro MINEDUC", "Certificado de antecedentes para fines especiales",
           "Certificado de consulta de inhabilidades para trabajar con menores de edad", "Certificado de consulta de inhabilidades por maltrato relevante",
@@ -160,17 +171,17 @@ try {
           "Certificado de inscripción en el Registro Nacional de Prestadores Individuales de Salud", "Hoja de vida conductr",
           "Licencia conducir legalizada"
         ];
-        
+
         echo '<optgroup label="Estudiantes">';
         foreach ($tipos_estudiantes as $tipo) {
-          $selected = ($tipo === $documento['Tipo_documento']) ? 'selected' : '';
+          $selected = ($tipo === ($_GET['tipo_documento'] ?? '')) ? 'selected' : '';
           echo "<option value=\"$tipo\" $selected>$tipo</option>";
         }
         echo '</optgroup>';
-        
+
         echo '<optgroup label="Docentes">';
         foreach ($tipos_docentes as $tipo) {
-          $selected = ($tipo === $documento['Tipo_documento']) ? 'selected' : '';
+          $selected = ($tipo === ($_GET['tipo_documento'] ?? '')) ? 'selected' : '';
           echo "<option value=\"$tipo\" $selected>$tipo</option>";
         }
         echo '</optgroup>';
@@ -201,11 +212,24 @@ try {
     <div>
       <label>Ordenar por</label>
       <select name="orden" class="form-select">
-        <option value="subido_desc" <?= ($_GET['orden'] ?? '') === 'subido_desc' ? 'selected' : '' ?>>Subido (más reciente primero)</option>
-        <option value="subido_asc" <?= ($_GET['orden'] ?? '') === 'subido_asc' ? 'selected' : '' ?>>Subido (más antiguo primero)</option>
+        <option value="subido_desc"     <?= ($_GET['orden'] ?? '') === 'subido_desc'     ? 'selected' : '' ?>>Subido (más reciente primero)</option>
+        <option value="subido_asc"      <?= ($_GET['orden'] ?? '') === 'subido_asc'      ? 'selected' : '' ?>>Subido (más antiguo primero)</option>
         <option value="modificado_desc" <?= ($_GET['orden'] ?? '') === 'modificado_desc' ? 'selected' : '' ?>>Modificado (más reciente primero)</option>
-        <option value="modificado_asc" <?= ($_GET['orden'] ?? '') === 'modificado_asc' ? 'selected' : '' ?>>Modificado (más antiguo primero)</option>
+        <option value="modificado_asc"  <?= ($_GET['orden'] ?? '') === 'modificado_asc'  ? 'selected' : '' ?>>Modificado (más antiguo primero)</option>
       </select>
+    </div>
+
+    <!-- Switch “Solo profesional” -->
+    <div class="form-check form-switch mb-3">
+      <input class="form-check-input"
+             type="checkbox"
+             id="soloProfesional"
+             name="solo_profesional"
+             value="1"
+             <?= $soloProf ? 'checked' : '' ?>>
+      <label class="form-check-label" for="soloProfesional">
+        Solo docs sin estudiante de un profesional
+      </label>
     </div>
 
     <div style="display: flex; gap: 10px; align-items: end;">
@@ -214,30 +238,21 @@ try {
     </div>
   </form>
 </div>
-
 </div>
 
-<!-- Mensajes -->
 <?php if (!empty($errorMsg)): ?>
   <div class="alert alert-danger"><?= htmlspecialchars($errorMsg) ?></div>
 <?php elseif (empty($documentos)): ?>
   <div class="alert alert-warning">No se encontraron documentos.</div>
 <?php else: ?>
 
-<!-- Tabla de resultados -->
+  <!-- Tabla de resultados -->
   <div class="table-responsive">
     <table class="table table-striped table-hover">
       <thead>
         <tr>
-          <th>Nombre Documento</th>
-          <th>Tipo</th>
-          <th>Subido</th>
-          <th>Modificado</th>
-          <th>Descripción</th>
-          <th>Estudiante</th>
-          <th>Profesional</th>
-          <th>Usuario</th>
-          <th>Acciones</th>
+          <th>Nombre Documento</th><th>Tipo</th><th>Subido</th><th>Modificado</th>
+          <th>Descripción</th><th>Estudiante</th><th>Profesional</th><th>Usuario</th><th>Acciones</th>
         </tr>
       </thead>
       <tbody>
@@ -252,8 +267,10 @@ try {
           <td><?= htmlspecialchars($doc['Nombre_profesional'] ?? '-') ?></td>
           <td><?= htmlspecialchars($doc['Usuario_que_subio'] ?? 'Desconocido') ?></td>
           <td>
-            <a href="?seccion=modificar_documento&id_documento=<?= $doc['Id_documento'] ?>" class="btn btn-warning btn-sm">Modificar</a>
-            <a href="descargar.php?id_documento=<?= $doc['Id_documento'] ?>" class="btn btn-primary btn-sm">Descargar</a>
+            <a href="?seccion=modificar_documento&id_documento=<?= $doc['Id_documento'] ?>"
+               class="btn btn-warning btn-sm">Modificar</a>
+            <a href="descargar.php?id_documento=<?= $doc['Id_documento'] ?>"
+               class="btn btn-primary btn-sm">Descargar</a>
           </td>
         </tr>
         <?php endforeach; ?>
@@ -261,22 +278,25 @@ try {
     </table>
   </div>
 
-<!-- Paginación -->
+  <!-- Paginación -->
   <nav>
     <ul class="pagination justify-content-center">
       <?php if ($paginaActual > 1): ?>
-      <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=1">Primera</a></li>
-      <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=<?= $paginaActual - 1 ?>">Anterior</a></li>
+        <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=1">Primera</a></li>
+        <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=<?= $paginaActual - 1 ?>">Anterior</a></li>
       <?php endif; ?>
       <?php for ($i = max(1, $paginaActual - 2); $i <= min($totalPaginas, $paginaActual + 2); $i++): ?>
-      <li class="page-item <?= ($i === $paginaActual) ? 'active' : '' ?>"><a class="page-link" href="?seccion=documentos&pagina=<?= $i ?>"><?= $i ?></a></li>
+        <li class="page-item <?= ($i === $paginaActual) ? 'active' : '' ?>">
+          <a class="page-link" href="?seccion=documentos&pagina=<?= $i ?>"><?= $i ?></a>
+        </li>
       <?php endfor; ?>
       <?php if ($paginaActual < $totalPaginas): ?>
-      <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=<?= $paginaActual + 1 ?>">Siguiente</a></li>
-      <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=<?= $totalPaginas ?>">Última</a></li>
+        <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=<?= $paginaActual + 1 ?>">Siguiente</a></li>
+        <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=<?= $totalPaginas ?>">Última</a></li>
       <?php endif; ?>
     </ul>
   </nav>
 <?php endif; ?>
+
 </body>
 </html>
