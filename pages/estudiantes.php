@@ -7,8 +7,8 @@ if (!isset($_SESSION['usuario'])) {
 }
 
 // 1) Recoger filtros
-$filtro_escuela    = $_GET['escuela']              ?? '';
-$filtro_estado     = $_GET['estado']               ?? '';
+$filtro_escuela    = $_GET['escuela']                ?? '';
+$filtro_estado     = $_GET['estado']                 ?? '';
 $filtro_nombre     = trim($_GET['nombre_estudiante'] ?? '');
 $filtro_apellido   = trim($_GET['apellido_estudiante'] ?? '');
 $filtro_rut        = trim($_GET['rut_estudiante']    ?? '');
@@ -69,7 +69,6 @@ echo "<div class='d-flex gap-2'>
         <button type='submit' class='btn btn-primary mt-4'>Buscar</button>
         <button type='button' class='btn btn-secondary mt-4' onclick=\"window.location='?seccion=estudiantes'\">Limpiar filtros</button>
       </div>";
-
 echo "</form>";
 
 // 3) Construir consulta dinámica
@@ -113,9 +112,9 @@ $sql = "
     a.Numero_apoderado,
     a.Correo_apoderado
   FROM estudiantes e
-  LEFT JOIN cursos      c   ON e.Id_curso    = c.Id_curso
-  LEFT JOIN escuelas    esc ON e.Id_escuela  = esc.Id_escuela
-  LEFT JOIN apoderados  a   ON e.Id_apoderado= a.Id_apoderado
+  LEFT JOIN cursos      c   ON e.Id_curso     = c.Id_curso
+  LEFT JOIN escuelas    esc ON e.Id_escuela   = esc.Id_escuela
+  LEFT JOIN apoderados  a   ON e.Id_apoderado = a.Id_apoderado
   WHERE $where
   ORDER BY e.Id_estudiante ASC
 ";
@@ -163,7 +162,7 @@ foreach($estudiantes as $row){
             <td>
               <a href=\"index.php?seccion=modificar_estudiante&Id_estudiante={$row['Id_estudiante']}\" 
                  class=\"btn btn-sm btn-warning\">Editar</a>
-              <a href=\"index.php?seccion=documentos&estudiante=".urlencode($row['Rut_estudiante'])."\" 
+              <a href=\"index.php?seccion=documentos&id_estudiante={$row['Id_estudiante']}&sin_profesional=1\" 
                  class=\"btn btn-sm btn-info\">Documentos</a>
             </td>
           </tr>";
