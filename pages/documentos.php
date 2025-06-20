@@ -2,10 +2,11 @@
 try {
     require_once 'includes/db.php';
     require_once 'includes/storage.php';
+
     function normalizarRut($rut) {
-      return preg_replace('/[^0-9kK]/', '', $rut);
+        return preg_replace('/[^0-9kK]/', '', $rut);
     }
-  
+
     $azure = new AzureBlobStorage();
     $errorMsg = '';
     $documentos = [];
@@ -13,10 +14,22 @@ try {
     $documentosPorPagina = 5;
     $paginaActual = max((int)($_GET['pagina'] ?? 1), 1);
 
-    $where = "1=1";
-    $params = [];
+    // Switch “Solo profesional”:
+    $soloProf = isset($_GET['solo_profesional']) && $_GET['solo_profesional'] === '1';
+    $id_prof   = intval($_GET['id_prof'] ?? 0);
 
-     function agregarFiltro(&$where, &$params, $campo, $valor) {
+    if ($soloProf) {
+        // solo documentos de ese profesional y sin estudiante
+        $where  = "d.Id_prof_doc = ?";
+        $params = [ $id_prof ];
+        $where .= " AND d.Id_estudiante_doc IS NULL";
+    } else {
+        // búsqueda normal
+        $where  = "1=1";
+        $params = [];
+    }
+
+    function agregarFiltro(&$where, &$params, $campo, $valor) {
         if (!empty($valor)) {
             $where .= " AND $campo LIKE ?";
             $params[] = "%$valor%";
@@ -27,13 +40,13 @@ try {
     agregarFiltro($where, $params, 'd.Tipo_documento', $_GET['tipo_documento'] ?? '');
 
     if (!empty($_GET['estudiante'])) {
-      $filtroEst = $_GET['estudiante'];
-      $rutEstNormalizado = normalizarRut($filtroEst);
-      $where .= " AND (e.Nombre_estudiante LIKE ? OR REPLACE(REPLACE(REPLACE(LOWER(e.Rut_estudiante), '.', ''), '-', ''), 'k', 'K') LIKE ?)";
-      $params[] = "%" . $filtroEst . "%";
-      $params[] = "%" . strtolower($rutEstNormalizado) . "%";
+        $filtroEst = $_GET['estudiante'];
+        $rutEstNormalizado = normalizarRut($filtroEst);
+        $where .= " AND (e.Nombre_estudiante LIKE ? OR REPLACE(REPLACE(REPLACE(LOWER(e.Rut_estudiante), '.', ''), '-', ''), 'k', 'K') LIKE ?)";
+        $params[] = "%" . $filtroEst . "%";
+        $params[] = "%" . strtolower($rutEstNormalizado) . "%";
     }
-    
+
     if (!empty($_GET['profesional'])) {
         $filtroProf = $_GET['profesional'];
         $rutProfNormalizado = normalizarRut($filtroProf);
@@ -41,7 +54,6 @@ try {
         $params[] = "%" . $filtroProf . "%";
         $params[] = "%" . strtolower($rutProfNormalizado) . "%";
     }
-    
 
     if (!empty($_GET['fecha_subida_desde'])) {
         $where .= " AND d.Fecha_subido >= ?";
@@ -54,13 +66,13 @@ try {
     }
 
     $ordenOpciones = [
-      'subido_desc' => 'd.Fecha_subido DESC',
-      'subido_asc' => 'd.Fecha_subido ASC',
-      'modificado_desc' => 'd.Fecha_modificacion DESC',
-      'modificado_asc' => 'd.Fecha_modificacion ASC'
+        'subido_desc'     => 'd.Fecha_subido DESC',
+        'subido_asc'      => 'd.Fecha_subido ASC',
+        'modificado_desc' => 'd.Fecha_modificacion DESC',
+        'modificado_asc'  => 'd.Fecha_modificacion ASC'
     ];
     $orden = $ordenOpciones[$_GET['orden'] ?? 'subido_desc'] ?? $ordenOpciones['subido_desc'];
-    
+
     $stmtTotal = $conn->prepare("
         SELECT COUNT(*) FROM documentos d
         LEFT JOIN estudiantes e ON d.Id_estudiante_doc = e.Id_estudiante
@@ -120,7 +132,6 @@ try {
 <h2 class="mb-4">Lista de Documentos <?= $totalDocumentos ? "($totalDocumentos encontrados)" : '' ?></h2>
 
 <!-- Filtro de búsqueda -->
-<div class="card p-4 mb-4">
 <div class="card p-4 mb-4">
   <form method="GET" class="form-grid">
     <input type="hidden" name="seccion" value="documentos">
@@ -201,11 +212,24 @@ try {
     <div>
       <label>Ordenar por</label>
       <select name="orden" class="form-select">
-        <option value="subido_desc" <?= ($_GET['orden'] ?? '') === 'subido_desc' ? 'selected' : '' ?>>Subido (más reciente primero)</option>
-        <option value="subido_asc" <?= ($_GET['orden'] ?? '') === 'subido_asc' ? 'selected' : '' ?>>Subido (más antiguo primero)</option>
+        <option value="subido_desc"     <?= ($_GET['orden'] ?? '') === 'subido_desc'     ? 'selected' : '' ?>>Subido (más reciente primero)</option>
+        <option value="subido_asc"      <?= ($_GET['orden'] ?? '') === 'subido_asc'      ? 'selected' : '' ?>>Subido (más antiguo primero)</option>
         <option value="modificado_desc" <?= ($_GET['orden'] ?? '') === 'modificado_desc' ? 'selected' : '' ?>>Modificado (más reciente primero)</option>
-        <option value="modificado_asc" <?= ($_GET['orden'] ?? '') === 'modificado_asc' ? 'selected' : '' ?>>Modificado (más antiguo primero)</option>
+        <option value="modificado_asc"  <?= ($_GET['orden'] ?? '') === 'modificado_asc'  ? 'selected' : '' ?>>Modificado (más antiguo primero)</option>
       </select>
+    </div>
+
+    <!-- Switch “Solo profesional” -->
+    <div class="form-check form-switch mb-3">
+      <input class="form-check-input"
+             type="checkbox"
+             id="soloProfesional"
+             name="solo_profesional"
+             value="1"
+             <?= isset($_GET['solo_profesional']) ? 'checked' : '' ?>>
+      <label class="form-check-label" for="soloProfesional">
+        Solo docs sin estudiante de un profesional
+      </label>
     </div>
 
     <div style="display: flex; gap: 10px; align-items: end;">
@@ -215,16 +239,13 @@ try {
   </form>
 </div>
 
-</div>
-
-<!-- Mensajes -->
 <?php if (!empty($errorMsg)): ?>
   <div class="alert alert-danger"><?= htmlspecialchars($errorMsg) ?></div>
 <?php elseif (empty($documentos)): ?>
   <div class="alert alert-warning">No se encontraron documentos.</div>
 <?php else: ?>
 
-<!-- Tabla de resultados -->
+  <!-- Tabla de resultados -->
   <div class="table-responsive">
     <table class="table table-striped table-hover">
       <thead>
@@ -261,22 +282,25 @@ try {
     </table>
   </div>
 
-<!-- Paginación -->
+  <!-- Paginación -->
   <nav>
     <ul class="pagination justify-content-center">
       <?php if ($paginaActual > 1): ?>
-      <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=1">Primera</a></li>
-      <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=<?= $paginaActual - 1 ?>">Anterior</a></li>
+        <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=1">Primera</a></li>
+        <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=<?= $paginaActual - 1 ?>">Anterior</a></li>
       <?php endif; ?>
       <?php for ($i = max(1, $paginaActual - 2); $i <= min($totalPaginas, $paginaActual + 2); $i++): ?>
-      <li class="page-item <?= ($i === $paginaActual) ? 'active' : '' ?>"><a class="page-link" href="?seccion=documentos&pagina=<?= $i ?>"><?= $i ?></a></li>
+        <li class="page-item <?= ($i === $paginaActual) ? 'active' : '' ?>">
+          <a class="page-link" href="?seccion=documentos&pagina=<?= $i ?>"><?= $i ?></a>
+        </li>
       <?php endfor; ?>
       <?php if ($paginaActual < $totalPaginas): ?>
-      <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=<?= $paginaActual + 1 ?>">Siguiente</a></li>
-      <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=<?= $totalPaginas ?>">Última</a></li>
+        <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=<?= $paginaActual + 1 ?>">Siguiente</a></li>
+        <li class="page-item"><a class="page-link" href="?seccion=documentos&pagina=<?= $totalPaginas ?>">Última</a></li>
       <?php endif; ?>
     </ul>
   </nav>
 <?php endif; ?>
+
 </body>
 </html>
