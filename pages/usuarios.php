@@ -15,22 +15,49 @@ $buscar_usuario = trim($_GET['buscar'] ?? '');
 
 // Formulario de búsqueda y filtros
 echo "<h2 class='mb-4'>Visualización de Usuarios</h2>";
-echo "<form method='GET' class='mb-3 d-flex flex-wrap gap-2'>
+echo "
+<style>
+  .filtro-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+</style>
+
+<h2 class='mb-4'>Visualización de Usuarios</h2>
+<form method='GET' class='filtro-grid'>
     <input type='hidden' name='seccion' value='usuarios'>
-    <select name='escuela' class='form-select w-auto'>
-        <option value=''>Todas las escuelas</option>
-        <option value='1'" . ($escuela_filtro == '1' ? ' selected' : '') . ">Sendero</option>
-        <option value='2'" . ($escuela_filtro == '2' ? ' selected' : '') . ">Multiverso</option>
-        <option value='3'" . ($escuela_filtro == '3' ? ' selected' : '') . ">Luz de Luna</option>
-    </select>
-    <select name='estado' class='form-select w-auto'>
-        <option value=''>Todos los estados</option>
-        <option value='1'" . ($estado_filtro == '1' ? ' selected' : '') . ">Activo</option>
-        <option value='0'" . ($estado_filtro == '0' ? ' selected' : '') . ">Inactivo</option>
-    </select>
-    <input type='text' name='buscar' class='form-control w-auto' placeholder='Buscar usuario o profesional' value='" . htmlspecialchars($buscar_usuario) . "'>
-    <button class='btn btn-primary' type='submit'>Filtrar</button>
-</form>";
+
+    <div>
+      <label for='escuela'>Escuela</label>
+      <select name='escuela' id='escuela' class='form-select'>
+          <option value=''>Todas las escuelas</option>
+          <option value='1'" . ($escuela_filtro == '1' ? ' selected' : '') . ">Sendero</option>
+          <option value='2'" . ($escuela_filtro == '2' ? ' selected' : '') . ">Multiverso</option>
+          <option value='3'" . ($escuela_filtro == '3' ? ' selected' : '') . ">Luz de Luna</option>
+      </select>
+    </div>
+
+    <div>
+      <label for='estado'>Estado</label>
+      <select name='estado' id='estado' class='form-select'>
+          <option value=''>Todos los estados</option>
+          <option value='1'" . ($estado_filtro == '1' ? ' selected' : '') . ">Activo</option>
+          <option value='0'" . ($estado_filtro == '0' ? ' selected' : '') . ">Inactivo</option>
+      </select>
+    </div>
+
+    <div style='grid-column: span 2;'>
+      <label for='buscar'>Buscar</label>
+      <input type='text' name='buscar' id='buscar' class='form-control' placeholder='Buscar usuario o profesional' value='" . htmlspecialchars($buscar_usuario) . "'>
+    </div>
+
+    <div style='grid-column: span 2; display:flex; gap:10px; align-items: end;'>
+      <button class='btn btn-primary' type='submit'>Filtrar</button>
+      <a href='?seccion=usuarios' class='btn btn-secondary'>Limpiar filtros</a>
+    </div>
+</form>
 
 // Consulta principal con joins y filtros
 $sql = "SELECT u.*, p.*, e.Nombre_escuela
