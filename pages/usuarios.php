@@ -163,19 +163,16 @@ echo "<div style='max-height:400px; overflow-y:auto; border-radius:10px;'>
 if ($usuarios) {
     foreach ($usuarios as $row) {
         echo "<tr>
-                <td>".htmlspecialchars($row['Rut_profesional']   ?? '-')."</td>
+                <td>".htmlspecialchars($row['Rut_profesional'] ?? '-')."</td>
                 <td>".htmlspecialchars($row['Nombre_usuario'])."</td>
-                <td>".htmlspecialchars($row['Nombre_profesional']?? '-')."</td>
-                <td>".htmlspecialchars($row['Apellido_profesional']?? '-')."</td>
-                <td>".htmlspecialchars($row['Cargo_profesional']  ?? '-')."</td>
-                <td>".htmlspecialchars($row['Nombre_escuela']     ?? 'Otra')."</td>
-                <td>".htmlspecialchars($row['Permisos']           ?? 'user')."</td>
+                <td>".htmlspecialchars($row['Nombre_profesional'] ?? '-')."</td>
+                <td>".htmlspecialchars($row['Apellido_profesional'] ?? '-')."</td>
+                <td>".htmlspecialchars($row['Cargo_profesional'] ?? '-')."</td>
+                <td>".htmlspecialchars($row['Nombre_escuela'] ?? 'Otra')."</td>
+                <td>".htmlspecialchars($row['Permisos'] ?? 'user')."</td>
                 <td>".($row['Estado_usuario']==1 ? 'Activo':'Inactivo')."</td>
                 <td>
-                  <a 
-                    href=\"modificar_profesional.php?Id_profesional={$row['Id_profesional']}\" 
-                    class=\"btn btn-sm btn-warning\"
-                  >Editar</a>
+                  <a href='index.php?seccion=modificar_profesional&Id_profesional=".htmlspecialchars($row['Id_profesional'])."' class='btn btn-sm btn-warning'>Editar</a>
                 </td>
               </tr>";
     }
