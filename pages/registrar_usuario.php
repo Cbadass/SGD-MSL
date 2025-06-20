@@ -235,7 +235,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <link rel="stylesheet" href="style.css">
 </head>
 
-<body class="<?= $_COOKIE['modo_oscuro'] === 'true' ? 'dark-mode' : '' ?>">
+<body class="<?= isset($_COOKIE['modo_oscuro']) && $_COOKIE['modo_oscuro'] === 'true' ? 'dark-mode' : '' ?>">
   <?php include 'header.php'; ?>
 
   <div class="container">
