@@ -10,62 +10,64 @@ $modo_oscuro = $_COOKIE['modo_oscuro'] ?? 'false';
 <!DOCTYPE html>
 <html lang="es">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SGD Multisenluz</title>
-<link rel="stylesheet" href="style.css">
-<style>
-  body {
-    background-color: <?= $modo_oscuro === 'true' ? '#121212' : '#e8e8fc' ?>;
-    color: <?= $modo_oscuro === 'true' ? '#eee' : '#333' ?>;
-  }
-</style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SGD Multisenluz</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    body {
+      background-color: <?= $modo_oscuro === 'true' ? '#121212' : '#e8e8fc' ?>;
+      color: <?= $modo_oscuro === 'true' ? '#eee' : '#333' ?>;
+    }
+  </style>
 </head>
 
 <body class="<?= $modo_oscuro === 'true' ? 'dark-mode' : '' ?>">
-<?php include 'components/header.php'; ?>
+  <?php include 'components/header.php'; ?>
 
-<div class="container">
-  <?php include 'components/sidebar.php'; ?>
+  <div class="container">
+    <?php include 'components/sidebar.php'; ?>
 
-  <main class="main">
-    <section class="section">
-      <?php
-      $allowed = [
-        'usuarios',
-        'cursos',
-        'estudiantes',
-        'registrar_usuario',
-        'registrar_estudiante',
-        'actividad',
-        'documentos',
-        'subir_documento',
-        'asignaciones',
-        'modificar_documento',
-        'modificar_profesional'   // <— aquí
-      ];
-      
-      $seccion = $_GET['seccion'] ?? 'usuarios';
-      $file    = in_array($seccion, $allowed)
-               ? __DIR__ . "/pages/{$seccion}.php"
-               : __DIR__ . "/pages/error404.php";
-      
-      // DEBUG: muestra la ruta que intenta incluir
-      if (! file_exists($file)) {
-          die("ERROR: Archivo no encontrado: $file");
-      }
-      
-      include $file;
-      ?>
-    </section>
-  </main>
-</div>
+    <main class="main">
+      <section class="section">
+        <?php
+        // Lista de secciones válidas
+        $allowed = [
+          'usuarios',
+          'cursos',
+          'estudiantes',
+          'registrar_usuario',
+          'registrar_estudiante',
+          'actividad',
+          'documentos',
+          'subir_documento',
+          'asignaciones',
+          'modificar_documento',
+          'modificar_profesional',
+          'modificar_estudiante',    // <— añadido para Editar Estudiante
+        ];
 
-<script>
-document.getElementById('modoToggle').addEventListener('click', () => {
-  const dark = document.body.classList.toggle('dark-mode');
-  document.cookie = `modo_oscuro=${dark}; path=/; max-age=31536000`;
-});
-</script>
+        $seccion = $_GET['seccion'] ?? 'usuarios';
+        $file    = in_array($seccion, $allowed)
+                 ? __DIR__ . "/pages/{$seccion}.php"
+                 : __DIR__ . "/pages/error404.php";
+
+        // DEBUG: si falla, muestra ruta completa
+        if (! file_exists($file)) {
+            die("ERROR: Archivo no encontrado: $file");
+        }
+
+        include $file;
+        ?>
+      </section>
+    </main>
+  </div>
+
+  <script>
+    document.getElementById('modoToggle').addEventListener('click', () => {
+      const dark = document.body.classList.toggle('dark-mode');
+      document.cookie = `modo_oscuro=${dark}; path=/; max-age=31536000`;
+    });
+  </script>
 </body>
 </html>
