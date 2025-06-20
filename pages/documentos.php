@@ -14,14 +14,14 @@ try {
     $documentosPorPagina = 5;
     $paginaActual = max((int)($_GET['pagina'] ?? 1), 1);
 
-    // Switch “Solo profesional”:
-    $soloProf = isset($_GET['solo_profesional']) && $_GET['solo_profesional'] === '1';
-    $id_prof  = intval($_GET['id_prof'] ?? 0);
+    // Checks para “solo profesional” vía parámetro sin_estudiante
+    $id_prof       = intval($_GET['id_prof'] ?? 0);
+    $soloProfesional = isset($_GET['sin_estudiante']) && $_GET['sin_estudiante'] === '1';
 
-    if ($soloProf) {
-        // Sólo documentos de ese profesional y sin estudiante
+    if ($soloProfesional && $id_prof > 0) {
+        // Solo documentos de ese profesional y sin estudiante
         $where  = "d.Id_prof_doc = ?";
-        $params = [ $id_prof ];
+        $params = [$id_prof];
         $where .= " AND d.Id_estudiante_doc IS NULL";
     } else {
         // Búsqueda normal
@@ -75,14 +75,17 @@ try {
 
     $stmtTotal = $conn->prepare("
         SELECT COUNT(*) FROM documentos d
-        LEFT JOIN estudiantes e ON d.Id_estudiante_doc = e.Id_estudiante
-        LEFT JOIN profesionales p ON d.Id_prof_doc = p.Id_profesional
+        LEFT JOIN estudiantes  e ON d.Id_estudiante_doc = e.Id_estudiante
+        LEFT JOIN profesionales p ON d.Id_prof_doc      = p.Id_profesional
         WHERE $where
     ");
     $stmtTotal->execute($params);
     $totalDocumentos = (int)$stmtTotal->fetchColumn();
-    $totalPaginas    = max(1, ceil($totalDocumentos / $documentosPorPagina));
-    if ($paginaActual > $totalPaginas) $paginaActual = $totalPaginas;
+
+    $totalPaginas = max(1, ceil($totalDocumentos / $documentosPorPagina));
+    if ($paginaActual > $totalPaginas) {
+        $paginaActual = $totalPaginas;
+    }
 
     $offset = ($paginaActual - 1) * $documentosPorPagina;
 
@@ -101,9 +104,9 @@ try {
                CONCAT(e.Nombre_estudiante, ' ', e.Apellido_estudiante) AS Nombre_estudiante,
                CONCAT(p.Nombre_profesional, ' ', p.Apellido_profesional) AS Nombre_profesional
         FROM documentos d
-        LEFT JOIN usuarios     u ON d.Id_usuario_subido = u.Id_usuario
-        LEFT JOIN estudiantes  e ON d.Id_estudiante_doc   = e.Id_estudiante
-        LEFT JOIN profesionales p ON d.Id_prof_doc        = p.Id_profesional
+        LEFT JOIN usuarios      u ON d.Id_usuario_subido  = u.Id_usuario
+        LEFT JOIN estudiantes   e ON d.Id_estudiante_doc  = e.Id_estudiante
+        LEFT JOIN profesionales p ON d.Id_prof_doc       = p.Id_profesional
         WHERE $where
         ORDER BY $orden
         OFFSET $offset ROWS FETCH NEXT $documentosPorPagina ROWS ONLY
@@ -129,17 +132,23 @@ try {
 </head>
 <body class="container mt-4">
 
-<h2 class="mb-4">Lista de Documentos <?= $totalDocumentos ? "($totalDocumentos encontrados)" : '' ?></h2>
+<h2 class="mb-4">
+  Lista de Documentos
+  <?= $totalDocumentos ? "($totalDocumentos encontrados)" : '' ?>
+</h2>
 
 <!-- Filtro de búsqueda -->
 <div class="card p-4 mb-4">
-<div class="card p-4 mb-4">
   <form method="GET" class="form-grid">
-    <input type="hidden" name="seccion" value="documentos">
+    <input type="hidden" name="seccion"        value="documentos">
+    <input type="hidden" name="id_prof"         value="<?= htmlspecialchars($id_prof) ?>">
+    <input type="hidden" name="sin_estudiante"  value="<?= $soloProfesional ? '1' : '0' ?>">
 
     <div>
       <label>Nombre documento</label>
-      <input type="text" name="nombre" value="<?= htmlspecialchars($_GET['nombre'] ?? '') ?>" class="form-control">
+      <input type="text" name="nombre"
+             value="<?= htmlspecialchars($_GET['nombre'] ?? '') ?>"
+             class="form-control">
     </div>
 
     <div>
@@ -191,53 +200,71 @@ try {
 
     <div>
       <label>Nombre/RUT Estudiante</label>
-      <input type="text" name="estudiante" value="<?= htmlspecialchars($_GET['estudiante'] ?? '') ?>" class="form-control">
+      <input type="text" name="estudiante"
+             value="<?= htmlspecialchars($_GET['estudiante'] ?? '') ?>"
+             class="form-control">
     </div>
 
     <div>
       <label>Nombre/RUT Profesional</label>
-      <input type="text" name="profesional" value="<?= htmlspecialchars($_GET['profesional'] ?? '') ?>" class="form-control">
+      <input type="text" name="profesional"
+             value="<?= htmlspecialchars($_GET['profesional'] ?? '') ?>"
+             class="form-control">
     </div>
 
     <div>
       <label>Fecha subida (desde)</label>
-      <input type="date" name="fecha_subida_desde" value="<?= htmlspecialchars($_GET['fecha_subida_desde'] ?? '') ?>" class="form-control">
+      <input type="date" name="fecha_subida_desde"
+             value="<?= htmlspecialchars($_GET['fecha_subida_desde'] ?? '') ?>"
+             class="form-control">
     </div>
 
     <div>
       <label>Fecha subida (hasta)</label>
-      <input type="date" name="fecha_subida_hasta" value="<?= htmlspecialchars($_GET['fecha_subida_hasta'] ?? '') ?>" class="form-control">
+      <input type="date" name="fecha_subida_hasta"
+             value="<?= htmlspecialchars($_GET['fecha_subida_hasta'] ?? '') ?>"
+             class="form-control">
     </div>
 
     <div>
       <label>Ordenar por</label>
       <select name="orden" class="form-select">
-        <option value="subido_desc"     <?= ($_GET['orden'] ?? '') === 'subido_desc'     ? 'selected' : '' ?>>Subido (más reciente primero)</option>
-        <option value="subido_asc"      <?= ($_GET['orden'] ?? '') === 'subido_asc'      ? 'selected' : '' ?>>Subido (más antiguo primero)</option>
-        <option value="modificado_desc" <?= ($_GET['orden'] ?? '') === 'modificado_desc' ? 'selected' : '' ?>>Modificado (más reciente primero)</option>
-        <option value="modificado_asc"  <?= ($_GET['orden'] ?? '') === 'modificado_asc'  ? 'selected' : '' ?>>Modificado (más antiguo primero)</option>
+        <option value="subido_desc"
+          <?= ($_GET['orden'] ?? '') === 'subido_desc' ? 'selected' : '' ?>>
+          Subido (más reciente primero)
+        </option>
+        <option value="subido_asc"
+          <?= ($_GET['orden'] ?? '') === 'subido_asc' ? 'selected' : '' ?>>
+          Subido (más antiguo primero)
+        </option>
+        <option value="modificado_desc"
+          <?= ($_GET['orden'] ?? '') === 'modificado_desc' ? 'selected' : '' ?>>
+          Modificado (más reciente primero)
+        </option>
+        <option value="modificado_asc"
+          <?= ($_GET['orden'] ?? '') === 'modificado_asc' ? 'selected' : '' ?>>
+          Modificado (más antiguo primero)
+        </option>
       </select>
     </div>
 
     <!-- Switch “Solo profesional” -->
-    <div class="form-check form-switch mb-3">
+    <div class="form-check form-switch mb-3" style="grid-column:1/-1;">
       <input class="form-check-input"
              type="checkbox"
-             id="soloProfesional"
-             name="solo_profesional"
-             value="1"
-             <?= $soloProf ? 'checked' : '' ?>>
-      <label class="form-check-label" for="soloProfesional">
+             id="switchSoloProf"
+             onchange="this.form.sin_estudiante.value=this.checked?1:0; this.form.submit()"
+             <?= $soloProfesional ? 'checked' : '' ?>>
+      <label class="form-check-label" for="switchSoloProf">
         Solo docs sin estudiante de un profesional
       </label>
     </div>
 
-    <div style="display: flex; gap: 10px; align-items: end;">
+    <div style="display:flex; gap:10px; align-items:end; grid-column:1/-1;">
       <button type="submit" class="btn btn-primary">Buscar</button>
       <a href="?seccion=documentos" class="btn btn-secondary">Limpiar filtros</a>
     </div>
   </form>
-</div>
 </div>
 
 <?php if (!empty($errorMsg)): ?>
