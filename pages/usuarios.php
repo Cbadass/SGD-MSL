@@ -156,7 +156,7 @@ echo "<div style='max-height:400px; overflow-y:auto; border-radius:10px;'>
           <thead class='table-dark'>
             <tr>
               <th>RUT</th><th>Usuario</th><th>Nombres</th><th>Apellidos</th><th>Cargo</th>
-              <th>Escuela</th><th>Permisos</th><th>Estado</th><th>Edición</th>
+              <th>Escuela</th><th>Permisos</th><th>Estado</th><th>Acciones</th>
             </tr>
           </thead>
           <tbody>";
@@ -173,7 +173,7 @@ if ($usuarios) {
                 <td>".($row['Estado_usuario']==1 ? 'Activo':'Inactivo')."</td>
                 <td>
                     <a href='index.php?seccion=modificar_profesional&Id_profesional=" . htmlspecialchars($row['Id_profesional']) . "' class='btn btn-sm btn-warning me-1'>Editar</a>
-                    <a href='index.php?seccion=documentos&id_prof=" . htmlspecialchars($row['Id_profesional']) . "&sin_estudiante=1' class='btn btn-sm btn-info'>Docs libres</a>
+                    <a href='index.php?seccion=documentos&id_prof=" . htmlspecialchars($row['Id_profesional']) . "&sin_estudiante=1' class='btn btn-sm btn-info'>Documentos</a>
                 </td>
               </tr>";
     }
