@@ -236,7 +236,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body class="p-4" style="background-color: #f2f1fb;">
   <h2>Registrar nuevo profesional</h2>
   <?= $message ?>
-  <div class="container bg-white rounded shadow p-4 mt-3">
 
   <form method="POST" class="row g-3 needs-validation" novalidate>
     <div class="col-md-6"><label class="form-label">Nombres</label>
@@ -344,6 +343,5 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     </div>
     <div class="col-12"><button type="submit" class="btn btn-success">Guardar Datos</button></div>
   </form>
-  </div>
 </body>
 </html>
