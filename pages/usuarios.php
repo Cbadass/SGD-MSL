@@ -183,10 +183,8 @@ if ($usuarios) {
                 <td>".htmlspecialchars($row['Permisos']           ?? 'user')."</td>
                 <td>".($row['Estado_usuario']==1 ? 'Activo':'Inactivo')."</td>
                 <td>
-                  <a href=\"modificar_profesional.php?Id_profesional={$row['Id_profesional']}\" 
-                     class=\"btn btn-sm btn-warning\">Editar</a>
-                  <a href=\"?seccion=documentos&id_prof={$row['Id_profesional']}&sin_estudiante=1\" 
-                     class=\"btn btn-sm btn-info\">Documentos</a>
+                    <a href='index.php?seccion=modificar_profesional&Id_profesional=" . htmlspecialchars($row['Id_profesional']) . "' class='btn btn-sm btn-warning me-1'>Editar</a>
+                    <a href='index.php?seccion=documentos&id_prof=" . htmlspecialchars($row['Id_profesional']) . "&sin_estudiante=1' class='btn btn-sm btn-info'>Docs libres</a>
                 </td>
               </tr>";
     }
