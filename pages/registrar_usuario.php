@@ -238,7 +238,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body class="<?= isset($_COOKIE['modo_oscuro']) && $_COOKIE['modo_oscuro'] === 'true' ? 'dark-mode' : '' ?>">
   <?php include 'header.php'; ?>
 
-  <div class="container">
+  <!-- 1) Añade "d-flex" para activar el flex layout -->
+  <div class="container d-flex">
     <?php include 'sidebar.php'; ?>
 
     <main class="main">
@@ -359,3 +360,4 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </div>
 </body>
 </html>
+
