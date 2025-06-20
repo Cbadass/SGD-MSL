@@ -242,118 +242,117 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <main class="main w-100 p-4">
       <section class="bg-white p-4 rounded shadow" style="max-width: 1000px;">
+        <h2>Registrar nuevo profesional</h2>
+        <?= $message ?>
 
-  <h2>Registrar nuevo profesional</h2>
-  <?= $message ?>
-
-  <form method="POST" class="row g-3 needs-validation" novalidate>
-    <div class="col-md-6"><label class="form-label">Nombres</label>
-      <input name="nombre" class="form-control" required>
-    </div>
-    <div class="col-md-6"><label class="form-label">Apellidos</label>
-      <input name="apellido" class="form-control" required>
-    </div>
-    <div class="col-md-4"><label class="form-label">Correo</label>
-      <input name="correo" type="email" class="form-control" required>
-    </div>
-    <div class="col-md-4"><label class="form-label">Teléfono</label>
-      <input name="telefono" class="form-control" placeholder="+56 9 1234 5678" required>
-    </div>
-    <div class="col-md-4"><label class="form-label">RUT</label>
-      <input name="rut" class="form-control" placeholder="20.384.593-4" required>
-    </div>
-    <div class="col-md-4"><label class="form-label">Fecha nacimiento</label>
-      <input name="fecha_nacimiento" type="date" class="form-control" required>
-    </div>
-    <div class="col-md-4"><label class="form-label">Tipo profesional</label>
-      <select name="tipo_profesional" class="form-select" required>
-        <option value="">Seleccione...</option>
-        <?php foreach ($tipos_prof as $t): ?>
-          <option><?= htmlspecialchars($t) ?></option>
-        <?php endforeach ?>
-      </select>
-    </div>
-    <div class="col-md-4"><label class="form-label">Cargo</label>
-      <select name="cargo" class="form-select" required>
-        <option value="">Seleccione...</option>
-        <?php foreach ($cargos as $c): ?>
-          <option><?= htmlspecialchars($c) ?></option>
-        <?php endforeach ?>
-      </select>
-    </div>
-    <div class="col-md-2"><label class="form-label">Horas</label>
-      <input name="horas" type="number" class="form-control" min="0">
-    </div>
-    <div class="col-md-2"><label class="form-label">Ingreso</label>
-      <input name="fecha_ingreso" type="date" class="form-control">
-    </div>
-    <div class="col-md-6"><label class="form-label">Domicilio</label>
-      <input name="domicilio" class="form-control">
-    </div>
-    <div class="col-md-6"><label class="form-label">Estado civil</label>
-      <select name="estado_civil" class="form-select" required>
-        <option value="">Seleccione...</option>
-        <?php foreach ($estados_civ as $ec => $desc): ?>
-          <option value="<?= htmlspecialchars($ec) ?>" title="<?= htmlspecialchars($desc) ?>">
-            <?= htmlspecialchars($ec) ?>
-          </option>
-        <?php endforeach ?>
-      </select>
-    </div>
-    <div class="col-md-4"><label class="form-label">Banco</label>
-      <select name="banco" class="form-select" required>
-        <option value="">Seleccione...</option>
-        <?php foreach ($bancos as $b): ?>
-          <option><?= htmlspecialchars($b) ?></option>
-        <?php endforeach ?>
-      </select>
-    </div>
-    <div class="col-md-4"><label class="form-label">Tipo de cuenta</label>
-      <select name="tipo_cuenta" class="form-select" required>
-        <option value="">Seleccione...</option>
-        <?php foreach ($tipos_cta as $tc): ?>
-          <option><?= htmlspecialchars($tc) ?></option>
-        <?php endforeach ?>
-      </select>
-    </div>
-    <div class="col-md-4"><label class="form-label">N° de cuenta</label>
-      <input name="cuenta" class="form-control" required>
-    </div>
-    <div class="col-md-4"><label class="form-label">AFP</label>
-      <select name="afp" class="form-select" required>
-        <option value="">Seleccione...</option>
-        <?php foreach ($afps as $a): ?>
-          <option><?= htmlspecialchars($a) ?></option>
-        <?php endforeach ?>
-      </select>
-    </div>
-    <div class="col-md-4"><label class="form-label">Salud</label>
-      <select name="salud" class="form-select" required>
-        <option value="">Seleccione...</option>
-        <?php foreach ($saludes as $s): ?>
-          <option><?= htmlspecialchars($s) ?></option>
-        <?php endforeach ?>
-      </select>
-    </div>
-    <div class="col-md-4"><label class="form-label">Permisos</label>
-      <select name="permiso" class="form-select" required>
-        <?php foreach ($permisos as $p): ?>
-          <option><?= htmlspecialchars($p) ?></option>
-        <?php endforeach ?>
-      </select>
-    </div>
-    <div class="col-md-4"><label class="form-label">Escuela</label>
-      <select name="escuela" class="form-select" required>
-        <option value="">Seleccione...</option>
-        <?php foreach ($escuelas as $e => $id): ?>
-          <option><?= htmlspecialchars($e) ?></option>
-        <?php endforeach ?>
-      </select>
-    </div>
-    <div class="col-12"><button type="submit" class="btn btn-success">Guardar Datos</button></div>
-  </form>
-  </section>
-  </main>
+        <form method="POST" class="row g-3 needs-validation" novalidate>
+          <div class="col-md-6"><label class="form-label">Nombres</label>
+            <input name="nombre" class="form-control" required>
+          </div>
+          <div class="col-md-6"><label class="form-label">Apellidos</label>
+            <input name="apellido" class="form-control" required>
+          </div>
+          <div class="col-md-4"><label class="form-label">Correo</label>
+            <input name="correo" type="email" class="form-control" required>
+          </div>
+          <div class="col-md-4"><label class="form-label">Teléfono</label>
+            <input name="telefono" class="form-control" placeholder="+56 9 1234 5678" required>
+          </div>
+          <div class="col-md-4"><label class="form-label">RUT</label>
+            <input name="rut" class="form-control" placeholder="20.384.593-4" required>
+          </div>
+          <div class="col-md-4"><label class="form-label">Fecha nacimiento</label>
+            <input name="fecha_nacimiento" type="date" class="form-control" required>
+          </div>
+          <div class="col-md-4"><label class="form-label">Tipo profesional</label>
+            <select name="tipo_profesional" class="form-select" required>
+              <option value="">Seleccione...</option>
+              <?php foreach ($tipos_prof as $t): ?>
+                <option><?= htmlspecialchars($t) ?></option>
+              <?php endforeach ?>
+            </select>
+          </div>
+          <div class="col-md-4"><label class="form-label">Cargo</label>
+            <select name="cargo" class="form-select" required>
+              <option value="">Seleccione...</option>
+              <?php foreach ($cargos as $c): ?>
+                <option><?= htmlspecialchars($c) ?></option>
+              <?php endforeach ?>
+            </select>
+          </div>
+          <div class="col-md-2"><label class="form-label">Horas</label>
+            <input name="horas" type="number" class="form-control" min="0">
+          </div>
+          <div class="col-md-2"><label class="form-label">Ingreso</label>
+            <input name="fecha_ingreso" type="date" class="form-control">
+          </div>
+          <div class="col-md-6"><label class="form-label">Domicilio</label>
+            <input name="domicilio" class="form-control">
+          </div>
+          <div class="col-md-6"><label class="form-label">Estado civil</label>
+            <select name="estado_civil" class="form-select" required>
+              <option value="">Seleccione...</option>
+              <?php foreach ($estados_civ as $ec => $desc): ?>
+                <option value="<?= htmlspecialchars($ec) ?>" title="<?= htmlspecialchars($desc) ?>">
+                  <?= htmlspecialchars($ec) ?>
+                </option>
+              <?php endforeach ?>
+            </select>
+          </div>
+          <div class="col-md-4"><label class="form-label">Banco</label>
+            <select name="banco" class="form-select" required>
+              <option value="">Seleccione...</option>
+              <?php foreach ($bancos as $b): ?>
+                <option><?= htmlspecialchars($b) ?></option>
+              <?php endforeach ?>
+            </select>
+          </div>
+          <div class="col-md-4"><label class="form-label">Tipo de cuenta</label>
+            <select name="tipo_cuenta" class="form-select" required>
+              <option value="">Seleccione...</option>
+              <?php foreach ($tipos_cta as $tc): ?>
+                <option><?= htmlspecialchars($tc) ?></option>
+              <?php endforeach ?>
+            </select>
+          </div>
+          <div class="col-md-4"><label class="form-label">N° de cuenta</label>
+            <input name="cuenta" class="form-control" required>
+          </div>
+          <div class="col-md-4"><label class="form-label">AFP</label>
+            <select name="afp" class="form-select" required>
+              <option value="">Seleccione...</option>
+              <?php foreach ($afps as $a): ?>
+                <option><?= htmlspecialchars($a) ?></option>
+              <?php endforeach ?>
+            </select>
+          </div>
+          <div class="col-md-4"><label class="form-label">Salud</label>
+            <select name="salud" class="form-select" required>
+              <option value="">Seleccione...</option>
+              <?php foreach ($saludes as $s): ?>
+                <option><?= htmlspecialchars($s) ?></option>
+              <?php endforeach ?>
+            </select>
+          </div>
+          <div class="col-md-4"><label class="form-label">Permisos</label>
+            <select name="permiso" class="form-select" required>
+              <?php foreach ($permisos as $p): ?>
+                <option><?= htmlspecialchars($p) ?></option>
+              <?php endforeach ?>
+            </select>
+          </div>
+          <div class="col-md-4"><label class="form-label">Escuela</label>
+            <select name="escuela" class="form-select" required>
+              <option value="">Seleccione...</option>
+              <?php foreach ($escuelas as $e => $id): ?>
+                <option><?= htmlspecialchars($e) ?></option>
+              <?php endforeach ?>
+            </select>
+          </div>
+          <div class="col-12"><button type="submit" class="btn btn-success">Guardar Datos</button></div>
+        </form>
+      </section>
+    </main>
   </div>
 </body>
 </html>
