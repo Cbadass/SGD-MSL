@@ -232,16 +232,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta charset="UTF-8">
   <title>Registrar Profesional</title>
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
 
 <body class="<?= $_COOKIE['modo_oscuro'] === 'true' ? 'dark-mode' : '' ?>">
   <?php include 'header.php'; ?>
 
-  <div class="container d-flex">
+  <div class="container">
     <?php include 'sidebar.php'; ?>
 
-    <main class="main w-100 p-4">
-      <section class="bg-white p-4 rounded shadow" style="max-width: 1000px;">
+    <main class="main">
+      <section class="section">
         <h2>Registrar nuevo profesional</h2>
         <?= $message ?>
 
@@ -349,7 +350,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <?php endforeach ?>
             </select>
           </div>
-          <div class="col-12"><button type="submit" class="btn btn-success">Guardar Datos</button></div>
+          <div class="col-12">
+            <button type="submit" class="btn btn-success">Guardar Datos</button>
+          </div>
         </form>
       </section>
     </main>
