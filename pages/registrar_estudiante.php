@@ -125,7 +125,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <div class="container d-flex">
   <?php include '../sidebar.php'; ?>
   <main class="main">
-    <section class="section">
       <h2>Registrar nuevo estudiante</h2>
       <?= $message ?>
 
@@ -176,7 +175,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <button type="submit" class="btn btn-success">Guardar Datos</button>
         </div>
       </form>
-    </section>
   </main>
 </div>
 
