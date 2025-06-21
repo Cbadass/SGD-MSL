@@ -20,7 +20,7 @@ $escuelas = $conn->query("
 <head>
   <meta charset="UTF-8">
   <title>Registrar Curso</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
   <style>
     .resultado { cursor:pointer; padding:6px; border-bottom:1px solid #ddd; }
     .resultado:hover { background:#f0f0f0; }
