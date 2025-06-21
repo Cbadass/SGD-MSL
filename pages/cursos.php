@@ -11,60 +11,96 @@ if (!isset($_SESSION['usuario'])) {
 
 // 2) Recoger filtros
 $filtro_escuela    = $_GET['escuela']        ?? '';
-$filtro_tipo       = trim($_GET['tipo_curso'] ?? '');
-$filtro_grado      = trim($_GET['grado_curso']?? '');
-$filtro_seccion    = trim($_GET['seccion_curso'] ?? '');
-$filtro_docente    = trim($_GET['docente']    ?? '');
+$filtro_tipo       = $_GET['tipo_curso']     ?? '';
+$filtro_grado      = $_GET['grado_curso']    ?? '';
+$filtro_seccion    = $_GET['seccion_curso']  ?? '';
+$filtro_docente    = $_GET['docente']        ?? '';
 
-// 3) Formulario de búsqueda avanzada
+// 3) Cargar listas para los selects
+$escuelas = $conn->query("SELECT Id_escuela, Nombre_escuela FROM escuelas ORDER BY Nombre_escuela")
+                 ->fetchAll(PDO::FETCH_ASSOC);
+
+$tipos = $conn->query("SELECT DISTINCT Tipo_curso FROM cursos WHERE Tipo_curso IS NOT NULL ORDER BY Tipo_curso")
+             ->fetchAll(PDO::FETCH_COLUMN);
+
+$grados = $conn->query("SELECT DISTINCT Grado_curso FROM cursos WHERE Grado_curso IS NOT NULL ORDER BY Grado_curso")
+              ->fetchAll(PDO::FETCH_COLUMN);
+
+$secciones = $conn->query("SELECT DISTINCT seccion_curso FROM cursos WHERE seccion_curso IS NOT NULL ORDER BY seccion_curso")
+                  ->fetchAll(PDO::FETCH_COLUMN);
+
+$docentes = $conn->query("
+    SELECT Id_profesional, Nombre_profesional, Apellido_profesional
+      FROM profesionales
+     ORDER BY Nombre_profesional, Apellido_profesional
+")->fetchAll(PDO::FETCH_ASSOC);
+
+// 4) Formulario de búsqueda avanzada
 echo "<h2 class='mb-4'>Visualización de Cursos</h2>";
-echo "<form method='GET' class='mb-3 d-flex flex-wrap gap-2 align-items-end'>";
-echo "  <input type='hidden' name='seccion' value='cursos'>";
+echo "<form method='GET' class='mb-3 d-flex flex-wrap gap-3 align-items-end'>";
+echo "<input type='hidden' name='seccion' value='cursos'>";
 
-echo "  <div>
-          <label>Escuela</label>
-          <select name='escuela' class='form-select'>
-            <option value=''>Todas</option>
-            <option value='1'".($filtro_escuela=='1'?' selected':'').">Sendero</option>
-            <option value='2'".($filtro_escuela=='2'?' selected':'').">Multiverso</option>
-            <option value='3'".($filtro_escuela=='3'?' selected':'').">Luz de Luna</option>
-          </select>
-        </div>";
+// Escuela
+echo "<div><label>Escuela</label><select name='escuela' class='form-select'>";
+echo "<option value=''>Todas</option>";
+foreach ($escuelas as $e) {
+    $sel = $filtro_escuela == $e['Id_escuela'] ? ' selected' : '';
+    echo "<option value='{$e['Id_escuela']}'{$sel}>{$e['Nombre_escuela']}</option>";
+}
+echo "</select></div>";
 
-echo "  <div>
-          <label>Tipo</label>
-          <input type='text' name='tipo_curso' class='form-control' value='".htmlspecialchars($filtro_tipo)."'>
-        </div>";
+// Tipo
+echo "<div><label>Tipo</label><select name='tipo_curso' class='form-select'>";
+echo "<option value=''>Todos</option>";
+foreach ($tipos as $t) {
+    $sel = $filtro_tipo === $t ? ' selected' : '';
+    echo "<option value=\"".htmlspecialchars($t)."\"{$sel}>".htmlspecialchars($t)."</option>";
+}
+echo "</select></div>";
 
-echo "  <div>
-          <label>Grado</label>
-          <input type='text' name='grado_curso' class='form-control' value='".htmlspecialchars($filtro_grado)."'>
-        </div>";
+// Grado
+echo "<div><label>Grado</label><select name='grado_curso' class='form-select'>";
+echo "<option value=''>Todos</option>";
+foreach ($grados as $g) {
+    $sel = $filtro_grado === $g ? ' selected' : '';
+    echo "<option value=\"".htmlspecialchars($g)."\"{$sel}>".htmlspecialchars($g)."</option>";
+}
+echo "</select></div>";
 
-echo "  <div>
-          <label>Sección</label>
-          <input type='text' name='seccion_curso' class='form-control' value='".htmlspecialchars($filtro_seccion)."'>
-        </div>";
+// Sección
+echo "<div><label>Sección</label><select name='seccion_curso' class='form-select'>";
+echo "<option value=''>Todas</option>";
+foreach ($secciones as $s) {
+    $sel = $filtro_seccion === $s ? ' selected' : '';
+    echo "<option value=\"".htmlspecialchars($s)."\"{$sel}>".htmlspecialchars($s)."</option>";
+}
+echo "</select></div>";
 
-echo "  <div style='flex:1'>
-          <label>Docente</label>
-          <input type='text' name='docente' class='form-control' placeholder='Nombre o RUT' value='".htmlspecialchars($filtro_docente)."'>
-        </div>";
+// Docente
+echo "<div style='flex:1'><label>Docente</label><select name='docente' class='form-select'>";
+echo "<option value=''>Todos</option>";
+foreach ($docentes as $d) {
+    $nombre = "{$d['Nombre_profesional']} {$d['Apellido_profesional']}";
+    $sel = $filtro_docente == $d['Id_profesional'] ? ' selected' : '';
+    echo "<option value='{$d['Id_profesional']}'{$sel}>".htmlspecialchars($nombre)."</option>";
+}
+echo "</select></div>";
 
-echo "  <div class='d-flex gap-2'>
-          <button type='submit' class='btn btn-primary mt-4'>Buscar</button>
-          <button type='button' class='btn btn-secondary mt-4' onclick=\"window.location='?seccion=cursos'\">Limpiar filtros</button>
-        </div>";
+// Botones
+echo "<div class='d-flex gap-2'>";
+echo "  <button type='submit' class='btn btn-primary'>Buscar</button>";
+echo "  <button type='button' class='btn btn-secondary' onclick=\"window.location='?seccion=cursos'\">Limpiar</button>";
+echo "</div>";
 
 echo "</form>";
 
-// 4) Construir consulta dinámica
+// 5) Construir consulta dinámica
 $where  = "1=1";
 $params = [];
 function filtrar(&$where,&$params,$campo,$valor) {
-    if ($valor!=='') {
-        $where   .= " AND $campo LIKE ?";
-        $params[] = "%$valor%";
+    if ($valor !== '') {
+        $where   .= " AND $campo = ?";
+        $params[] = $valor;
     }
 }
 filtrar($where,$params,"c.Id_escuela",$filtro_escuela);
@@ -72,14 +108,8 @@ filtrar($where,$params,"c.Tipo_curso",$filtro_tipo);
 filtrar($where,$params,"c.Grado_curso",$filtro_grado);
 filtrar($where,$params,"c.seccion_curso",$filtro_seccion);
 if ($filtro_docente!=='') {
-    $where .= " AND (
-        p.Nombre_profesional LIKE ? OR
-        p.Apellido_profesional LIKE ? OR
-        p.Rut_profesional LIKE ?
-    )";
-    $params[] = "%{$filtro_docente}%";
-    $params[] = "%{$filtro_docente}%";
-    $params[] = "%{$filtro_docente}%";
+    $where .= " AND c.Id_profesional = ?";
+    $params[] = $filtro_docente;
 }
 
 $sql = "
@@ -93,44 +123,36 @@ $sql = "
     p.Nombre_profesional,
     p.Apellido_profesional
   FROM cursos c
-  LEFT JOIN escuelas    e ON c.Id_escuela    = e.Id_escuela
+  LEFT JOIN escuelas     e ON c.Id_escuela     = e.Id_escuela
   LEFT JOIN profesionales p ON c.Id_profesional = p.Id_profesional
   WHERE $where
   ORDER BY c.Id_curso ASC
 ";
-
 $stmt = $conn->prepare($sql);
 $stmt->execute($params);
 $cursos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// 5) Mostrar tabla
-echo "<div style='max-height:400px; overflow-y:auto; border-radius:10px;'>
-        <table class='table table-striped table-bordered'>
-          <thead class='table-dark'>
-            <tr>
-              <th>Escuela</th>
-              <th>Tipo</th>
-              <th>Grado</th>
-              <th>Sección</th>
-              <th>Docente Encargado</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>";
+// 6) Mostrar tabla
+echo "<div style='max-height:400px;overflow-y:auto;border-radius:10px;'>";
+echo "<table class='table table-striped table-bordered'>";
+echo "<thead class='table-dark'><tr>
+        <th>Escuela</th><th>Tipo</th><th>Grado</th><th>Sección</th>
+        <th>Docente Encargado</th><th>Acciones</th>
+      </tr></thead><tbody>";
 
 if ($cursos) {
-    foreach ($cursos as $row) {
-        $nombre_docente = $row['Id_profesional']
-            ? htmlspecialchars("{$row['Nombre_profesional']} {$row['Apellido_profesional']}")
-            : "<em>No asignado</em>";
+    foreach ($cursos as $r) {
+        $doc = $r['Id_profesional']
+             ? htmlspecialchars("{$r['Nombre_profesional']} {$r['Apellido_profesional']}")
+             : "<em>No asignado</em>";
         echo "<tr>
-                <td>".htmlspecialchars($row['Nombre_escuela'])."</td>
-                <td>".htmlspecialchars($row['Tipo_curso'])."</td>
-                <td>".htmlspecialchars($row['Grado_curso'])."</td>
-                <td>".htmlspecialchars($row['seccion_curso'])."</td>
-                <td>{$nombre_docente}</td>
+                <td>".htmlspecialchars($r['Nombre_escuela'])."</td>
+                <td>".htmlspecialchars($r['Tipo_curso'])."</td>
+                <td>".htmlspecialchars($r['Grado_curso'])."</td>
+                <td>".htmlspecialchars($r['seccion_curso'])."</td>
+                <td>{$doc}</td>
                 <td>
-                  <a href='index.php?seccion=modificar_curso&Id_curso={$row['Id_curso']}' 
+                  <a href='index.php?seccion=modificar_curso&Id_curso={$r['Id_curso']}' 
                      class='btn btn-sm btn-warning'>Editar</a>
                 </td>
               </tr>";
@@ -138,8 +160,4 @@ if ($cursos) {
 } else {
     echo "<tr><td colspan='6'>No se encontraron cursos.</td></tr>";
 }
-
-echo "    </tbody>
-        </table>
-      </div>";
-?>
+echo "</tbody></table></div>";
