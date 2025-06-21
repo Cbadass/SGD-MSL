@@ -9,6 +9,10 @@ body {
   color: #333;
 }
 
+.container {
+  display: flex;
+}
+
 .sidebar {
   width: 250px;
   background-color: #d3d2f3;
