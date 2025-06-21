@@ -237,7 +237,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <body class="<?= isset($_COOKIE['modo_oscuro']) && $_COOKIE['modo_oscuro'] === 'true' ? 'dark-mode' : '' ?>">
   <?php include 'header.php'; ?>
 
-  <!-- 1) Añade "d-flex" para activar el flex layout -->
   <div class="container d-flex">
     <?php include 'sidebar.php'; ?>
 
@@ -246,26 +245,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <h2>Registrar nuevo profesional</h2>
         <?= $message ?>
 
-        <form method="POST" class="row g-3 needs-validation" novalidate>
-          <div class="col-md-6"><label class="form-label">Nombres</label>
+        <form method="POST" class="form-grid needs-validation" novalidate>
+          <div>
+            <label class="form-label">Nombres</label>
             <input name="nombre" class="form-control" required>
           </div>
-          <div class="col-md-6"><label class="form-label">Apellidos</label>
+          <div>
+            <label class="form-label">Apellidos</label>
             <input name="apellido" class="form-control" required>
           </div>
-          <div class="col-md-4"><label class="form-label">Correo</label>
+          <div>
+            <label class="form-label">Correo</label>
             <input name="correo" type="email" class="form-control" required>
           </div>
-          <div class="col-md-4"><label class="form-label">Teléfono</label>
+          <div>
+            <label class="form-label">Teléfono</label>
             <input name="telefono" class="form-control" placeholder="+56 9 1234 5678" required>
           </div>
-          <div class="col-md-4"><label class="form-label">RUT</label>
+          <div>
+            <label class="form-label">RUT</label>
             <input name="rut" class="form-control" placeholder="20.384.593-4" required>
           </div>
-          <div class="col-md-4"><label class="form-label">Fecha nacimiento</label>
+          <div>
+            <label class="form-label">Fecha nacimiento</label>
             <input name="fecha_nacimiento" type="date" class="form-control" required>
           </div>
-          <div class="col-md-4"><label class="form-label">Tipo profesional</label>
+          <div>
+            <label class="form-label">Tipo profesional</label>
             <select name="tipo_profesional" class="form-select" required>
               <option value="">Seleccione...</option>
               <?php foreach ($tipos_prof as $t): ?>
@@ -273,7 +279,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <?php endforeach ?>
             </select>
           </div>
-          <div class="col-md-4"><label class="form-label">Cargo</label>
+          <div>
+            <label class="form-label">Cargo</label>
             <select name="cargo" class="form-select" required>
               <option value="">Seleccione...</option>
               <?php foreach ($cargos as $c): ?>
@@ -281,16 +288,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <?php endforeach ?>
             </select>
           </div>
-          <div class="col-md-2"><label class="form-label">Horas</label>
+          <div>
+            <label class="form-label">Horas</label>
             <input name="horas" type="number" class="form-control" min="0">
           </div>
-          <div class="col-md-2"><label class="form-label">Ingreso</label>
+          <div>
+            <label class="form-label">Ingreso</label>
             <input name="fecha_ingreso" type="date" class="form-control">
           </div>
-          <div class="col-md-6"><label class="form-label">Domicilio</label>
+          <div>
+            <label class="form-label">Domicilio</label>
             <input name="domicilio" class="form-control">
           </div>
-          <div class="col-md-6"><label class="form-label">Estado civil</label>
+          <div>
+            <label class="form-label">Estado civil</label>
             <select name="estado_civil" class="form-select" required>
               <option value="">Seleccione...</option>
               <?php foreach ($estados_civ as $ec => $desc): ?>
@@ -300,7 +311,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <?php endforeach ?>
             </select>
           </div>
-          <div class="col-md-4"><label class="form-label">Banco</label>
+          <div>
+            <label class="form-label">Banco</label>
             <select name="banco" class="form-select" required>
               <option value="">Seleccione...</option>
               <?php foreach ($bancos as $b): ?>
@@ -308,7 +320,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <?php endforeach ?>
             </select>
           </div>
-          <div class="col-md-4"><label class="form-label">Tipo de cuenta</label>
+          <div>
+            <label class="form-label">Tipo de cuenta</label>
             <select name="tipo_cuenta" class="form-select" required>
               <option value="">Seleccione...</option>
               <?php foreach ($tipos_cta as $tc): ?>
@@ -316,10 +329,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <?php endforeach ?>
             </select>
           </div>
-          <div class="col-md-4"><label class="form-label">N° de cuenta</label>
+          <div>
+            <label class="form-label">N° de cuenta</label>
             <input name="cuenta" class="form-control" required>
           </div>
-          <div class="col-md-4"><label class="form-label">AFP</label>
+          <div>
+            <label class="form-label">AFP</label>
             <select name="afp" class="form-select" required>
               <option value="">Seleccione...</option>
               <?php foreach ($afps as $a): ?>
@@ -327,7 +342,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <?php endforeach ?>
             </select>
           </div>
-          <div class="col-md-4"><label class="form-label">Salud</label>
+          <div>
+            <label class="form-label">Salud</label>
             <select name="salud" class="form-select" required>
               <option value="">Seleccione...</option>
               <?php foreach ($saludes as $s): ?>
@@ -335,14 +351,16 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <?php endforeach ?>
             </select>
           </div>
-          <div class="col-md-4"><label class="form-label">Permisos</label>
+          <div>
+            <label class="form-label">Permisos</label>
             <select name="permiso" class="form-select" required>
               <?php foreach ($permisos as $p): ?>
                 <option><?= htmlspecialchars($p) ?></option>
               <?php endforeach ?>
             </select>
           </div>
-          <div class="col-md-4"><label class="form-label">Escuela</label>
+          <div>
+            <label class="form-label">Escuela</label>
             <select name="escuela" class="form-select" required>
               <option value="">Seleccione...</option>
               <?php foreach ($escuelas as $e => $id): ?>
@@ -350,7 +368,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <?php endforeach ?>
             </select>
           </div>
-          <div class="col-12">
+
+          <!-- Botón que ocupa toda la fila -->
+          <div class="form-submit">
             <button type="submit" class="btn btn-success">Guardar Datos</button>
           </div>
         </form>
@@ -359,4 +379,3 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   </div>
 </body>
 </html>
-
