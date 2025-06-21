@@ -85,7 +85,8 @@ body {
   border-radius: 10px;
 
   /* --- añade estas --- */
-  width: 100%;      /* ocupa todo el ancho de su contenedor (.main) */
+  width: 500px;
+  height: 500px;
   box-sizing: border-box; /* para que el padding se incluya dentro del 100% */
 }
 
