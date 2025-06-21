@@ -1,12 +1,10 @@
 <?php
-require_once __DIR__ . '/../includes/db.php';
-
+require_once 'includes/db.php';
 $q = trim($_GET['q'] ?? '');
 if (strlen($q) < 3) {
     echo json_encode([]);
     exit;
 }
-
 $stmt = $conn->prepare("
   SELECT Id_apoderado AS id,
          Rut_apoderado AS rut,
