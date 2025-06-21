@@ -9,6 +9,7 @@ body {
   color: #333;
 }
 
+
 .sidebar {
   width: 250px;
   background-color: #d3d2f3;
@@ -72,15 +73,13 @@ body {
   font-weight: bold;
 }
 
+/*----------Cuadro Blanco------------*/
 .section {
-  /* lo anterior… */
-  margin: 30px auto;        /* centrado horizontal y algo de separación vertical */
-  background-color: white;
+  max-width: 900px;     /* o el ancho que quieras */
+  margin: 30px auto;    /* centrado horizontal, separándolo del sidebar/header */
+  background: #fff;
   padding: 30px;
   border-radius: 10px;
-
-  width: 100%;              /* pide que ocupe TODO el ancho de su contenedor padre (.main) */
-  max-width: 900px;         /* opcional: no crecerá más allá de 900px */
 }
 
 
