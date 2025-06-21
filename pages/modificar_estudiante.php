@@ -160,7 +160,7 @@ $cursos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 
   document.getElementById('buscar_apoderado')
     .addEventListener('input', e=>{
-      buscar('/buscar_apoderados.php', e.target.value.trim(),
+      buscar('buscar_apoderados.php', e.target.value.trim(),
              document.getElementById('resultados_apoderado'),
              'Id_apoderado');
     });
