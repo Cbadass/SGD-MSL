@@ -280,26 +280,3 @@ body.dark-mode .card { background: #1f1f1f; border-color: #333; }
 /*
 .form-grid { display: grid !important; }
 */
-/* ——— todo tu CSS actual ——— */
-
-/* al final, pega esto: */
-.form-section {
-  margin-bottom: 2rem;
-}
-
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-  gap: 1rem 2rem;
-}
-
-.form-submit {
-  grid-column: 1 / -1;
-  text-align: center;
-}
-
-.form-section h3 {
-  font-size: 1.1em;
-  margin-bottom: 0.75rem;
-  color: #3b3b8c;
-}
