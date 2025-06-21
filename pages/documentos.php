@@ -239,33 +239,61 @@ try {
     <table class="table table-striped">
       <thead>
         <tr>
-          <th>Nombre</th><th>Tipo</th><th>Subido</th><th>Modificado</th>
-          <th>Descripción</th><th>Estudiante</th><th>Profesional</th>
-          <th>Usuario</th><th>Acciones</th>
+          <th>Nombre Documento</th>
+          <th>Tipo de documento</th>
+          <th>Fecha de Subida</th>
+          <th>Modificado</th>
+          <th>Descripción</th>
+          <th>Estudiante</th>
+          <th>Profesional</th>
+          <th>Subido Por</th>
+          <th>Acciones</th>
         </tr>
       </thead>
       <tbody>
-        <?php foreach ($documentos as $d): ?>
+        <?php foreach ($documentos as $d): 
+          // calcular fecha formateada y tiempo transcurrido
+          $fechaSubido = new DateTime($d['Fecha_subido']);
+          $ahora       = new DateTime();
+          $diff        = $ahora->diff($fechaSubido);
+          if      ($diff->y) $tiempo = $diff->y . ' año' . ($diff->y > 1 ? 's' : '');
+          elseif  ($diff->m) $tiempo = $diff->m . ' mes'  . ($diff->m > 1 ? 'es' : '');
+          elseif  ($diff->d) $tiempo = $diff->d . ' día'  . ($diff->d > 1 ? 's' : '');
+          elseif  ($diff->h) $tiempo = $diff->h . ' hora' . ($diff->h > 1 ? 's' : '');
+          else               $tiempo = 'momento';
+        ?>
         <tr>
           <td><?= htmlspecialchars($d['Nombre_documento']) ?></td>
           <td><?= htmlspecialchars($d['Tipo_documento']) ?></td>
-          <td><?= htmlspecialchars($d['Fecha_subido']) ?></td>
-          <td><?= htmlspecialchars($d['Fecha_modificacion'] ?? '-') ?></td>
+          <td>
+            <?= $fechaSubido->format('d-m-Y') ?><br>
+            <small>Hace <?= $tiempo ?></small>
+          </td>
+          <td>
+            <?php 
+              if (!empty($d['Fecha_modificacion'])) {
+                echo (new DateTime($d['Fecha_modificacion']))->format('d-m-Y');
+              } else {
+                echo 'No Modificado';
+              }
+            ?>
+          </td>
           <td><?= htmlspecialchars($d['Descripcion']) ?></td>
           <td><?= htmlspecialchars($d['Nombre_estudiante']  ?: '-') ?></td>
           <td><?= htmlspecialchars($d['Nombre_profesional'] ?: '-') ?></td>
           <td><?= htmlspecialchars($d['Usuario_subio']) ?></td>
           <td>
             <a href="index.php?seccion=modificar_documento&id_documento=<?= $d['Id_documento'] ?>"
-               class="btn btn-warning btn-sm">Modificar</a>
+              class="btn btn-warning btn-sm">Modificar</a>
             <a href="descargar.php?id_documento=<?= $d['Id_documento'] ?>"
-               class="btn btn-primary btn-sm">Descargar</a>
+              class="btn btn-primary btn-sm">Descargar</a>
           </td>
         </tr>
         <?php endforeach; ?>
       </tbody>
     </table>
   </div>
+
 
   <!-- Paginación -->
   <nav>
