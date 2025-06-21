@@ -231,6 +231,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta charset="UTF-8">
   <title>Registrar Profesional</title>
+  <form id='formFiltros' method='GET' class='mb-3 d-flex flex-wrap gap-2 align-items-end'>
 </head>
 
 <body class="<?= isset($_COOKIE['modo_oscuro']) && $_COOKIE['modo_oscuro'] === 'true' ? 'dark-mode' : '' ?>">
