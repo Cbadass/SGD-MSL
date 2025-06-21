@@ -15,14 +15,14 @@ try {
     }
 
     // 3) Capturar datos de POST
-    $tipo       = trim($_POST['Tipo_curso']     ?? '');
-    $grado      = intval($_POST['Grado_curso']  ?? 0);
-    $seccion    = trim($_POST['seccion_curso']  ?? '');
-    $idEscuela  = intval($_POST['Id_escuela']  ?? 0);
+    $tipo       = trim($_POST['Tipo_curso']        ?? '');
+    $grado      = trim($_POST['Grado_curso']       ?? '');  // ahora es string
+    $seccion    = trim($_POST['seccion_curso']     ?? '');
+    $idEscuela  = intval($_POST['Id_escuela']     ?? 0);
     $idProfes   = intval($_POST['Id_profesional'] ?? 0) ?: null;
 
     // 4) Validaciones
-    if ($tipo === '' || $grado <= 0 || $seccion === '' || $idEscuela <= 0) {
+    if ($tipo === '' || $grado === '' || $seccion === '' || $idEscuela <= 0) {
         throw new Exception("Complete todos los campos obligatorios.");
     }
 
@@ -30,7 +30,7 @@ try {
     $sql = "
         UPDATE cursos
            SET Tipo_curso     = ?,
-               Grado_curso    = ?,
+               Grado_curso    = ?,  -- ahora almacenamos cadena
                seccion_curso  = ?,
                Id_escuela     = ?,
                Id_profesional = ?
