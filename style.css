@@ -1,8 +1,11 @@
 /* Base */
+
+/* Fondo General */
+
 body {
   margin: 0;
   font-family: 'Segoe UI', sans-serif;
-  background-color: #FFFF00;
+  background-color: #e8e8fc;
   color: #333;
 }
 
@@ -20,9 +23,11 @@ body {
   justify-content: space-between;
 }
 
+/* Color = letras sidebar general */
+
 .sidebar h3 {
   margin: 10px 20px;
-  color: #FFFF00;
+  color: #3b3b8c;
   font-size: 14px;
   text-transform: uppercase;
 }
