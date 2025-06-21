@@ -18,7 +18,7 @@ body {
   background-color: #d3d2f3;
   height: 100vh;
   padding: 20px 0;
-  display: flex;
+  display: grid;
   flex-direction: column;
   justify-content: space-between;
 }
