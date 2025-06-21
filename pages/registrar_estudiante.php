@@ -113,6 +113,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta charset="UTF-8">
   <title>Registrar Estudiante</title>
   <link rel="stylesheet" href="style.css">
+
   <style>
     .resultado { cursor:pointer; padding:6px; border-bottom:1px solid #ddd; }
     .resultado:hover { background:#f0f0f0; }
