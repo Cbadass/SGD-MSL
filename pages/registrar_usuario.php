@@ -254,7 +254,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <label class="form-label">Apellidos</label>
             <input name="apellido" class="form-control" required>
           </div>
-          <div>
+          <div> 
             <label class="form-label">Correo</label>
             <input name="correo" type="email" class="form-control" required>
           </div>
