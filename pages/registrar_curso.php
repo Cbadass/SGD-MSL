@@ -36,8 +36,8 @@ $escuelas = $conn->query("
       <input name="Tipo_curso" class="form-control" required>
     </div>
     <div class="col-md-3">
-      <label class="form-label">Grado</label>
-      <input name="Grado_curso" type="number" class="form-control" required min="1">
+      <label class="form-label">Grado</label>Grado_curso
+      <input name="Grado_curso" class="form-control" required>
     </div>
     <div class="col-md-3">
       <label class="form-label">Sección</label>

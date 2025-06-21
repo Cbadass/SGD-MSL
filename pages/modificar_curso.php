@@ -55,7 +55,7 @@ $escuelas = $conn->query("
     </div>
     <div class="col-md-3">
       <label class="form-label">Grado</label>
-      <input name="Grado_curso" type="number" class="form-control" required min="1"
+      <input name="Grado_curso" class="form-control" required
              value="<?= htmlspecialchars($curso['Grado_curso']) ?>">
     </div>
     <div class="col-md-3">
