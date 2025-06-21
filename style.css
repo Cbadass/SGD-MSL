@@ -14,7 +14,7 @@ body {
 }
 
 .sidebar {
-  width: 300px;
+  width: 500px;
   background-color: #d3d2f3;
   height: 100vh;
   padding: 20px 0;
@@ -35,7 +35,7 @@ body {
 .sidebar a {
   display: block;
   padding: 10px 20px;
-  color: #333;
+  color: white;
   text-decoration: none;
   font-weight: 500;
   font-size: 14px;
