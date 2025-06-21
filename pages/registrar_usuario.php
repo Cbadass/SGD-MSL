@@ -245,156 +245,134 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <h2>Registrar nuevo profesional</h2>
         <?= $message ?>
 
-        <form method="POST" novalidate>
-
-          <!-- === DATOS PERSONALES === -->
-          <div class="form-section">
-            <h3>Datos personales</h3>
-            <div class="form-grid">
-              <div>
-                <label class="form-label">Nombres</label>
-                <input name="nombre" class="form-control" required>
-              </div>
-              <div>
-                <label class="form-label">Apellidos</label>
-                <input name="apellido" class="form-control" required>
-              </div>
-              <div>
-                <label class="form-label">Correo Electrónico</label>
-                <input name="correo" type="email" class="form-control" required>
-              </div>
-              <div>
-                <label class="form-label">Número</label>
-                <input name="telefono" class="form-control" placeholder="+56 9 1234 5678" required>
-              </div>
-              <div>
-                <label class="form-label">RUT</label>
-                <input name="rut" class="form-control" placeholder="20.384.593-4" required>
-              </div>
-              <div>
-                <label class="form-label">Fecha de nacimiento</label>
-                <input name="fecha_nacimiento" type="date" class="form-control" required>
-              </div>
-              <div>
-                <label class="form-label">Tipo profesional</label>
-                <select name="tipo_profesional" class="form-select" required>
-                  <option value="">Seleccione…</option>
-                  <?php foreach ($tipos_prof as $t): ?>
-                    <option><?= htmlspecialchars($t) ?></option>
-                  <?php endforeach ?>
-                </select>
-              </div>
-              <div>
-                <label class="form-label">Cargo del profesional</label>
-                <select name="cargo" class="form-select" required>
-                  <option value="">Seleccione…</option>
-                  <?php foreach ($cargos as $c): ?>
-                    <option><?= htmlspecialchars($c) ?></option>
-                  <?php endforeach ?>
-                </select>
-              </div>
-              <div>
-                <label class="form-label">Horas laborales</label>
-                <input name="horas" type="number" class="form-control" min="0">
-              </div>
-              <div>
-                <label class="form-label">Fecha de Inicio de Actividades</label>
-                <input name="fecha_ingreso" type="date" class="form-control">
-              </div>
-              <div>
-                <label class="form-label">Domicilio</label>
-                <input name="domicilio" class="form-control">
-              </div>
-              <div>
-                <label class="form-label">Estado Civil</label>
-                <select name="estado_civil" class="form-select" required>
-                  <option value="">Seleccione…</option>
-                  <?php foreach ($estados_civ as $ec => $desc): ?>
-                    <option value="<?= htmlspecialchars($ec) ?>" title="<?= htmlspecialchars($desc) ?>">
-                      <?= htmlspecialchars($ec) ?>
-                    </option>
-                  <?php endforeach ?>
-                </select>
-              </div>
-            </div>
+        <form method="POST" class="form-grid needs-validation" novalidate>
+          <div>
+            <label class="form-label">Nombres</label>
+            <input name="nombre" class="form-control" required>
+          </div>
+          <div>
+            <label class="form-label">Apellidos</label>
+            <input name="apellido" class="form-control" required>
+          </div>
+          <div>
+            <label class="form-label">Correo</label>
+            <input name="correo" type="email" class="form-control" required>
+          </div>
+          <div>
+            <label class="form-label">Teléfono</label>
+            <input name="telefono" class="form-control" placeholder="+56 9 1234 5678" required>
+          </div>
+          <div>
+            <label class="form-label">RUT</label>
+            <input name="rut" class="form-control" placeholder="20.384.593-4" required>
+          </div>
+          <div>
+            <label class="form-label">Fecha nacimiento</label>
+            <input name="fecha_nacimiento" type="date" class="form-control" required>
+          </div>
+          <div>
+            <label class="form-label">Tipo profesional</label>
+            <select name="tipo_profesional" class="form-select" required>
+              <option value="">Seleccione...</option>
+              <?php foreach ($tipos_prof as $t): ?>
+                <option><?= htmlspecialchars($t) ?></option>
+              <?php endforeach ?>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Cargo</label>
+            <select name="cargo" class="form-select" required>
+              <option value="">Seleccione...</option>
+              <?php foreach ($cargos as $c): ?>
+                <option><?= htmlspecialchars($c) ?></option>
+              <?php endforeach ?>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Horas</label>
+            <input name="horas" type="number" class="form-control" min="0">
+          </div>
+          <div>
+            <label class="form-label">Ingreso</label>
+            <input name="fecha_ingreso" type="date" class="form-control">
+          </div>
+          <div>
+            <label class="form-label">Domicilio</label>
+            <input name="domicilio" class="form-control">
+          </div>
+          <div>
+            <label class="form-label">Estado civil</label>
+            <select name="estado_civil" class="form-select" required>
+              <option value="">Seleccione...</option>
+              <?php foreach ($estados_civ as $ec => $desc): ?>
+                <option value="<?= htmlspecialchars($ec) ?>" title="<?= htmlspecialchars($desc) ?>">
+                  <?= htmlspecialchars($ec) ?>
+                </option>
+              <?php endforeach ?>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Banco</label>
+            <select name="banco" class="form-select" required>
+              <option value="">Seleccione...</option>
+              <?php foreach ($bancos as $b): ?>
+                <option><?= htmlspecialchars($b) ?></option>
+              <?php endforeach ?>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Tipo de cuenta</label>
+            <select name="tipo_cuenta" class="form-select" required>
+              <option value="">Seleccione...</option>
+              <?php foreach ($tipos_cta as $tc): ?>
+                <option><?= htmlspecialchars($tc) ?></option>
+              <?php endforeach ?>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">N° de cuenta</label>
+            <input name="cuenta" class="form-control" required>
+          </div>
+          <div>
+            <label class="form-label">AFP</label>
+            <select name="afp" class="form-select" required>
+              <option value="">Seleccione...</option>
+              <?php foreach ($afps as $a): ?>
+                <option><?= htmlspecialchars($a) ?></option>
+              <?php endforeach ?>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Salud</label>
+            <select name="salud" class="form-select" required>
+              <option value="">Seleccione...</option>
+              <?php foreach ($saludes as $s): ?>
+                <option><?= htmlspecialchars($s) ?></option>
+              <?php endforeach ?>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Permisos</label>
+            <select name="permiso" class="form-select" required>
+              <?php foreach ($permisos as $p): ?>
+                <option><?= htmlspecialchars($p) ?></option>
+              <?php endforeach ?>
+            </select>
+          </div>
+          <div>
+            <label class="form-label">Escuela</label>
+            <select name="escuela" class="form-select" required>
+              <option value="">Seleccione...</option>
+              <?php foreach ($escuelas as $e => $id): ?>
+                <option><?= htmlspecialchars($e) ?></option>
+              <?php endforeach ?>
+            </select>
           </div>
 
-          <!-- === DATOS BANCARIOS === -->
-          <div class="form-section">
-            <h3>Datos bancarios</h3>
-            <div class="form-grid">
-              <div>
-                <label class="form-label">Banco</label>
-                <select name="banco" class="form-select" required>
-                  <option value="">Seleccione…</option>
-                  <?php foreach ($bancos as $b): ?>
-                    <option><?= htmlspecialchars($b) ?></option>
-                  <?php endforeach ?>
-                </select>
-              </div>
-              <div>
-                <label class="form-label">Tipo de Cuenta</label>
-                <select name="tipo_cuenta" class="form-select" required>
-                  <option value="">Seleccione…</option>
-                  <?php foreach ($tipos_cta as $tc): ?>
-                    <option><?= htmlspecialchars($tc) ?></option>
-                  <?php endforeach ?>
-                </select>
-              </div>
-              <div>
-                <label class="form-label">Número de Cuenta</label>
-                <input name="cuenta" class="form-control" required>
-              </div>
-            </div>
-          </div>
-
-          <!-- === DATOS SALUD + PERMISOS & ESCUELA === -->
-          <div class="form-section">
-            <h3>Datos salud / Plataforma</h3>
-            <div class="form-grid">
-              <div>
-                <label class="form-label">Tipo AFP</label>
-                <select name="afp" class="form-select" required>
-                  <option value="">Seleccione…</option>
-                  <?php foreach ($afps as $a): ?>
-                    <option><?= htmlspecialchars($a) ?></option>
-                  <?php endforeach ?>
-                </select>
-              </div>
-              <div>
-                <label class="form-label">Plan de Salud</label>
-                <select name="salud" class="form-select" required>
-                  <option value="">Seleccione…</option>
-                  <?php foreach ($saludes as $s): ?>
-                    <option><?= htmlspecialchars($s) ?></option>
-                  <?php endforeach ?>
-                </select>
-              </div>
-              <div>
-                <label class="form-label">Permisos de plataforma</label>
-                <select name="permiso" class="form-select" required>
-                  <?php foreach ($permisos as $p): ?>
-                    <option><?= htmlspecialchars($p) ?></option>
-                  <?php endforeach ?>
-                </select>
-              </div>
-              <div>
-                <label class="form-label">Escuela</label>
-                <select name="escuela" class="form-select" required>
-                  <option value="">Seleccione…</option>
-                  <?php foreach ($escuelas as $e => $id): ?>
-                    <option><?= htmlspecialchars($e) ?></option>
-                  <?php endforeach ?>
-                </select>
-              </div>
-            </div>
-          </div>
-
-          <!-- BOTÓN -->
+          <!-- Botón que ocupa toda la fila -->
           <div class="form-submit">
             <button type="submit" class="btn btn-success">Guardar Datos</button>
           </div>
-
         </form>
       </section>
     </main>
