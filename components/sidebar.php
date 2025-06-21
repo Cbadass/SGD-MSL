@@ -6,9 +6,12 @@
     <a href="?seccion=asignaciones" class="<?= $seccion === 'asignaciones' ? 'active' : '' ?>">Asignaciones</a>
 
     <h3>Estudiantes</h3>
-    <a href="?seccion=cursos" class="<?= $seccion === 'cursos' ? 'active' : '' ?>">Cursos</a>
     <a href="?seccion=estudiantes" class="<?= $seccion === 'estudiantes' ? 'active' : '' ?>">Estudiantes</a>
     <a href="?seccion=registrar_estudiante" class="<?= $seccion === 'registrar_estudiante' ? 'active' : '' ?>">Registrar Estudiante</a>
+
+    <h3>Cursos</h3>
+    <a href="?seccion=cursos" class="<?= $seccion === 'cursos' ? 'active' : '' ?>">Cursos</a>
+    <a href="?seccion=registrar_curso" class="<?= $seccion === 'registrar_curso' ? 'active' : '' ?>">Crear Curso</a>
 
     <h3>Documentos</h3>
     <a href="?seccion=documentos" class="<?= $seccion === 'documentos' ? 'active' : '' ?>">Documentos</a>
