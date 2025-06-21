@@ -261,30 +261,3 @@ body.dark-mode .card { background: #1f1f1f; border-color: #333; }
 
 
 /*-------------------------------------------------------------------------*/
-
-/* — AQUÍ VAN TODAS TUS REGLAS VIEJAS — */
-
-/* NUEVAS REGLAS PARA EL FORMULARIO DE REGISTRO */
-.form-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-  gap: 20px;
-}
-.form-submit {
-  grid-column: 1 / -1;
-  text-align: center;
-}
-.section {
-  margin: 30px auto;
-  max-width: 1000px;
-  background-color: white;
-  padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
-}
-
-/* Y SI QUIERES ASEGURARTE DE QUE SE APLIQUE, PUEDES AÑADIR !important: */
-/*
-.form-grid { display: grid !important; }
-*/
- 
