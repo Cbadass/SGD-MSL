@@ -2,6 +2,32 @@
 session_start();
 require_once __DIR__ . '/../includes/db.php';
 
+// — Funciones de RUT —
+function cleanRut($rut) {
+    return preg_replace('/[^0-9kK]/', '', $rut);
+}
+function dvRut($rut) {
+    $R = cleanRut($rut);
+    $digits = substr($R, 0, -1);
+    $dv      = strtoupper(substr($R, -1));
+    $sum = 0; $mult = 2;
+    for ($i = strlen($digits) - 1; $i >= 0; $i--) {
+        $sum += $digits[$i] * $mult;
+        $mult = $mult < 7 ? $mult + 1 : 2;
+    }
+    $res = 11 - ($sum % 11);
+    if ($res == 11) $expected = '0';
+    elseif ($res == 10) $expected = 'K';
+    else $expected = (string)$res;
+    return $dv === $expected;
+}
+function formatRut($rut) {
+    $R = cleanRut($rut);
+    $number = substr($R, 0, -1);
+    $dv     = strtoupper(substr($R, -1));
+    return number_format($number, 0, ',', '.') . "-$dv";
+}
+
 // 1) Protege la página
 if (!isset($_SESSION['usuario'])) {
     header("Location: ../login.php");
@@ -10,31 +36,27 @@ if (!isset($_SESSION['usuario'])) {
 
 // 2) Recoge el Id de la URL
 $id = intval($_GET['Id_estudiante'] ?? 0);
-if ($id <= 0) {
-    die("ID inválido.");
-}
+if ($id <= 0) die("ID inválido.");
 
-// 3) Trae datos del estudiante + apoderado (incluimos también el RUT del apoderado)
+// 3) Trae datos del estudiante + apoderado
 $stmt = $conn->prepare("
-    SELECT e.*,
-           a.Id_apoderado,
-           a.Nombre_apoderado,
-           a.Apellido_apoderado,
-           a.Rut_apoderado
+    SELECT e.*, a.Id_apoderado,
+           a.Nombre_apoderado, a.Apellido_apoderado, a.Rut_apoderado
       FROM estudiantes e
  LEFT JOIN apoderados a ON e.Id_apoderado = a.Id_apoderado
      WHERE e.Id_estudiante = ?
 ");
 $stmt->execute([$id]);
 $est = $stmt->fetch(PDO::FETCH_ASSOC);
-if (!$est) {
-    die("Estudiante no encontrado.");
-}
+if (!$est) die("Estudiante no encontrado.");
+
+// formatea el RUT antes de mostrar
+$est['Rut_estudiante'] = formatRut($est['Rut_estudiante']);
 
 // 4) Carga cursos para el select
 $stmt2 = $conn->query("
     SELECT c.Id_curso,
-           CONCAT(c.Tipo_curso,' - ',c.Grado_curso,'/',c.seccion_curso,' (',esc.Nombre_escuela,')') AS desc_curso
+           CONCAT(c.Tipo_curso, ' - ', c.Grado_curso, '/', c.seccion_curso, ' (', esc.Nombre_escuela, ')') AS desc_curso
       FROM cursos c
  LEFT JOIN escuelas esc ON c.Id_escuela = esc.Id_escuela
     ORDER BY c.Tipo_curso, c.Grado_curso, c.seccion_curso
@@ -56,7 +78,7 @@ $cursos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 <body class="p-4">
   <h2>Editar Estudiante</h2>
 
-  <form method="POST" action="/guardar_modificacion_estudiante.php" class="row g-3 needs-validation" novalidate>
+  <form method="POST" action="../guardar_modificacion_estudiante.php" class="row g-3 needs-validation" novalidate>
     <input type="hidden" name="Id_estudiante" value="<?= $est['Id_estudiante'] ?>">
 
     <div class="col-md-4">
@@ -71,7 +93,7 @@ $cursos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
     </div>
     <div class="col-md-4">
       <label class="form-label">RUT</label>
-      <input name="Rut_estudiante" class="form-control" placeholder="20.384.593-4" required
+      <input name="Rut_estudiante" id="Rut_estudiante" class="form-control" placeholder="20.384.593-4" required
              value="<?= htmlspecialchars($est['Rut_estudiante']) ?>">
     </div>
 
@@ -116,8 +138,8 @@ $cursos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
       <div id="resultados_apoderado" class="border mt-1">
         <?php if($est['Id_apoderado']): ?>
           <div class="resultado seleccionado">
-            <?= htmlspecialchars($est['Rut_apoderado'] ?? '') ?>
-            <?= htmlspecialchars($est['Nombre_apoderado'].' '.$est['Apellido_apoderado']) ?>
+            <?= htmlspecialchars($est['Rut_apoderado']) ?> —
+            <?= htmlspecialchars($est['Nombre_apoderado'] . ' ' . $est['Apellido_apoderado']) ?>
             (Seleccionado)
           </div>
         <?php endif ?>
@@ -132,10 +154,7 @@ $cursos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 
   <script>
   function buscar(endpoint, query, cont, idInput) {
-    if (query.length < 3) {
-      cont.innerHTML = '';
-      return;
-    }
+    if (query.length < 3) { cont.innerHTML = ''; return; }
     fetch(endpoint + '?q=' + encodeURIComponent(query))
       .then(r=>r.json())
       .then(data=>{
@@ -147,17 +166,15 @@ $cursos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
         data.forEach(item=>{
           const div = document.createElement('div');
           div.className = 'resultado';
-          div.textContent = item.rut + ' - ' + item.nombre + ' ' + item.apellido;
+          div.textContent = item.rut + ' — ' + item.nombre + ' ' + item.apellido;
           div.onclick = ()=>{
             document.getElementById(idInput).value = item.id;
-            cont.innerHTML =
-              `<div class="resultado seleccionado">${div.textContent} (Seleccionado)</div>`;
+            cont.innerHTML = `<div class="resultado seleccionado">${div.textContent} (Seleccionado)</div>`;
           };
           cont.appendChild(div);
         });
       });
   }
-
   document.getElementById('buscar_apoderado')
     .addEventListener('input', e=>{
       buscar('buscar_apoderados.php', e.target.value.trim(),
