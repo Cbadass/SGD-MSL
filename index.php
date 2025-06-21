@@ -40,6 +40,8 @@ $modo_oscuro = $_COOKIE['modo_oscuro'] ?? 'false';
           'registrar_usuario',
           'registrar_estudiante',
           'actividad',
+          'registrar_curso',
+          'modificar_curso',
           'documentos',
           'subir_documento',
           'asignaciones',
