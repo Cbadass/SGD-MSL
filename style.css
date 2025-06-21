@@ -111,7 +111,6 @@ td .btn {
 
 table {
   display: block;         /* para que pueda hacer scroll */
-  max-height: 400px;
   overflow-y: auto;
   width: 100%;
   border-collapse: collapse;
