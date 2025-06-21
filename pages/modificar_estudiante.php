@@ -16,7 +16,8 @@ if ($id <= 0) {
 
 // 3) Trae datos del estudiante + apoderado
 $stmt = $conn->prepare("
-    SELECT e.*, a.Id_apoderado, a.Nombre_apoderado, a.Apellido_apoderado
+    SELECT e.*, 
+           a.Id_apoderado, a.Rut_apoderado, a.Nombre_apoderado, a.Apellido_apoderado
       FROM estudiantes e
  LEFT JOIN apoderados a ON e.Id_apoderado = a.Id_apoderado
      WHERE e.Id_estudiante = ?
@@ -52,7 +53,7 @@ $cursos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 <body class="p-4">
   <h2>Editar Estudiante</h2>
 
-  <form method="POST" action="../guardar_modificacion_estudiante.php" enctype="multipart/form-data" class="row g-3 needs-validation" novalidate>
+  <form method="POST" action="../guardar_modificacion_estudiante.php" class="row g-3 needs-validation" novalidate>
     <input type="hidden" name="Id_estudiante" value="<?= $est['Id_estudiante'] ?>">
 
     <div class="col-md-4">
@@ -103,43 +104,61 @@ $cursos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
       </select>
     </div>
 
-    <div class="mb-3">
-    <label class="form-label">Buscar Apoderado</label>
-    <input type="text" id="buscar_apoderado" class="form-control" placeholder="RUT o Nombre">
-    <input type="hidden" name="id_apoderado" id="id_apoderado">
-    <div id="resultados_apoderado" class="border mt-1"></div>
+    <!-- Buscador Apoderado -->
+    <div class="col-md-6">
+      <label class="form-label">Apoderado (opcional)</label>
+      <input type="text" id="buscar_apoderado" class="form-control" placeholder="RUT o Nombre">
+      <input type="hidden" name="Id_apoderado" id="Id_apoderado"
+             value="<?= htmlspecialchars($est['Id_apoderado']) ?>">
+      <div id="resultados_apoderado" class="border mt-1">
+        <?php if($est['Id_apoderado']): ?>
+          <div class="resultado seleccionado">
+            <?= htmlspecialchars($est['Rut_apoderado']) ?> —
+            <?= htmlspecialchars($est['Nombre_apoderado'].' '.$est['Apellido_apoderado']) ?> (Seleccionado)
+          </div>
+        <?php endif ?>
+      </div>
     </div>
 
-    <script>
-    function buscar(endpoint, query, contenedor, idInput) {
+    <div class="col-12">
+      <button type="submit" class="btn btn-success">Guardar cambios</button>
+      <a href="index.php?seccion=estudiantes" class="btn btn-secondary">Cancelar</a>
+    </div>
+  </form>
+
+  <script>
+  function buscar(endpoint, query, container, idInput) {
     if (query.length < 3) {
-        contenedor.innerHTML = '';
-        return;
+      container.innerHTML = '';
+      return;
     }
-    fetch(`${endpoint}?q=${encodeURIComponent(query)}`)
-        .then(res => res.json())
-        .then(data => {
-        contenedor.innerHTML = '';
+    fetch(endpoint + '?q=' + encodeURIComponent(query))
+      .then(res => res.json())
+      .then(data => {
+        container.innerHTML = '';
         if (data.length === 0) {
-            contenedor.innerHTML = '<div class="p-2 text-muted">Sin resultados</div>';
-            return;
+          container.innerHTML = '<div class="p-2 text-muted">Sin resultados</div>';
+          return;
         }
         data.forEach(item => {
-            const div = document.createElement('div');
-            div.textContent = `${item.rut} - ${item.nombre} ${item.apellido} (${item.numero} / ${item.correo})`;
-            div.className = 'resultado';
-            div.onclick = () => {
+          const div = document.createElement('div');
+          div.className = 'resultado';
+          div.textContent = `${item.rut} — ${item.nombre} ${item.apellido}`;
+          div.onclick = () => {
             document.getElementById(idInput).value = item.id;
-            contenedor.innerHTML = `<div class="resultado seleccionado">${div.textContent} (Seleccionado)</div>`;
-            };
-            contenedor.appendChild(div);
+            container.innerHTML = `<div class="resultado seleccionado">${div.textContent} (Seleccionado)</div>`;
+          };
+          container.appendChild(div);
         });
-        });
-    }
+      });
+  }
 
-    document.getElementById('buscar_apoderado').addEventListener('input', function() {
-    buscar('buscar_apoderados.php', this.value.trim(), document.getElementById('resultados_apoderado'), 'id_apoderado');
+  document.getElementById('buscar_apoderado')
+    .addEventListener('input', e => {
+      buscar('buscar_apoderados.php', e.target.value.trim(),
+             document.getElementById('resultados_apoderado'),
+             'Id_apoderado');
     });
-    </script>
+  </script>
 </body>
 </html>
