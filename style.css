@@ -174,7 +174,7 @@ label {
 }
 
 h2 {
-  margin-top: 0;
+  margin-top: 100;
 }
 
 .card {
@@ -261,3 +261,12 @@ body.dark-mode .card { background: #1f1f1f; border-color: #333; }
 
 
 /*-------------------------------------------------------------------------*/
+
+.table-scrollable {
+  display: block;          /* Para que overflow funcione */
+  max-height: 400px;       /* Altura máxima antes de aparecer la barra */
+  overflow-y: auto;        /* Scroll vertical */
+  margin-bottom: 1rem;     /* Un pequeño espacio bajo la tabla */
+  border-radius: 0.25rem;  /* Coincide con el resto de esquinas redondeadas */
+  border: 1px solid #ddd;  /* Opcional, para remarcar el contenedor */
+}

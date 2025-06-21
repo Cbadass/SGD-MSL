@@ -240,7 +240,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php include 'sidebar.php'; ?>
 
     <main class="main">
-      <section class="section">
         <h2>Registrar nuevo profesional</h2>
         <?= $message ?>
 
@@ -373,7 +372,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <button type="submit" class="btn btn-success">Guardar Datos</button>
           </div>
         </form>
-      </section>
     </main>
   </div>
 </body>
