@@ -2,7 +2,7 @@
 body {
   margin: 0;
   font-family: 'Segoe UI', sans-serif;
-  background-color: #e8e8fc;
+  background-color: #FFFF00;
   color: #333;
 }
 
@@ -22,7 +22,7 @@ body {
 
 .sidebar h3 {
   margin: 10px 20px;
-  color: #3b3b8c;
+  color: #FFFF00;
   font-size: 14px;
   text-transform: uppercase;
 }
