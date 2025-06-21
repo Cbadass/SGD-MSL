@@ -14,10 +14,13 @@ if ($id <= 0) {
     die("ID inválido.");
 }
 
-// 3) Trae datos del estudiante + apoderado
+// 3) Trae datos del estudiante + apoderado (incluimos también el RUT del apoderado)
 $stmt = $conn->prepare("
-    SELECT e.*, 
-           a.Id_apoderado, a.Rut_apoderado, a.Nombre_apoderado, a.Apellido_apoderado
+    SELECT e.*,
+           a.Id_apoderado,
+           a.Nombre_apoderado,
+           a.Apellido_apoderado,
+           a.Rut_apoderado
       FROM estudiantes e
  LEFT JOIN apoderados a ON e.Id_apoderado = a.Id_apoderado
      WHERE e.Id_estudiante = ?
@@ -53,7 +56,7 @@ $cursos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 <body class="p-4">
   <h2>Editar Estudiante</h2>
 
-  <form method="POST" action="../guardar_modificacion_estudiante.php" class="row g-3 needs-validation" novalidate>
+  <form method="POST" action="/guardar_modificacion_estudiante.php" class="row g-3 needs-validation" novalidate>
     <input type="hidden" name="Id_estudiante" value="<?= $est['Id_estudiante'] ?>">
 
     <div class="col-md-4">
@@ -113,8 +116,9 @@ $cursos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
       <div id="resultados_apoderado" class="border mt-1">
         <?php if($est['Id_apoderado']): ?>
           <div class="resultado seleccionado">
-            <?= htmlspecialchars($est['Rut_apoderado']) ?> —
-            <?= htmlspecialchars($est['Nombre_apoderado'].' '.$est['Apellido_apoderado']) ?> (Seleccionado)
+            <?= htmlspecialchars($est['Rut_apoderado'] ?? '') ?>
+            <?= htmlspecialchars($est['Nombre_apoderado'].' '.$est['Apellido_apoderado']) ?>
+            (Seleccionado)
           </div>
         <?php endif ?>
       </div>
@@ -127,35 +131,36 @@ $cursos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
   </form>
 
   <script>
-  function buscar(endpoint, query, container, idInput) {
+  function buscar(endpoint, query, cont, idInput) {
     if (query.length < 3) {
-      container.innerHTML = '';
+      cont.innerHTML = '';
       return;
     }
     fetch(endpoint + '?q=' + encodeURIComponent(query))
-      .then(res => res.json())
-      .then(data => {
-        container.innerHTML = '';
-        if (data.length === 0) {
-          container.innerHTML = '<div class="p-2 text-muted">Sin resultados</div>';
+      .then(r=>r.json())
+      .then(data=>{
+        cont.innerHTML = '';
+        if (!data.length) {
+          cont.innerHTML = '<div class="p-2 text-muted">Sin resultados</div>';
           return;
         }
-        data.forEach(item => {
+        data.forEach(item=>{
           const div = document.createElement('div');
           div.className = 'resultado';
-          div.textContent = `${item.rut} — ${item.nombre} ${item.apellido}`;
-          div.onclick = () => {
+          div.textContent = item.rut + ' - ' + item.nombre + ' ' + item.apellido;
+          div.onclick = ()=>{
             document.getElementById(idInput).value = item.id;
-            container.innerHTML = `<div class="resultado seleccionado">${div.textContent} (Seleccionado)</div>`;
+            cont.innerHTML =
+              `<div class="resultado seleccionado">${div.textContent} (Seleccionado)</div>`;
           };
-          container.appendChild(div);
+          cont.appendChild(div);
         });
       });
   }
 
   document.getElementById('buscar_apoderado')
-    .addEventListener('input', e => {
-      buscar('buscar_apoderados.php', e.target.value.trim(),
+    .addEventListener('input', e=>{
+      buscar('/buscar_apoderados.php', e.target.value.trim(),
              document.getElementById('resultados_apoderado'),
              'Id_apoderado');
     });

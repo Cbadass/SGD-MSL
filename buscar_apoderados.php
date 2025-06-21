@@ -1,7 +1,5 @@
 <?php
-// buscar_apoderados.php
-require_once 'includes/db.php';
-header('Content-Type: application/json');
+require_once __DIR__ . '/../includes/db.php';
 
 $q = trim($_GET['q'] ?? '');
 if (strlen($q) < 3) {
@@ -9,22 +7,16 @@ if (strlen($q) < 3) {
     exit;
 }
 
-// Preparar y ejecutar la consulta (SQL Server)
 $stmt = $conn->prepare("
-    SELECT TOP (10)
-        Id_apoderado AS id,
-        Rut_apoderado AS rut,
-        Nombre_apoderado AS nombre,
-        Apellido_apoderado AS apellido,
-        Numero_apoderado AS numero,
-        Correo_apoderado AS correo
+  SELECT Id_apoderado AS id,
+         Rut_apoderado AS rut,
+         Nombre_apoderado AS nombre,
+         Apellido_apoderado AS apellido
     FROM apoderados
-    WHERE Rut_apoderado LIKE ? 
-       OR Nombre_apoderado LIKE ? 
-       OR Apellido_apoderado LIKE ?
-    ORDER BY Nombre_apoderado ASC
+   WHERE Rut_apoderado LIKE ?
+      OR Nombre_apoderado LIKE ?
+      OR Apellido_apoderado LIKE ?
 ");
-$like = "%{$q}%";
+$like = "%$q%";
 $stmt->execute([$like, $like, $like]);
-
 echo json_encode($stmt->fetchAll(PDO::FETCH_ASSOC));

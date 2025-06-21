@@ -44,7 +44,7 @@ $modo_oscuro = $_COOKIE['modo_oscuro'] ?? 'false';
           'asignaciones',
           'modificar_documento',
           'modificar_profesional',
-          'modificar_estudiante',    // <— añadido para Editar Estudiante
+          'modificar_estudiante',   
         ];
 
         $seccion = $_GET['seccion'] ?? 'usuarios';
