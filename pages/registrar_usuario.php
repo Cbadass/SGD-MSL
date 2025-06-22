@@ -311,6 +311,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </div>
 
           <!-- DATOS BANCARIOS -->
+          <br>
           <h3 class = 'mb-4'>Datos Bancarios</h3>
           <div>
             <label class="form-label">Banco</label>
@@ -336,6 +337,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </div>
 
           <!-- Datos salud -->
+          <br>
           <h3 class = 'mb-4'>Datos Salud</h3>
           <div>
             <label class="form-label">AFP</label>
