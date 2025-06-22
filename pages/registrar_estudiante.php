@@ -2,6 +2,7 @@
 // pages/registrar_estudiante.php
 session_start();
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/auditoria.php';  // <-- Incluimos auditoría
 
 // 1) Protege la página
 if (!isset($_SESSION['usuario'])) {
@@ -98,7 +99,30 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $id_curso, $id_apoderado, $id_escuela
             ]);
             if ($ok) {
-                // >>> Cambio aquí: redirige correctamente al index en la raíz
+                // --- Registra auditoría ---
+                $nuevoId = $conn->lastInsertId();
+                $usuarioLog = $_SESSION['usuario']['id'];
+                $datosNuevos = [
+                    'Nombre_estudiante'   => $nombre,
+                    'Apellido_estudiante' => $apellido,
+                    'Rut_estudiante'      => $rut_fmt,
+                    'Fecha_nacimiento'    => $fecha_nac,
+                    'Fecha_ingreso'       => $fecha_ing,
+                    'Estado_estudiante'   => 1,
+                    'Id_curso'            => $id_curso,
+                    'Id_apoderado'        => $id_apoderado,
+                    'Id_escuela'          => $id_escuela
+                ];
+                registrarAuditoria(
+                    $conn,
+                    $usuarioLog,
+                    'estudiantes',
+                    $nuevoId,
+                    'INSERT',
+                    null,
+                    $datosNuevos
+                );
+                // Redirige correctamente a la lista
                 header("Location: index.php?seccion=estudiantes");
                 exit;
             } else {
@@ -114,7 +138,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <meta charset="UTF-8">
   <title>Registrar Estudiante</title>
   <link rel="stylesheet" href="style.css">
-
   <style>
     .resultado { cursor:pointer; padding:6px; border-bottom:1px solid #ddd; }
     .resultado:hover { background:#f0f0f0; }
