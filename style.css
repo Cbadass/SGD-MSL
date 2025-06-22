@@ -153,8 +153,12 @@ table th {
 
 .form-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  grid-template-columns: auto auto auto auto;
   gap: 3rem;
+}
+
+.subtitle {
+  grid-row: 1 / 5;
 }
 
 label {

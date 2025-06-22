@@ -231,6 +231,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta charset="UTF-8">
   <title>Registrar Profesional</title>
+  <style>
+    
+  </style>
 </head>
 
 <body class="<?= isset($_COOKIE['modo_oscuro']) && $_COOKIE['modo_oscuro'] === 'true' ? 'dark-mode' : '' ?>">
@@ -242,8 +245,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <main class="main">
         <h2 class = 'mb-4'>Registrar nuevo profesional</h2>
         <?= $message ?>
-        <h3 class = 'mb-4'>Datos personales</h3>
         <form method="POST" class="form-grid needs-validation" novalidate>
+          <!-- DAtos personales -->
+          <h3 class = 'mb-4 subtitle'>Datos personales</h3>
           <div>
             <label class="form-label">Nombres</label>
             <input name="nombre" class="form-control" required type="text">
@@ -311,8 +315,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </div>
 
           <!-- DATOS BANCARIOS -->
-          <br>
-          <h3 class = 'mb-4'>Datos Bancarios</h3>
+          <h3 class = 'mb-4 subtitle'>Datos Bancarios</h3>
           <div>
             <label class="form-label">Banco</label>
             <select name="banco" class="form-select" required>
@@ -337,8 +340,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </div>
 
           <!-- Datos salud -->
-          <br>
-          <h3 class = 'mb-4'>Datos Salud</h3>
+          <h3 class = 'mb-4 subtitle'>Datos Salud</h3>
           <div>
             <label class="form-label">AFP</label>
             <select name="afp" class="form-select" required>
@@ -357,6 +359,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <?php endforeach ?>
             </select>
           </div>
+
+          <!-- Otros -->
           <div>
             <label class="form-label">Permisos</label>
             <select name="permiso" class="form-select" required>
