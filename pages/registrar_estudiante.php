@@ -154,7 +154,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <head>
   <meta charset="UTF-8">
   <title>Registrar Estudiante</title>
-  <link rel="stylesheet" href="style.css">
   <style>
     /* Grid para el layout principal */
     .layout { display:grid; grid-template-columns:250px 1fr; gap:1rem; }
