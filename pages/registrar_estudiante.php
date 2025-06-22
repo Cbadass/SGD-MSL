@@ -196,17 +196,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <form method="POST" class="form-grid needs-validation" novalidate>
       <div>
         <label for="Nombre_estudiante">Nombres</label>
-        <input id="Nombre_estudiante" name="Nombre_estudiante" required
+        <input id="Nombre_estudiante" type="text" name="Nombre_estudiante" required
                value="<?= htmlspecialchars($data['Nombre_estudiante']) ?>">
       </div>
       <div>
         <label for="Apellido_estudiante">Apellidos</label>
-        <input id="Apellido_estudiante" name="Apellido_estudiante" required
+        <input id="Apellido_estudiante" type="text" name="Apellido_estudiante" required
                value="<?= htmlspecialchars($data['Apellido_estudiante']) ?>">
       </div>
       <div>
         <label for="Rut_estudiante">RUT</label>
-        <input id="Rut_estudiante" name="Rut_estudiante" required
+        <input id="Rut_estudiante" name="Rut_estudiante" type="text" required
                placeholder="20.384.593-4"
                value="<?= htmlspecialchars($data['Rut_estudiante']) ?>">
       </div>
