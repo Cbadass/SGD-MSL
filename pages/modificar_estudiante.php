@@ -1,100 +1,64 @@
 <?php
+// pages/modificar_estudiante.php
 session_start();
 require_once __DIR__ . '/../includes/db.php';
 
-// — Funciones de RUT —
-function cleanRut($rut) {
-    return preg_replace('/[^0-9kK]/', '', $rut);
-}
-function dvRut($rut) {
-    $R = cleanRut($rut);
-    $digits = substr($R, 0, -1);
-    $dv      = strtoupper(substr($R, -1));
-    $sum = 0; $mult = 2;
-    for ($i = strlen($digits) - 1; $i >= 0; $i--) {
-        $sum += $digits[$i] * $mult;
-        $mult = $mult < 7 ? $mult + 1 : 2;
-    }
-    $res = 11 - ($sum % 11);
-    if ($res == 11) $expected = '0';
-    elseif ($res == 10) $expected = 'K';
-    else $expected = (string)$res;
-    return $dv === $expected;
-}
-function formatRut($rut) {
-    $R = cleanRut($rut);
-    $number = substr($R, 0, -1);
-    $dv     = strtoupper(substr($R, -1));
-    return number_format($number, 0, ',', '.') . "-$dv";
-}
-
-// 1) Protege la página
 if (!isset($_SESSION['usuario'])) {
-    header("Location: ../login.php");
+    header("Location: login.php");
     exit;
 }
 
-// 2) Recoge el Id de la URL
+// 1) Recoge el Id
 $id = intval($_GET['Id_estudiante'] ?? 0);
-if ($id <= 0) die("ID inválido.");
+if ($id <= 0) {
+    die("ID inválido.");
+}
 
-// 3) Trae datos del estudiante + apoderado
+// 2) Trae datos del estudiante + apoderado
 $stmt = $conn->prepare("
-    SELECT e.*, a.Id_apoderado,
-           a.Nombre_apoderado, a.Apellido_apoderado, a.Rut_apoderado
+    SELECT e.*, a.Id_apoderado, a.Nombre_apoderado, a.Apellido_apoderado, a.Rut_apoderado
       FROM estudiantes e
  LEFT JOIN apoderados a ON e.Id_apoderado = a.Id_apoderado
      WHERE e.Id_estudiante = ?
 ");
 $stmt->execute([$id]);
 $est = $stmt->fetch(PDO::FETCH_ASSOC);
-if (!$est) die("Estudiante no encontrado.");
+if (!$est) {
+    die("Estudiante no encontrado.");
+}
 
-// formatea el RUT antes de mostrar
-$est['Rut_estudiante'] = formatRut($est['Rut_estudiante']);
-
-// 4) Carga cursos para el select
+// 3) Carga cursos para el select
 $stmt2 = $conn->query("
     SELECT c.Id_curso,
-           CONCAT(c.Tipo_curso, ' - ', c.Grado_curso, '/', c.seccion_curso, ' (', esc.Nombre_escuela, ')') AS desc_curso
+           CONCAT(c.Tipo_curso,' - ',c.Grado_curso,'/',c.seccion_curso,' (',esc.Nombre_escuela,')') AS desc_curso
       FROM cursos c
  LEFT JOIN escuelas esc ON c.Id_escuela = esc.Id_escuela
     ORDER BY c.Tipo_curso, c.Grado_curso, c.seccion_curso
 ");
 $cursos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 ?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Editar Estudiante</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-  <style>
-    .resultado { cursor:pointer; padding:6px; border-bottom:1px solid #ddd; }
-    .resultado:hover { background:#f0f0f0; }
-    .seleccionado { background:#d1e7dd!important; font-weight:bold; }
-  </style>
-</head>
-<body class="p-4">
-  <h2>Editar Estudiante</h2>
 
-  <form method="POST" action="../guardar_modificacion_estudiante.php" class="row g-3 needs-validation" novalidate>
+<h2 class="mb-4">Editar Estudiante</h2>
+
+<div class="card p-4 mb-4">
+  <form method="POST"
+        action="../guardar_modificacion_estudiante.php"
+        enctype="multipart/form-data"
+        class="row g-3 needs-validation"
+        novalidate>
+        
     <input type="hidden" name="Id_estudiante" value="<?= $est['Id_estudiante'] ?>">
 
-    <div class="col-md-4">
+    <div class="col-md-6">
       <label class="form-label">Nombres</label>
       <input name="Nombre_estudiante" class="form-control" required
              value="<?= htmlspecialchars($est['Nombre_estudiante']) ?>">
     </div>
-    <div class="col-md-4">
+
+    <div class="col-md-6">
       <label class="form-label">Apellidos</label>
       <input name="Apellido_estudiante" class="form-control" required
              value="<?= htmlspecialchars($est['Apellido_estudiante']) ?>">
-    </div>
-    <div class="col-md-4">
-      <label class="form-label">RUT</label>
-      <input name="Rut_estudiante" id="Rut_estudiante" class="form-control" placeholder="20.384.593-4" required
-             value="<?= htmlspecialchars($est['Rut_estudiante']) ?>">
     </div>
 
     <div class="col-md-4">
@@ -102,10 +66,18 @@ $cursos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
       <input name="Fecha_nacimiento" type="date" class="form-control"
              value="<?= htmlspecialchars($est['Fecha_nacimiento']) ?>">
     </div>
+
     <div class="col-md-4">
       <label class="form-label">Fecha de Ingreso</label>
       <input name="Fecha_ingreso" type="date" class="form-control"
              value="<?= htmlspecialchars($est['Fecha_ingreso']) ?>">
+    </div>
+
+    <div class="col-md-4">
+      <label class="form-label">RUT</label>
+      <input name="Rut_estudiante" class="form-control" required
+             placeholder="20.384.593-4"
+             value="<?= htmlspecialchars($est['Rut_estudiante']) ?>">
     </div>
 
     <div class="col-md-4">
@@ -129,58 +101,61 @@ $cursos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
       </select>
     </div>
 
-    <!-- Buscador Apoderado -->
     <div class="col-md-6">
       <label class="form-label">Apoderado (opcional)</label>
       <input type="text" id="buscar_apoderado" class="form-control" placeholder="RUT o Nombre">
       <input type="hidden" name="Id_apoderado" id="Id_apoderado"
              value="<?= htmlspecialchars($est['Id_apoderado']) ?>">
-      <div id="resultados_apoderado" class="border mt-1">
+      <div id="resultados_apoderado" class="border mt-1 p-2">
         <?php if($est['Id_apoderado']): ?>
           <div class="resultado seleccionado">
             <?= htmlspecialchars($est['Rut_apoderado']) ?> —
-            <?= htmlspecialchars($est['Nombre_apoderado'] . ' ' . $est['Apellido_apoderado']) ?>
+            <?= htmlspecialchars($est['Nombre_apoderado'].' '.$est['Apellido_apoderado']) ?>
             (Seleccionado)
           </div>
         <?php endif ?>
       </div>
     </div>
 
-    <div class="col-12">
+    <div class="col-12 d-flex gap-2">
       <button type="submit" class="btn btn-success">Guardar cambios</button>
       <a href="index.php?seccion=estudiantes" class="btn btn-secondary">Cancelar</a>
     </div>
   </form>
+</div>
 
-  <script>
-  function buscar(endpoint, query, cont, idInput) {
-    if (query.length < 3) { cont.innerHTML = ''; return; }
-    fetch(endpoint + '?q=' + encodeURIComponent(query))
-      .then(r=>r.json())
-      .then(data=>{
-        cont.innerHTML = '';
-        if (!data.length) {
-          cont.innerHTML = '<div class="p-2 text-muted">Sin resultados</div>';
-          return;
-        }
-        data.forEach(item=>{
-          const div = document.createElement('div');
-          div.className = 'resultado';
-          div.textContent = item.rut + ' — ' + item.nombre + ' ' + item.apellido;
-          div.onclick = ()=>{
-            document.getElementById(idInput).value = item.id;
-            cont.innerHTML = `<div class="resultado seleccionado">${div.textContent} (Seleccionado)</div>`;
-          };
-          cont.appendChild(div);
-        });
-      });
+<script>
+function buscar(endpoint, query, cont, idInput) {
+  if (query.length < 3) {
+    cont.innerHTML = '';
+    return;
   }
-  document.getElementById('buscar_apoderado')
-    .addEventListener('input', e=>{
-      buscar('buscar_apoderados.php', e.target.value.trim(),
-             document.getElementById('resultados_apoderado'),
-             'Id_apoderado');
+  fetch(endpoint + '?q=' + encodeURIComponent(query))
+    .then(r => r.json())
+    .then(data => {
+      cont.innerHTML = '';
+      if (!data.length) {
+        cont.innerHTML = '<div class="p-2 text-muted">Sin resultados</div>';
+        return;
+      }
+      data.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'resultado';
+        div.textContent = `${item.rut} — ${item.nombre} ${item.apellido}`;
+        div.onclick = () => {
+          document.getElementById(idInput).value = item.id;
+          cont.innerHTML = `<div class="resultado seleccionado">${div.textContent} (Seleccionado)</div>`;
+        };
+        cont.appendChild(div);
+      });
     });
-  </script>
-</body>
-</html>
+}
+
+document.getElementById('buscar_apoderado')
+  .addEventListener('input', e => {
+    buscar('buscar_apoderados.php',
+           e.target.value.trim(),
+           document.getElementById('resultados_apoderado'),
+           'Id_apoderado');
+  });
+</script>
