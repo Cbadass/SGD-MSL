@@ -48,40 +48,40 @@ $stmtC = $conn->query("
 ");
 $cursos = $stmtC->fetchAll(PDO::FETCH_ASSOC);
 
-// 3) Inicializa datos y errores
+// 3) Preparación de datos
 $data = [
-    'Nombre_estudiante' => '',
+    'Nombre_estudiante'   => '',
     'Apellido_estudiante' => '',
-    'Rut_estudiante' => '',
-    'Fecha_nacimiento' => '',
-    'Fecha_ingreso' => '',
-    'Id_curso' => '',
-    'Id_apoderado' => '',
+    'Rut_estudiante'      => '',
+    'Fecha_nacimiento'    => '',
+    'Fecha_ingreso'       => '',
+    'Id_curso'            => null,
+    'Id_apoderado'        => null
 ];
 $errors = [];
 $message = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-    // — Colecta todo en $data —
-    foreach (array_keys($data) as $key) {
-        $data[$key] = trim($_POST[$key] ?? '');
+    // Colecta todos los valores en $data
+    foreach (array_keys($data) as $k) {
+        $data[$k] = trim($_POST[$k] ?? '');
     }
-    // sanitiza enteros
     $data['Id_curso']     = intval($data['Id_curso']) ?: null;
     $data['Id_apoderado'] = intval($data['Id_apoderado']) ?: null;
 
-    // — Validaciones —
-    if (!$data['Nombre_estudiante'] || !$data['Apellido_estudiante']
-        || !$data['Rut_estudiante'] || !$data['Fecha_nacimiento']
-        || !$data['Fecha_ingreso']
-    ) {
+    // Validaciones
+    if (!$data['Nombre_estudiante'] ||
+        !$data['Apellido_estudiante'] ||
+        !$data['Rut_estudiante'] ||
+        !$data['Fecha_nacimiento'] ||
+        !$data['Fecha_ingreso']) {
         $errors[] = "Complete todos los campos obligatorios.";
     }
-    if ($data['Rut_estudiante'] && !dvRut($data['Rut_estudiante'])) {
+    if (!empty($data['Rut_estudiante']) && !dvRut($data['Rut_estudiante'])) {
         $errors[] = "RUT inválido.";
     }
+
     if (empty($errors)) {
-        // formatea RUT y unicidad
         $rut_fmt = formatRut($data['Rut_estudiante']);
         $stmtRut = $conn->prepare("SELECT COUNT(*) FROM estudiantes WHERE Rut_estudiante = ?");
         $stmtRut->execute([$rut_fmt]);
@@ -91,7 +91,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     if (empty($errors)) {
-        // determina escuela
+        // Determinar escuela desde el curso
         if ($data['Id_curso']) {
             $stmtE = $conn->prepare("SELECT Id_escuela FROM cursos WHERE Id_curso = ?");
             $stmtE->execute([$data['Id_curso']]);
@@ -101,7 +101,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $id_escuela = null;
         }
 
-        // — Inserción y auditoría —
+        // Inserción + auditoría
         $conn->beginTransaction();
         try {
             $stmtI = $conn->prepare("
@@ -122,26 +122,33 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $id_escuela
             ]);
             $newId = $conn->lastInsertId();
-            // registra auditoría
+
+            // registrar auditoría
             $usuarioLog = $_SESSION['usuario']['id'];
-            // incluye rut formateado
             $auditData = $data;
             $auditData['Rut_estudiante'] = $rut_fmt;
-            registrarAuditoria($conn, $usuarioLog, 'estudiantes', $newId, 'INSERT', null, $auditData);
+            registrarAuditoria(
+                $conn,
+                $usuarioLog,
+                'estudiantes',
+                $newId,
+                'INSERT',
+                null,
+                $auditData
+            );
 
             $conn->commit();
-            // redirección robusta
             header("Location: index.php?seccion=estudiantes");
             exit;
-        } catch (Exception $e) {
+        } catch (Exception $ex) {
             $conn->rollBack();
-            $message = "<p class='text-danger'>Error al guardar: " . htmlspecialchars($e->getMessage()) . "</p>";
+            $message = "<p class='text-danger'>Error al guardar: " 
+                     . htmlspecialchars($ex->getMessage()) . "</p>";
         }
     } else {
-        // concatena errores
         $message = '<div class="alert alert-danger"><ul>';
-        foreach ($errors as $err) {
-            $message .= "<li>".htmlspecialchars($err)."</li>";
+        foreach ($errors as $e) {
+            $message .= "<li>" . htmlspecialchars($e) . "</li>";
         }
         $message .= '</ul></div>';
     }
@@ -154,12 +161,29 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <title>Registrar Estudiante</title>
   <link rel="stylesheet" href="style.css">
   <style>
+    /* grid para labels e inputs */
+    .form-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 1rem;
+    }
+    .form-grid label {
+      display: block;
+      margin-bottom: .25rem;
+      font-weight: bold;
+    }
+    .form-grid input,
+    .form-grid select {
+      width: 100%;
+      padding: .5rem;
+      box-sizing: border-box;
+    }
     .resultado { cursor:pointer; padding:6px; border-bottom:1px solid #ddd; }
     .resultado:hover { background:#f0f0f0; }
     .seleccionado { background:#d1e7dd!important; font-weight:bold; }
   </style>
 </head>
-<body class="<?= ($_COOKIE['modo_oscuro'] ?? 'false')==='true'?'dark-mode':'' ?>">
+<body class="<?= ($_COOKIE['modo_oscuro'] ?? 'false') === 'true' ? 'dark-mode' : '' ?>">
 <?php include '../header.php'; ?>
 <div class="container d-flex">
   <?php include '../sidebar.php'; ?>
@@ -167,56 +191,53 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <h2>Registrar nuevo estudiante</h2>
     <?= $message ?>
 
-    <form method="POST" class="row g-3 needs-validation" novalidate>
-      <div class="col-md-6">
-        <label class="form-label">Nombres</label>
-        <input name="Nombre_estudiante" class="form-control" required
+    <form method="POST" class="form-grid needs-validation" novalidate>
+      <div>
+        <label for="Nombre_estudiante">Nombres</label>
+        <input id="Nombre_estudiante" name="Nombre_estudiante" required
                value="<?= htmlspecialchars($data['Nombre_estudiante']) ?>">
       </div>
-      <div class="col-md-6">
-        <label class="form-label">Apellidos</label>
-        <input name="Apellido_estudiante" class="form-control" required
+      <div>
+        <label for="Apellido_estudiante">Apellidos</label>
+        <input id="Apellido_estudiante" name="Apellido_estudiante" required
                value="<?= htmlspecialchars($data['Apellido_estudiante']) ?>">
       </div>
-      <div class="col-md-4">
-        <label class="form-label">RUT</label>
-        <input name="Rut_estudiante" class="form-control" required
+      <div>
+        <label for="Rut_estudiante">RUT</label>
+        <input id="Rut_estudiante" name="Rut_estudiante" required
                placeholder="20.384.593-4"
                value="<?= htmlspecialchars($data['Rut_estudiante']) ?>">
       </div>
-      <div class="col-md-4">
-        <label class="form-label">Fecha de nacimiento</label>
-        <input name="Fecha_nacimiento" type="date" class="form-control" required
+      <div>
+        <label for="Fecha_nacimiento">Fecha de nacimiento</label>
+        <input id="Fecha_nacimiento" name="Fecha_nacimiento" type="date" required
                value="<?= htmlspecialchars($data['Fecha_nacimiento']) ?>">
       </div>
-      <div class="col-md-4">
-        <label class="form-label">Fecha de ingreso</label>
-        <input name="Fecha_ingreso" type="date" class="form-control" required
+      <div>
+        <label for="Fecha_ingreso">Fecha de ingreso</label>
+        <input id="Fecha_ingreso" name="Fecha_ingreso" type="date" required
                value="<?= htmlspecialchars($data['Fecha_ingreso']) ?>">
       </div>
-
-      <div class="col-md-6">
-        <label class="form-label">Curso (opcional)</label>
-        <select name="Id_curso" class="form-select">
+      <div>
+        <label for="Id_curso">Curso (opcional)</label>
+        <select id="Id_curso" name="Id_curso">
           <option value="">-- Sin curso --</option>
           <?php foreach($cursos as $c): ?>
             <option value="<?= $c['Id_curso'] ?>"
-              <?= $data['Id_curso']==$c['Id_curso']?'selected':'' ?>>
+              <?= $data['Id_curso']==$c['Id_curso'] ? 'selected' : '' ?>>
               <?= htmlspecialchars($c['desc_curso']) ?>
             </option>
           <?php endforeach ?>
         </select>
       </div>
-
-      <div class="col-md-6">
-        <label class="form-label">Apoderado (opcional)</label>
-        <input type="text" id="buscar_apoderado" class="form-control" placeholder="RUT o Nombre">
+      <div>
+        <label for="buscar_apoderado">Apoderado (opcional)</label>
+        <input type="text" id="buscar_apoderado" placeholder="RUT o Nombre">
         <input type="hidden" name="Id_apoderado" id="Id_apoderado"
                value="<?= htmlspecialchars($data['Id_apoderado']) ?>">
         <div id="resultados_apoderado" class="border mt-1"></div>
       </div>
-
-      <div class="col-12">
+      <div style="grid-column:1/-1;">
         <button type="submit" class="btn btn-success">Guardar Datos</button>
       </div>
     </form>
@@ -227,18 +248,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 function buscar(endpoint, query, cont, idInput) {
   if (query.length < 3) { cont.innerHTML = ''; return; }
   fetch(endpoint + '?q=' + encodeURIComponent(query))
-    .then(res => res.json())
-    .then(data => {
+    .then(r=>r.json()).then(data=>{
       cont.innerHTML = '';
       if (!data.length) {
         cont.innerHTML = '<div class="p-2 text-muted">Sin resultados</div>';
         return;
       }
-      data.forEach(item => {
+      data.forEach(item=>{
         const div = document.createElement('div');
         div.className = 'resultado';
         div.textContent = `${item.rut} - ${item.nombre} ${item.apellido}`;
-        div.onclick = () => {
+        div.onclick = ()=>{
           document.getElementById(idInput).value = item.id;
           cont.innerHTML = `<div class="resultado seleccionado">${div.textContent} (Seleccionado)</div>`;
         };
@@ -247,8 +267,9 @@ function buscar(endpoint, query, cont, idInput) {
     });
 }
 document.getElementById('buscar_apoderado')
-  .addEventListener('input', e => {
-    buscar('buscar_apoderados.php', e.target.value.trim(),
+  .addEventListener('input', e=>{
+    buscar('buscar_apoderados.php',
+           e.target.value.trim(),
            document.getElementById('resultados_apoderado'),
            'Id_apoderado');
   });
