@@ -162,11 +162,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <link rel="stylesheet" href="style.css">
   <style>
     /* grid para labels e inputs */
-    .form-grid {
+    
+    /* .form-grid {
       display: grid;
       grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
       gap: 1rem;
-    }
+    } */
+
     .form-grid label {
       display: block;
       margin-bottom: .25rem;
