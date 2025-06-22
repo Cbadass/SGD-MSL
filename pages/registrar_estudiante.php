@@ -99,7 +99,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ]);
             if ($ok) {
                 // >>> Cambio aquí: redirige correctamente al index en la raíz
-                header("Location: ../index.php?seccion=estudiantes");
+                header("Location: index.php?seccion=estudiantes");
                 exit;
             } else {
                 $message = "<p class='text-danger'>Error al guardar el estudiante.</p>";
