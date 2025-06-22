@@ -242,7 +242,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <main class="main">
         <h2 class = 'mb-4'>Registrar nuevo profesional</h2>
         <?= $message ?>
-
+        <h3 class = 'mb-4'>Datos personales</h3>
         <form method="POST" class="form-grid needs-validation" novalidate>
           <div>
             <label class="form-label">Nombres</label>
@@ -309,6 +309,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
               <?php endforeach ?>
             </select>
           </div>
+
+          <!-- DATOS BANCARIOS -->
+          <h3 class = 'mb-4'>Datos Bancarios</h3>
           <div>
             <label class="form-label">Banco</label>
             <select name="banco" class="form-select" required>
@@ -329,8 +332,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </div>
           <div>
             <label class="form-label">N° de cuenta</label>
-            <input name="cuenta" class="form-control" required>
+            <input name="cuenta" class="form-control" type="text" required>
           </div>
+
+          <!-- Datos salud -->
+          <h3 class = 'mb-4'>Datos Salud</h3>
           <div>
             <label class="form-label">AFP</label>
             <select name="afp" class="form-select" required>
