@@ -8,6 +8,10 @@
     <h3>Estudiantes</h3>
     <a href="?seccion=estudiantes" class="<?= $seccion === 'estudiantes' ? 'active' : '' ?>">Estudiantes</a>
     <a href="?seccion=registrar_estudiante" class="<?= $seccion === 'registrar_estudiante' ? 'active' : '' ?>">Registrar Estudiante</a>
+    
+    <h3>APODERADOS</h3>
+    <a href="?seccion=apoderados" class="<?= $seccion === 'apoderados' ? 'active' : '' ?>">Apoderados</a>
+    <a href="?seccion=registrar_apoderado" class="<?= $seccion === 'registrar_apoderado' ? 'active' : '' ?>">Registrar Apoderado</a>
 
     <h3>Cursos</h3>
     <a href="?seccion=cursos" class="<?= $seccion === 'cursos' ? 'active' : '' ?>">Cursos</a>

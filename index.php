@@ -35,19 +35,27 @@ $modo_oscuro = $_COOKIE['modo_oscuro'] ?? 'false';
         // Lista de secciones válidas
         $allowed = [
           'usuarios',
-          'cursos',
-          'estudiantes',
           'registrar_usuario',
-          'registrar_estudiante',
-          'actividad',
+          'modificar_profesional',
+          
+          'cursos',
           'registrar_curso',
           'modificar_curso',
+
+          'estudiantes',
+          'registrar_estudiante',
+          'modificar_estudiante',
+
+          'apoderados',
+          'registrar_apoderado',
+          'modificar_apoderado',
+
           'documentos',
           'subir_documento',
-          'asignaciones',
           'modificar_documento',
-          'modificar_profesional',
-          'modificar_estudiante',   
+
+          'asignaciones',
+          'actividad'
         ];
 
         $seccion = $_GET['seccion'] ?? 'usuarios';
