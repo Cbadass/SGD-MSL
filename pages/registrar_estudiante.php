@@ -2,7 +2,6 @@
 // pages/registrar_estudiante.php
 session_start();
 require_once __DIR__ . '/../includes/db.php';
-require_once __DIR__ . '/../includes/auditoria.php';  // <-- Incluimos auditoría
 
 // 1) Protege la página
 if (!isset($_SESSION['usuario'])) {
@@ -37,7 +36,6 @@ function formatRut($rut) {
 }
 
 // 2) Carga listados para selects
-// Cursos (con su escuela al lado)
 $stmtC = $conn->query("
     SELECT 
       c.Id_curso,
@@ -52,13 +50,13 @@ $cursos = $stmtC->fetchAll(PDO::FETCH_ASSOC);
 $message = '';
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     // — Captura y trim de inputs —
-    $nombre         = trim($_POST['Nombre_estudiante'] ?? '');
-    $apellido       = trim($_POST['Apellido_estudiante'] ?? '');
-    $rut            = trim($_POST['Rut_estudiante'] ?? '');
-    $fecha_nac      = trim($_POST['Fecha_nacimiento'] ?? '');
-    $fecha_ing      = trim($_POST['Fecha_ingreso'] ?? '');
-    $id_curso       = intval($_POST['Id_curso'] ?? 0) ?: null;
-    $id_apoderado   = intval($_POST['Id_apoderado'] ?? 0) ?: null;
+    $nombre       = trim($_POST['Nombre_estudiante'] ?? '');
+    $apellido     = trim($_POST['Apellido_estudiante'] ?? '');
+    $rut          = trim($_POST['Rut_estudiante'] ?? '');
+    $fecha_nac    = trim($_POST['Fecha_nacimiento'] ?? '');
+    $fecha_ing    = trim($_POST['Fecha_ingreso'] ?? '');
+    $id_curso     = intval($_POST['Id_curso'] ?? 0) ?: null;
+    $id_apoderado = intval($_POST['Id_apoderado'] ?? 0) ?: null;
 
     // — Validaciones —
     if (!$nombre || !$apellido || !$rut || !$fecha_nac || !$fecha_ing) {
@@ -99,31 +97,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $id_curso, $id_apoderado, $id_escuela
             ]);
             if ($ok) {
-                // --- Registra auditoría ---
-                $nuevoId = $conn->lastInsertId();
-                $usuarioLog = $_SESSION['usuario']['id'];
-                $datosNuevos = [
-                    'Nombre_estudiante'   => $nombre,
-                    'Apellido_estudiante' => $apellido,
-                    'Rut_estudiante'      => $rut_fmt,
-                    'Fecha_nacimiento'    => $fecha_nac,
-                    'Fecha_ingreso'       => $fecha_ing,
-                    'Estado_estudiante'   => 1,
-                    'Id_curso'            => $id_curso,
-                    'Id_apoderado'        => $id_apoderado,
-                    'Id_escuela'          => $id_escuela
-                ];
-                registrarAuditoria(
-                    $conn,
-                    $usuarioLog,
-                    'estudiantes',
-                    $nuevoId,
-                    'INSERT',
-                    null,
-                    $datosNuevos
-                );
-                // Redirige correctamente a la lista
+                // Redirección limpia
                 header("Location: index.php?seccion=estudiantes");
+                // Fallback JS / meta-refresh si header falla
+                echo '<script>window.location.href="index.php?seccion=estudiantes";</script>';
+                echo '<noscript><meta http-equiv="refresh" content="0;url=index.php?seccion=estudiantes"></noscript>';
                 exit;
             } else {
                 $message = "<p class='text-danger'>Error al guardar el estudiante.</p>";
@@ -144,10 +122,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     .seleccionado { background:#d1e7dd!important; font-weight:bold; }
   </style>
 </head>
-<body class="<?= ( $_COOKIE['modo_oscuro'] ?? 'false')==='true'?'dark-mode':'' ?>">
-<?php include '../header.php'; ?>
+<body class="<?= ($_COOKIE['modo_oscuro'] ?? 'false') === 'true' ? 'dark-mode' : '' ?>">
+<?php include __DIR__ . '/../components/header.php'; ?>
 <div class="container d-flex">
-  <?php include '../sidebar.php'; ?>
+  <?php include __DIR__ . '/../components/sidebar.php'; ?>
   <main class="main">
       <h2>Registrar nuevo estudiante</h2>
       <?= $message ?>
@@ -155,43 +133,48 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <form method="POST" class="row g-3 needs-validation" novalidate>
         <div class="col-md-6">
           <label class="form-label">Nombres</label>
-          <input name="Nombre_estudiante" class="form-control" required value="<?= htmlspecialchars($_POST['Nombre_estudiante'] ?? '') ?>">
+          <input name="Nombre_estudiante" class="form-control" required
+                 value="<?= htmlspecialchars($_POST['Nombre_estudiante'] ?? '') ?>">
         </div>
         <div class="col-md-6">
           <label class="form-label">Apellidos</label>
-          <input name="Apellido_estudiante" class="form-control" required value="<?= htmlspecialchars($_POST['Apellido_estudiante'] ?? '') ?>">
+          <input name="Apellido_estudiante" class="form-control" required
+                 value="<?= htmlspecialchars($_POST['Apellido_estudiante'] ?? '') ?>">
         </div>
         <div class="col-md-4">
           <label class="form-label">RUT</label>
-          <input name="Rut_estudiante" class="form-control" placeholder="20.384.593-4" required value="<?= htmlspecialchars($_POST['Rut_estudiante'] ?? '') ?>">
+          <input name="Rut_estudiante" class="form-control" placeholder="20.384.593-4" required
+                 value="<?= htmlspecialchars($_POST['Rut_estudiante'] ?? '') ?>">
         </div>
         <div class="col-md-4">
           <label class="form-label">Fecha de nacimiento</label>
-          <input name="Fecha_nacimiento" type="date" class="form-control" required value="<?= htmlspecialchars($_POST['Fecha_nacimiento'] ?? '') ?>">
+          <input name="Fecha_nacimiento" type="date" class="form-control" required
+                 value="<?= htmlspecialchars($_POST['Fecha_nacimiento'] ?? '') ?>">
         </div>
         <div class="col-md-4">
           <label class="form-label">Fecha de ingreso</label>
-          <input name="Fecha_ingreso" type="date" class="form-control" required value="<?= htmlspecialchars($_POST['Fecha_ingreso'] ?? '') ?>">
+          <input name="Fecha_ingreso" type="date" class="form-control" required
+                 value="<?= htmlspecialchars($_POST['Fecha_ingreso'] ?? '') ?>">
         </div>
 
         <div class="col-md-6">
           <label class="form-label">Curso (opcional)</label>
           <select name="Id_curso" class="form-select">
             <option value="">-- Sin curso --</option>
-            <?php foreach($cursos as $c): ?>
+            <?php foreach ($cursos as $c): ?>
               <option value="<?= $c['Id_curso'] ?>"
-                <?= (isset($_POST['Id_curso']) && $_POST['Id_curso']==$c['Id_curso'])?'selected':'' ?>>
+                <?= (isset($_POST['Id_curso']) && $_POST['Id_curso']==$c['Id_curso']) ? 'selected' : '' ?>>
                 <?= htmlspecialchars($c['desc_curso']) ?>
               </option>
             <?php endforeach ?>
           </select>
         </div>
 
-        <!-- Buscador Apoderado -->
         <div class="col-md-6">
           <label class="form-label">Apoderado (opcional)</label>
           <input type="text" id="buscar_apoderado" class="form-control" placeholder="RUT o Nombre">
-          <input type="hidden" name="Id_apoderado" id="Id_apoderado" value="<?= htmlspecialchars($_POST['Id_apoderado'] ?? '') ?>">
+          <input type="hidden" name="Id_apoderado" id="Id_apoderado"
+                 value="<?= htmlspecialchars($_POST['Id_apoderado'] ?? '') ?>">
           <div id="resultados_apoderado" class="border mt-1"></div>
         </div>
 
