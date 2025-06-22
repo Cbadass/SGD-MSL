@@ -2,6 +2,7 @@
 session_start();
 require_once 'includes/db.php';
 require_once 'includes/storage.php';
+require_once 'includes/auditoria.php';
 
 try {
     if (!isset($_SESSION['usuario'])) {
@@ -64,11 +65,24 @@ try {
     $stmt = $conn->prepare($sql);
     $stmt->execute([$nombre, $tipo, $descripcion, $urlDocumento, $id_estudiante, $id_profesional, $id_usuario]);
 
+    // Auditoría
+    $nuevoId = $conn->lastInsertId(); // ID del documento insertado
+    $datosNuevos = [
+        'Nombre_documento'    => $nombre,
+        'Tipo_documento'      => $tipo,
+        'Descripcion'         => $descripcion,
+        'Url_documento'       => $urlDocumento,
+        'Id_estudiante_doc'   => $id_estudiante,
+        'Id_prof_doc'         => $id_profesional,
+        'Id_usuario_subido'   => $id_usuario,
+    ];
+    registrarAuditoria($conn, $id_usuario, 'documentos', $nuevoId, 'INSERT', null, $datosNuevos);
+
     // Redirigir de nuevo a la lista de documentos
     header("Location: index.php?seccion=documentos");
     exit;
 
 } catch (Exception $e) {
-    echo "Error: " . $e->getMessage();
+    echo "Error: " . htmlspecialchars($e->getMessage());
 }
 ?>

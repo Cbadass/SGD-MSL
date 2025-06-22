@@ -144,74 +144,103 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $hashPwd  = password_hash($plainPwd, PASSWORD_DEFAULT);
 
             try {
-                $conn->beginTransaction();
-
-                // 1) Insertar en profesionales
-                $stmt1 = $conn->prepare("
-                    INSERT INTO profesionales (
-                      Nombre_profesional, Apellido_profesional, Rut_profesional,
-                      Nacimiento_profesional, Domicilio_profesional, Celular_profesional,
-                      Correo_profesional, Estado_civil_profesional, Banco_profesional,
-                      Tipo_cuenta_profesional, Cuenta_B_profesional, AFP_profesional,
-                      Salud_profesional, Cargo_profesional, Horas_profesional,
-                      Fecha_ingreso, Tipo_profesional, Id_escuela_prof
-                    ) VALUES (
-                      :nom, :ape, :rut, :nac,
-                      :dom, :tel, :mail, :ec, :bco,
-                      :tcta, :cta, :afp,
-                      :sal, :car, :hrs,
-                      :fing, :tprof, :idesc
-                    )
-                ");
-                $stmt1->execute([
-                    ':nom'   => $nombre,
-                    ':ape'   => $apellido,
-                    ':rut'   => $rut_fmt,
-                    ':nac'   => $nacimiento,
-                    ':dom'   => $domicilio,
-                    ':tel'   => $telefono,
-                    ':mail'  => $correo,
-                    ':ec'    => $estado_civ,
-                    ':bco'   => $banco,
-                    ':tcta'  => $tipo_cta_sel,
-                    ':cta'   => $cuenta,
-                    ':afp'   => $afp_sel,
-                    ':sal'   => $salud_sel,
-                    ':car'   => $cargo,
-                    ':hrs'   => $horas,
-                    ':fing'  => $fecha_ing,
-                    ':tprof' => $tipo_profes,
-                    ':idesc' => $escuelas[$escuela_sel]
-                ]);
-                $id_prof = $conn->lastInsertId();
-
-                // 2) Insertar en usuarios
-                $stmt2 = $conn->prepare("
-                    INSERT INTO usuarios (
-                      Nombre_usuario, Contraseña, Estado_usuario,
-                      Permisos, Id_profesional
-                    ) VALUES (
-                      :usr, :pwd, 1, :perm, :idp
-                    )
-                ");
-                $stmt2->execute([
-                    ':usr'  => $usr,
-                    ':pwd'  => $hashPwd,
-                    ':perm' => strtolower($permiso),
-                    ':idp'  => $id_prof
-                ]);
-                $id_user = $conn->lastInsertId();
-
-                // 3) Actualizar profesionales con su Id_usuario
-                $stmt3 = $conn->prepare("
-                    UPDATE profesionales
-                    SET Id_usuario = ?
-                    WHERE Id_profesional = ?
-                ");
-                $stmt3->execute([$id_user, $id_prof]);
-
-                $conn->commit();
-
+              $conn->beginTransaction();
+          
+              // 1) Insertar en profesionales
+              $stmt1 = $conn->prepare("
+                  INSERT INTO profesionales (
+                    Nombre_profesional, Apellido_profesional, Rut_profesional,
+                    Nacimiento_profesional, Domicilio_profesional, Celular_profesional,
+                    Correo_profesional, Estado_civil_profesional, Banco_profesional,
+                    Tipo_cuenta_profesional, Cuenta_B_profesional, AFP_profesional,
+                    Salud_profesional, Cargo_profesional, Horas_profesional,
+                    Fecha_ingreso, Tipo_profesional, Id_escuela_prof
+                  ) VALUES (
+                    :nom, :ape, :rut, :nac,
+                    :dom, :tel, :mail, :ec, :bco,
+                    :tcta, :cta, :afp,
+                    :sal, :car, :hrs,
+                    :fing, :tprof, :idesc
+                  )
+              ");
+              $stmt1->execute([
+                  ':nom'   => $nombre,
+                  ':ape'   => $apellido,
+                  ':rut'   => $rut_fmt,
+                  ':nac'   => $nacimiento,
+                  ':dom'   => $domicilio,
+                  ':tel'   => $telefono,
+                  ':mail'  => $correo,
+                  ':ec'    => $estado_civ,
+                  ':bco'   => $banco,
+                  ':tcta'  => $tipo_cta_sel,
+                  ':cta'   => $cuenta,
+                  ':afp'   => $afp_sel,
+                  ':sal'   => $salud_sel,
+                  ':car'   => $cargo,
+                  ':hrs'   => $horas,
+                  ':fing'  => $fecha_ing,
+                  ':tprof' => $tipo_profes,
+                  ':idesc' => $escuelas[$escuela_sel]
+              ]);
+              $id_prof = $conn->lastInsertId();
+          
+              // 2) Insertar en usuarios
+              $stmt2 = $conn->prepare("
+                  INSERT INTO usuarios (
+                    Nombre_usuario, Contraseña, Estado_usuario,
+                    Permisos, Id_profesional
+                  ) VALUES (
+                    :usr, :pwd, 1, :perm, :idp
+                  )
+              ");
+              $stmt2->execute([
+                  ':usr'  => $usr,
+                  ':pwd'  => $hashPwd,
+                  ':perm' => strtolower($permiso),
+                  ':idp'  => $id_prof
+              ]);
+              $id_user = $conn->lastInsertId();
+          
+              // 3) Actualizar profesionales con su Id_usuario
+              $stmt3 = $conn->prepare("
+                  UPDATE profesionales
+                  SET Id_usuario = ?
+                  WHERE Id_profesional = ?
+              ");
+              $stmt3->execute([$id_user, $id_prof]);
+          
+              // AUDITORÍA: Registrar creación del profesional
+              $datos_despues = [
+                  'nombre' => $nombre,
+                  'apellido' => $apellido,
+                  'rut' => $rut_fmt,
+                  'tipo_profesional' => $tipo_profes,
+                  'cargo' => $cargo,
+                  'usuario_asociado' => $usr
+              ];
+              registrarAuditoria(
+                  $conn,
+                  $_SESSION['usuario']['id'], // Asumiendo que el ID está en la sesión
+                  'profesionales',
+                  $id_prof,
+                  'CREACIÓN',
+                  null, // No hay datos anteriores en creación
+                  $datos_despues
+              );
+          
+              // AUDITORÍA: Registrar creación del usuario
+              registrarAuditoria(
+                  $conn,
+                  $_SESSION['usuario']['id'],
+                  'usuarios',
+                  $id_user,
+                  'CREACIÓN',
+                  null,
+                  ['usuario' => $usr, 'permisos' => $permiso]
+              );
+          
+              $conn->commit();
                 $message = "<p class='text-success'>
                     Profesional y usuario creados.<br>
                     <strong>Usuario:</strong> $usr<br>

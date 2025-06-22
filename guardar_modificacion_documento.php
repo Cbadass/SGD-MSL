@@ -2,6 +2,7 @@
 session_start();
 require_once 'includes/db.php';
 require_once 'includes/storage.php';
+require_once 'includes/auditoria.php';  // <-- Incluir auditoría
 
 try {
     // 1) Autorización
@@ -51,10 +52,8 @@ try {
 
         $tipoL    = preg_replace('/[^a-zA-Z0-9]/', '', $tipo);
         $ts       = date('YmdHis');
-        $nEst     = $est ? preg_replace('/[^a-zA-Z0-9]/', '',
-                     $est['Nombre_estudiante'] . $est['Apellido_estudiante']) : 'SinEst';
-        $nProf    = $prof ? preg_replace('/[^a-zA-Z0-9]/', '',
-                     $prof['Nombre_profesional'] . $prof['Apellido_profesional']) : 'SinProf';
+        $nEst     = $est  ? preg_replace('/[^a-zA-Z0-9]/', '', $est['Nombre_estudiante'] . $est['Apellido_estudiante'])   : 'SinEst';
+        $nProf    = $prof ? preg_replace('/[^a-zA-Z0-9]/', '', $prof['Nombre_profesional'] . $prof['Apellido_profesional']) : 'SinProf';
 
         $blobName = "{$tipoL}-{$ts}-{$nEst}-{$nProf}.{$ext}";
         $contenido= file_get_contents($archivo['tmp_name']);
@@ -72,7 +71,7 @@ try {
             throw new Exception("Error al subir el archivo a Azure.");
         }
 
-        // Aquí el cambio: extraer AccountName de la connection string
+        // Reconstruir URL con el AccountName
         $connectionString = getenv('AZURE_STORAGE_CONNECTION_STRING');
         if (!preg_match('/AccountName=([^;]+);/', $connectionString, $m)) {
             throw new Exception("No se pudo obtener el nombre de cuenta de la cadena de conexión.");
@@ -104,6 +103,18 @@ try {
         ':id'     => $id
     ]);
 
+    // Auditoría de la modificación
+    $usuarioLog = $_SESSION['usuario']['id'];
+    $datosNuevos = [
+        'Nombre_documento'  => $nombre,
+        'Tipo_documento'    => $tipo,
+        'Descripcion'       => $descripcion,
+        'Url_documento'     => $url_documento,
+        'Id_estudiante_doc' => $id_estudiante,
+        'Id_prof_doc'       => $id_profesional
+    ];
+    registrarAuditoria($conn, $usuarioLog, 'documentos', $id, 'UPDATE', null, $datosNuevos);
+
     // 7) Redirigir al listado
     header("Location: index.php?seccion=documentos");
     exit;
@@ -111,4 +122,3 @@ try {
 } catch (Exception $e) {
     echo "<p style='color:red;'>Error: " . htmlspecialchars($e->getMessage()) . "</p>";
 }
-?>

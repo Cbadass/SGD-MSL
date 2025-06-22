@@ -1,6 +1,7 @@
 <?php
 session_start();
 require_once 'includes/db.php';
+require_once 'includes/auditoria.php';  // <-- incluir auditoría
 
 try {
     // 1) Protección
@@ -38,6 +39,17 @@ try {
     ";
     $stmt = $conn->prepare($sql);
     $stmt->execute([$tipo, $grado, $seccion, $idEscuela, $idProfes, $idCurso]);
+
+    // Auditoría de la modificación
+    $usuarioLog = $_SESSION['usuario']['id'];
+    $datosNuevos = [
+        'Tipo_curso'     => $tipo,
+        'Grado_curso'    => $grado,
+        'seccion_curso'  => $seccion,
+        'Id_escuela'     => $idEscuela,
+        'Id_profesional' => $idProfes,
+    ];
+    registrarAuditoria($conn, $usuarioLog, 'cursos', $idCurso, 'UPDATE', null, $datosNuevos);
 
     // 6) Redirigir a la lista
     header("Location: index.php?seccion=cursos");

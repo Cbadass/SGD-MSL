@@ -1,6 +1,8 @@
 <?php
+// guardar_modificacion_estudiante.php
 session_start();
 require_once 'includes/db.php';
+require_once 'includes/auditoria.php';  // <-- Incluimos auditoría
 
 // — Funciones de RUT —
 function cleanRut($rut) {
@@ -38,14 +40,14 @@ try {
     if ($id <= 0) throw new Exception("ID inválido.");
 
     // 2) Capturar campos
-    $nombre     = trim($_POST['Nombre_estudiante']   ?? '');
-    $apellido   = trim($_POST['Apellido_estudiante'] ?? '');
-    $rutRaw     = trim($_POST['Rut_estudiante']      ?? '');
-    $nac        = trim($_POST['Fecha_nacimiento']    ?? '');
-    $ing        = trim($_POST['Fecha_ingreso']       ?? '');
-    $estado     = intval($_POST['Estado_estudiante'] ?? 1);
-    $curso      = intval($_POST['Id_curso']          ?? 0) ?: null;
-    $apoderado  = intval($_POST['Id_apoderado']      ?? 0) ?: null;
+    $nombre    = trim($_POST['Nombre_estudiante']   ?? '');
+    $apellido  = trim($_POST['Apellido_estudiante'] ?? '');
+    $rutRaw    = trim($_POST['Rut_estudiante']      ?? '');
+    $nac       = trim($_POST['Fecha_nacimiento']    ?? '');
+    $ing       = trim($_POST['Fecha_ingreso']       ?? '');
+    $estado    = intval($_POST['Estado_estudiante'] ?? 1);
+    $curso     = intval($_POST['Id_curso']          ?? 0) ?: null;
+    $apoderado = intval($_POST['Id_apoderado']      ?? 0) ?: null;
 
     // 3) Validaciones
     if (!$nombre || !$apellido || !$rutRaw) {
@@ -67,16 +69,17 @@ try {
 
     // 4) Transaction
     $conn->beginTransaction();
+
     $sql = "
       UPDATE estudiantes
-         SET Nombre_estudiante = :nom,
+         SET Nombre_estudiante   = :nom,
              Apellido_estudiante = :ape,
-             Rut_estudiante = :rut,
-             Fecha_nacimiento = :nac,
-             Fecha_ingreso = :ing,
-             Estado_estudiante = :est,
-             Id_curso = :cur,
-             Id_apoderado = :apo
+             Rut_estudiante      = :rut,
+             Fecha_nacimiento    = :nac,
+             Fecha_ingreso       = :ing,
+             Estado_estudiante   = :est,
+             Id_curso            = :cur,
+             Id_apoderado        = :apo
        WHERE Id_estudiante = :id
     ";
     $stmt = $conn->prepare($sql);
@@ -91,6 +94,21 @@ try {
         ':apo' => $apoderado,
         ':id'  => $id
     ]);
+
+    // Auditoría de la modificación
+    $usuarioLog = $_SESSION['usuario']['id'];
+    $datosNuevos = [
+        'Nombre_estudiante'   => $nombre,
+        'Apellido_estudiante' => $apellido,
+        'Rut_estudiante'      => $rutFmt,
+        'Fecha_nacimiento'    => $nac,
+        'Fecha_ingreso'       => $ing,
+        'Estado_estudiante'   => $estado,
+        'Id_curso'            => $curso,
+        'Id_apoderado'        => $apoderado
+    ];
+    registrarAuditoria($conn, $usuarioLog, 'estudiantes', $id, 'UPDATE', null, $datosNuevos);
+
     $conn->commit();
 
     header("Location: index.php?seccion=estudiantes");

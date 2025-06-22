@@ -2,7 +2,7 @@
 // guardar_modificacion_profesional.php
 session_start();
 require_once 'includes/db.php';
-
+require_once 'includes/auditoria.php';  
 try {
     if (!isset($_SESSION['usuario'])) {
         throw new Exception("No autorizado.");
@@ -43,24 +43,24 @@ try {
     // 4a) Update profesionales
     $sql1 = "
       UPDATE profesionales
-         SET Nombre_profesional     = :nom,
-             Apellido_profesional   = :ape,
-             Rut_profesional        = :rut,
-             Nacimiento_profesional = :nac,
-             Domicilio_profesional  = :dom,
-             Celular_profesional    = :tel,
-             Correo_profesional     = :mail,
+         SET Nombre_profesional       = :nom,
+             Apellido_profesional     = :ape,
+             Rut_profesional          = :rut,
+             Nacimiento_profesional   = :nac,
+             Domicilio_profesional    = :dom,
+             Celular_profesional      = :tel,
+             Correo_profesional       = :mail,
              Estado_civil_profesional = :ec,
-             Banco_profesional      = :bco,
-             Tipo_cuenta_profesional = :tcta,
-             Cuenta_B_profesional   = :cta,
-             AFP_profesional        = :afp,
-             Salud_profesional      = :sal,
-             Cargo_profesional      = :car,
-             Horas_profesional      = :hrs,
-             Fecha_ingreso          = :fing,
-             Tipo_profesional       = :tprof,
-             Id_escuela_prof        = :idesc
+             Banco_profesional        = :bco,
+             Tipo_cuenta_profesional  = :tcta,
+             Cuenta_B_profesional     = :cta,
+             AFP_profesional          = :afp,
+             Salud_profesional        = :sal,
+             Cargo_profesional        = :car,
+             Horas_profesional        = :hrs,
+             Fecha_ingreso            = :fing,
+             Tipo_profesional         = :tprof,
+             Id_escuela_prof          = :idesc
        WHERE Id_profesional = :idp
     ";
     $stmt1 = $conn->prepare($sql1);
@@ -86,6 +86,30 @@ try {
       ':idp'   => $id
     ]);
 
+    // Auditoría de la tabla 'profesionales'
+    $usuarioLog = $_SESSION['usuario']['id'];
+    $datosNuevosProf = [
+      'Nombre_profesional'       => $nombre,
+      'Apellido_profesional'     => $apellido,
+      'Rut_profesional'          => $rut,
+      'Nacimiento_profesional'   => $nacimiento,
+      'Domicilio_profesional'    => $domicilio,
+      'Celular_profesional'      => $telefono,
+      'Correo_profesional'       => $correo,
+      'Estado_civil_profesional' => $estado_civ,
+      'Banco_profesional'        => $banco,
+      'Tipo_cuenta_profesional'  => $tipo_cta,
+      'Cuenta_B_profesional'     => $cuenta,
+      'AFP_profesional'          => $afp,
+      'Salud_profesional'        => $salud,
+      'Cargo_profesional'        => $cargo,
+      'Horas_profesional'        => $horas,
+      'Fecha_ingreso'            => $fecha_ing,
+      'Tipo_profesional'         => $tipo_prof,
+      'Id_escuela_prof'          => $escuela
+    ];
+    registrarAuditoria($conn, $usuarioLog, 'profesionales', $id, 'UPDATE', null, $datosNuevosProf);
+
     // 4b) Update usuarios asociado (permiso y estado)
     $sql2 = "
       UPDATE usuarios
@@ -99,6 +123,13 @@ try {
       ':est'  => $estado_usr,
       ':idp'  => $id
     ]);
+
+    // Auditoría de la tabla 'usuarios'
+    $datosNuevosUsr = [
+      'Permisos'       => $permiso,
+      'Estado_usuario' => $estado_usr
+    ];
+    registrarAuditoria($conn, $usuarioLog, 'usuarios', $id, 'UPDATE', null, $datosNuevosUsr);
 
     $conn->commit();
 
