@@ -50,7 +50,7 @@ $estados_usr = ['1'=>'Activo','0'=>'Inactivo'];
 <head>
   <meta charset="UTF-8">
   <title>Editar Profesional</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" href="style.css">
 </head>
 <body class="p-4">
   <h2>Editar Profesional</h2>
