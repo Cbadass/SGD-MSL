@@ -154,11 +154,15 @@ table th {
 .form-grid {
   display: grid;
   grid-template-columns: auto auto auto auto;
-  gap: 3rem;
+  gap: 0 3rem;
+}
+
+.form-grid > div {
+  margin-bottom: 2rem;
 }
 
 .subtitle {
-  grid-row: 1 / 5;
+  grid-column: 1 / 5;
 }
 
 label {
