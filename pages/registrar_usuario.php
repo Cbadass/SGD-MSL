@@ -240,7 +240,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?php include 'sidebar.php'; ?>
 
     <main class="main">
-        <h2>Registrar nuevo profesional</h2>
+        <h2 class = 'mb-4'>Registrar nuevo profesional</h2>
         <?= $message ?>
 
         <form method="POST" class="form-grid needs-validation" novalidate>
