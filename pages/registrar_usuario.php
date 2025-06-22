@@ -226,15 +226,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
   <title>Registrar Profesional</title>
   <style>
-    
+
   </style>
-</head>
+</head> -->
 
 <body class="<?= isset($_COOKIE['modo_oscuro']) && $_COOKIE['modo_oscuro'] === 'true' ? 'dark-mode' : '' ?>">
   <?php include 'header.php'; ?>

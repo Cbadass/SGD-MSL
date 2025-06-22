@@ -194,6 +194,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <?= $message ?>
 
     <form method="POST" class="form-grid needs-validation" novalidate>
+      <!-- Datos personales -->
+      <h3 class="mb-4 subtitle">Datos personales</h3>
       <div>
         <label for="Nombre_estudiante">Nombres</label>
         <input id="Nombre_estudiante" type="text" name="Nombre_estudiante" required
@@ -216,11 +218,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                value="<?= htmlspecialchars($data['Fecha_nacimiento']) ?>">
       </div>
       <div>
-        <label for="Fecha_ingreso">Fecha de ingreso</label>
-        <input id="Fecha_ingreso" name="Fecha_ingreso" type="date" required
-               value="<?= htmlspecialchars($data['Fecha_ingreso']) ?>">
-      </div>
-      <div>
         <label for="Id_curso">Curso (opcional)</label>
         <select id="Id_curso" name="Id_curso">
           <option value="">-- Sin curso --</option>
@@ -231,6 +228,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </option>
           <?php endforeach ?>
         </select>
+      </div>
+      <div>
+        <label for="Fecha_ingreso">Fecha de ingreso</label>
+        <input id="Fecha_ingreso" name="Fecha_ingreso" type="date" required
+               value="<?= htmlspecialchars($data['Fecha_ingreso']) ?>">
+      </div>
+      <!-- Datos apoderado -->
+      <div class="mb-4 subtitle">
+        <h3>Datos de Apoderados</h3>
       </div>
       <div>
         <label for="buscar_apoderado">Apoderado (opcional)</label>
