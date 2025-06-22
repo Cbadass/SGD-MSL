@@ -246,11 +246,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="POST" class="form-grid needs-validation" novalidate>
           <div>
             <label class="form-label">Nombres</label>
-            <input name="nombre" class="form-control" required>
+            <input name="nombre" class="form-control" required type="text">
           </div>
           <div>
             <label class="form-label">Apellidos</label>
-            <input name="apellido" class="form-control" required>
+            <input name="apellido" class="form-control" required type="text" >
           </div>
           <div>
             <label class="form-label">Correo</label>
@@ -258,11 +258,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </div>
           <div>
             <label class="form-label">Teléfono</label>
-            <input name="telefono" class="form-control" placeholder="+56 9 1234 5678" required>
+            <input name="telefono" class="form-control" placeholder="+56 9 1234 5678" required type="text">
           </div>
           <div>
             <label class="form-label">RUT</label>
-            <input name="rut" class="form-control" placeholder="20.384.593-4" required>
+            <input name="rut" class="form-control" placeholder="20.384.593-4" required type="text">
           </div>
           <div>
             <label class="form-label">Fecha nacimiento</label>
@@ -296,7 +296,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </div>
           <div>
             <label class="form-label">Domicilio</label>
-            <input name="domicilio" class="form-control">
+            <input name="domicilio" class="form-control" type="text">
           </div>
           <div>
             <label class="form-label">Estado civil</label>
@@ -320,7 +320,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           </div>
           <div>
             <label class="form-label">Tipo de cuenta</label>
-            <select name="tipo_cuenta" class="form-select" required>
+            <select name="tipo_cuenta" class="form-select" required type="text">
               <option value="">Seleccione...</option>
               <?php foreach ($tipos_cta as $tc): ?>
                 <option><?= htmlspecialchars($tc) ?></option>
