@@ -403,7 +403,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
           <!-- Botón que ocupa toda la fila -->
           <div class="form-submit">
-            <button type="submit" class="btn btn-success">Guardar Datos</button>
+            <button type="submit" class="btn btn-success btn-height">Guardar Datos</button>
           </div>
         </form>
     </main>
