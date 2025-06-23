@@ -102,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -130,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     .alert { padding:0.75rem; background:#f8d7da; color:#842029; border-radius:4px; }
   </style>
-</head>
+</head> -->
 <h2 class="mb-4">Registrar Nuevo Apoderado</h2>
 <?= $message ?>
 <form method="POST" class="form-grid" novalidate>
