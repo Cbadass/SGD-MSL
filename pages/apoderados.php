@@ -14,7 +14,7 @@ $filtro_id = intval($_GET['Id_apoderado'] ?? 0);
 
 // 3) Formulario de búsqueda con autocomplete
 echo "<h2 class='mb-4'>Visualización de Apoderados</h2>";
-echo "<form method='GET' class='mb-3 d-flex flex-wrap gap-2 align-items-end'>";
+echo "<form method='GET' style='display:flex; gap:8rem ; margin: 2rem 0;'";
 echo "  <input type='hidden' name='seccion' value='apoderados'>";
 echo "  <div style='flex:1; position:relative;'>";
 echo "    <label>Apoderado</label>";
@@ -22,10 +22,8 @@ echo "    <input type='text' id='buscar_apoderado' class='form-control' placehol
 echo "    <input type='hidden' name='Id_apoderado' id='Id_apoderado' value='".htmlspecialchars($filtro_id)."'>";
 echo "    <div id='resultados_apoderado' class='border mt-1' style='position:absolute; width:100%; z-index:10; background:#fff;'></div>";
 echo "  </div>";
-echo "  <div class='d-flex gap-2'>";
-echo "    <button type='submit' class='btn btn-primary mt-4'>Buscar</button>";
-echo "    <button type='button' class='btn btn-secondary mt-4' onclick=\"window.location='?seccion=apoderados'\">Limpiar</button>";
-echo "  </div>";
+echo "  <button type='submit' class='btn btn-primary mt-4'>Buscar</button>";
+echo "  <button type='button' class='btn btn-secondary mt-4' onclick=\"window.location='?seccion=apoderados'\">Limpiar</button>";
 echo "</form>";
 
 // 4) Construir consulta dinámica
