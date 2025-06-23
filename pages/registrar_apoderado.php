@@ -134,6 +134,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 <h2 class="mb-4">Registrar Nuevo Apoderado</h2>
 <?= $message ?>
 <form method="POST" class="form-grid" novalidate>
+  <div class="mb-4">
     <label class="form-label">Nombres</label>
     <input name="Nombre_apoderado" class="form-control" required
            value="<?= htmlspecialchars($data['Nombre_apoderado']) ?>">
