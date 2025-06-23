@@ -74,8 +74,10 @@ body {
   justify-content: space-between;
   padding: 0 1.5rem;
   /* estilos */
-  background-color: #875ff5;
+  height: 52px;
+  align-items: center;
   color: white;
+  background-color: #875ff5;
 }
 
 /*----------Cuadro Blanco------------*/
@@ -227,8 +229,9 @@ h2 {
 }
 
 .header-title{
+  cursor: default;
   color: #fff;
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 600;
   align-content: center;
 }
