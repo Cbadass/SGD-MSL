@@ -109,47 +109,47 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   <h3 class = "mb-4 subtitle">Datos personales</h3>
   <div class="mb-4">
     <label class="form-label">Nombres</label>
-    <input name="Nombre_apoderado" class="form-control input-width" type="text" required
+    <input name="Nombre_apoderado" class="form-control" type="text" required
            value="<?= htmlspecialchars($data['Nombre_apoderado']) ?>">
   </div>
   <div class="mb-4">
     <label class="form-label">Apellidos</label>
-    <input name="Apellido_apoderado" class="form-control input-width" type="text" required
+    <input name="Apellido_apoderado" class="form-control" type="text" required
            value="<?= htmlspecialchars($data['Apellido_apoderado']) ?>">
   </div>
   <div class="mb-4">
     <label class="form-label">RUT</label>
-    <input name="Rut_apoderado" class="form-control input-width" type="text" placeholder="20.384.593-4" required
+    <input name="Rut_apoderado" class="form-control" type="text" placeholder="20.384.593-4" required
            value="<?= htmlspecialchars($data['Rut_apoderado']) ?>">
   </div>
   <div class="mb-4">
     <label class="form-label">Teléfono</label>
-    <input name="Numero_apoderado" class="form-control input-width" type="text"
+    <input name="Numero_apoderado" class="form-control" type="text"
            value="<?= htmlspecialchars($data['Numero_apoderado']) ?>">
   </div>
   <div class="mb-4">
     <label class="form-label">Correo electrónico</label>
-    <input name="Correo_apoderado" type="email" class="form-control input-width"
+    <input name="Correo_apoderado" type="email" class="form-control"
            value="<?= htmlspecialchars($data['Correo_apoderado']) ?>">
   </div>
   <div class="mb-4">
     <label class="form-label">Escolaridad Padre</label>
-    <input name="Escolaridad_padre" class="form-control input-width" type="text"
+    <input name="Escolaridad_padre" class="form-control" type="text"
            value="<?= htmlspecialchars($data['Escolaridad_padre']) ?>">
   </div>
   <div class="mb-4">
     <label class="form-label">Escolaridad Madre</label>
-    <input name="Escolaridad_madre" class="form-control input-width" type="text"
+    <input name="Escolaridad_madre" class="form-control" type="text"
            value="<?= htmlspecialchars($data['Escolaridad_madre']) ?>">
   </div>
   <div class="mb-4">
     <label class="form-label">Ocupación Padre</label>
-    <input name="Ocupacion_padre" class="form-control input-width" type="text"
+    <input name="Ocupacion_padre" class="form-control" type="text"
            value="<?= htmlspecialchars($data['Ocupacion_padre']) ?>">
   </div>
   <div class="mb-4">
     <label class="form-label">Ocupación Madre</label>
-    <input name="Ocupacion_madre" class="form-control input-width" type="text"
+    <input name="Ocupacion_madre" class="form-control" type="text"
            value="<?= htmlspecialchars($data['Ocupacion_madre']) ?>">
   </div>
   <div class="col-12">
