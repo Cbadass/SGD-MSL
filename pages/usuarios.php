@@ -25,9 +25,10 @@ $allowed_cargos = [
 ];
 
 // 3) Formulario de búsqueda avanzada
-echo "<h2 class='mb-4'>Visualización de Profesionales</h2>";
-echo "<form method='GET' class='mb-3 d-flex flex-wrap gap-2 align-items-end'>";
-echo "  <input type='hidden' name='seccion' value='usuarios'>";
+echo "<h2 class='mb-4'>Visualización de Profesionales</h2>
+        <div class='mb-3 d-flex flex-row flex-wrap gap-2 align-items-end'>                
+          <form method='GET'>
+          <input type='hidden' name='seccion' value='usuarios'>";
 
 // Escuela
 echo "<div>
@@ -76,7 +77,8 @@ echo "<div class='d-flex gap-2'>
         <button type='button' class='btn btn-secondary mt-4' onclick=\"window.location='?seccion=usuarios'\">Limpiar filtros</button>
       </div>";
 
-echo "</form>";
+echo "</form>
+      </div>";
 
 // 4) Construir consulta dinámica
 $sql = "
