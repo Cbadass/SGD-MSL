@@ -36,15 +36,17 @@ if ($id_est && !$id_apo) {
   <link rel="stylesheet" href="../assets/css/styles.css">
 </head>
 <body class="<?= ($_COOKIE['modo_oscuro'] ?? 'false') === 'true' ? 'dark-mode' : '' ?>">
-  <?php include __DIR__ . '/../header.php'; ?>
+  <?php include __DIR__ . '/../components/header.php'; ?>
   <div class="container d-flex">
-    <?php include __DIR__ . '/../sidebar.php'; ?>
+    <?php include __DIR__ . '/../components/sidebar.php'; ?>
     <main class="main">
 
       <?php if ($id_prof): 
         // === Perfil PROFESIONAL ===
         $stmt = $conn->prepare("
-          SELECT p.*, u.Nombre_usuario, u.Permisos, u.Estado_usuario, esc.Nombre_escuela
+          SELECT p.*, 
+                 u.Nombre_usuario, u.Permisos, u.Estado_usuario, 
+                 esc.Nombre_escuela
             FROM profesionales p
        LEFT JOIN usuarios      u   ON u.Id_profesional = p.Id_profesional
        LEFT JOIN escuelas      esc ON esc.Id_escuela   = p.Id_escuela_prof
@@ -63,10 +65,20 @@ if ($id_est && !$id_apo) {
             <div><label class="form-label">Nombres</label><div><?= htmlspecialchars($prof['Nombre_profesional']) ?></div></div>
             <div><label class="form-label">Apellidos</label><div><?= htmlspecialchars($prof['Apellido_profesional']) ?></div></div>
             <div><label class="form-label">RUT</label><div><?= htmlspecialchars($prof['Rut_profesional']) ?></div></div>
-            <div><label class="form-label">Correo</label><div><?= htmlspecialchars($prof['Correo_profesional']) ?></div></div>
+            <div><label class="form-label">Nacimiento</label><div><?= htmlspecialchars($prof['Nacimiento_profesional']) ?></div></div>
+            <div><label class="form-label">Domicilio</label><div><?= htmlspecialchars($prof['Domicilio_profesional']) ?></div></div>
             <div><label class="form-label">Teléfono</label><div><?= htmlspecialchars($prof['Celular_profesional']) ?></div></div>
-            <div><label class="form-label">Tipo profesional</label><div><?= htmlspecialchars($prof['Tipo_profesional']) ?></div></div>
+            <div><label class="form-label">Correo</label><div><?= htmlspecialchars($prof['Correo_profesional']) ?></div></div>
+            <div><label class="form-label">Estado Civil</label><div><?= htmlspecialchars($prof['Estado_civil_profesional']) ?></div></div>
+            <div><label class="form-label">Banco</label><div><?= htmlspecialchars($prof['Banco_profesional']) ?></div></div>
+            <div><label class="form-label">Tipo de cuenta</label><div><?= htmlspecialchars($prof['Tipo_cuenta_profesional']) ?></div></div>
+            <div><label class="form-label">Cuenta</label><div><?= htmlspecialchars($prof['Cuenta_B_profesional']) ?></div></div>
+            <div><label class="form-label">AFP</label><div><?= htmlspecialchars($prof['AFP_profesional']) ?></div></div>
+            <div><label class="form-label">Salud</label><div><?= htmlspecialchars($prof['Salud_profesional']) ?></div></div>
             <div><label class="form-label">Cargo</label><div><?= htmlspecialchars($prof['Cargo_profesional']) ?></div></div>
+            <div><label class="form-label">Horas</label><div><?= htmlspecialchars($prof['Horas_profesional']) ?></div></div>
+            <div><label class="form-label">Fecha Ingreso</label><div><?= htmlspecialchars($prof['Fecha_ingreso']) ?></div></div>
+            <div><label class="form-label">Tipo Profesional</label><div><?= htmlspecialchars($prof['Tipo_profesional']) ?></div></div>
             <div><label class="form-label">Escuela</label><div><?= htmlspecialchars($prof['Nombre_escuela']) ?></div></div>
           </div>
           <div class="mt-3">
@@ -113,7 +125,8 @@ if ($id_est && !$id_apo) {
           SELECT 
             e.Id_estudiante,
             e.Nombre_estudiante, e.Apellido_estudiante,
-            e.Rut_estudiante, e.Fecha_nacimiento,
+            e.Rut_estudiante, e.Fecha_nacimiento, e.Fecha_ingreso,
+            e.Estado_estudiante, e.Id_curso, e.Id_escuela,
             c.Tipo_curso, c.Grado_curso, c.seccion_curso,
             esc.Nombre_escuela
           FROM estudiantes e
@@ -134,6 +147,8 @@ if ($id_est && !$id_apo) {
                 <th>Nombre completo</th>
                 <th>RUT</th>
                 <th>Edad</th>
+                <th>Ingreso</th>
+                <th>Estado</th>
                 <th>Curso</th>
                 <th>Escuela</th>
                 <th>Acciones</th>
@@ -152,6 +167,8 @@ if ($id_est && !$id_apo) {
                 <td><?= htmlspecialchars($full) ?></td>
                 <td><?= htmlspecialchars($h['Rut_estudiante']) ?></td>
                 <td><?= $edad ?></td>
+                <td><?= htmlspecialchars($h['Fecha_ingreso']) ?></td>
+                <td><?= $h['Estado_estudiante']==1?'Activo':'Inactivo' ?></td>
                 <td><?= htmlspecialchars($curso) ?></td>
                 <td><?= htmlspecialchars($h['Nombre_escuela']) ?></td>
                 <td>
