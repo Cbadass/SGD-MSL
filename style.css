@@ -75,9 +75,6 @@ body {
   /* estilos */
   background-color: #875ff5;
   color: white;
-  padding: 15px 30px;
-  font-size: 22px;
-  font-weight: bold;
 }
 
 /*----------Cuadro Blanco------------*/
@@ -243,6 +240,10 @@ h2 {
 .link-text{
   color: #fff;
   text-decoration: none;
+}
+
+.user-info{
+  font-size: 14px;
 }
 
 input[type="text"],
