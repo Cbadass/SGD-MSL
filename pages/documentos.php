@@ -17,10 +17,10 @@ try {
     $pagina    = max((int)($_GET['pagina'] ?? 1), 1);
 
     // Parámetros de filtro específicos
-    $id_prof       = intval($_GET['id_prof']        ?? 0);
-    $sin_estud     = isset($_GET['sin_estudiante'])   && $_GET['sin_estudiante']   == 1;
-    $id_est        = intval($_GET['id_estudiante']   ?? 0);
-    $sin_profes    = isset($_GET['sin_profesional'])  && $_GET['sin_profesional']  == 1;
+    $id_prof    = intval($_GET['id_prof']       ?? 0);
+    $sin_estud  = isset($_GET['sin_estudiante']) && $_GET['sin_estudiante'] == 1;
+    $id_est     = intval($_GET['id_estudiante'] ?? 0);
+    $sin_profes = isset($_GET['sin_profesional']) && $_GET['sin_profesional'] == 1;
 
     // Construcción inicial del WHERE dinámico
     $where  = "1=1";
@@ -29,47 +29,23 @@ try {
     // Helper para LIKE
     function agregarFiltro(&$where, &$params, $campo, $valor) {
         if ($valor !== '') {
-            $where    .= " AND $campo LIKE ?";
-            $params[]  = "%{$valor}%";
+            $where   .= " AND $campo LIKE ?";
+            $params[] = "%{$valor}%";
         }
     }
 
     // Filtros básicos
-    agregarFiltro($where, $params, 'd.Nombre_documento',   $_GET['nombre'] ?? '');
-    agregarFiltro($where, $params, 'd.Tipo_documento',     $_GET['tipo_documento'] ?? '');
-
-    // Búsqueda libre de estudiante
-    if (!empty($_GET['estudiante'])) {
-        $f = $_GET['estudiante'];
-        $rn = normalizarRut($f);
-        $where .= " AND (
-            e.Nombre_estudiante LIKE ? OR
-            REPLACE(REPLACE(REPLACE(LOWER(e.Rut_estudiante),'.',''),'-',''),'k','K') LIKE ?
-        )";
-        $params[] = "%{$f}%";
-        $params[] = "%".strtolower($rn)."%";
-    }
-
-    // Búsqueda libre de profesional
-    if (!empty($_GET['profesional'])) {
-        $f = $_GET['profesional'];
-        $rn = normalizarRut($f);
-        $where .= " AND (
-            p.Nombre_profesional LIKE ? OR
-            REPLACE(REPLACE(REPLACE(LOWER(p.Rut_profesional),'.',''),'-',''),'k','K') LIKE ?
-        )";
-        $params[] = "%{$f}%";
-        $params[] = "%".strtolower($rn)."%";
-    }
+    agregarFiltro($where, $params, 'd.Nombre_documento', $_GET['nombre'] ?? '');
+    agregarFiltro($where, $params, 'd.Tipo_documento',   $_GET['tipo_documento'] ?? '');
 
     // Filtros de fechas
     if (!empty($_GET['fecha_subida_desde'])) {
-        $where    .= " AND d.Fecha_subido >= ?";
-        $params[]  = $_GET['fecha_subida_desde'];
+        $where   .= " AND d.Fecha_subido >= ?";
+        $params[] = $_GET['fecha_subida_desde'];
     }
     if (!empty($_GET['fecha_subida_hasta'])) {
-        $where    .= " AND d.Fecha_subido <= ?";
-        $params[]  = $_GET['fecha_subida_hasta'];
+        $where   .= " AND d.Fecha_subido <= ?";
+        $params[] = $_GET['fecha_subida_hasta'];
     }
 
     // Opciones de orden
@@ -79,21 +55,21 @@ try {
         'modificado_desc' => 'd.Fecha_modificacion DESC',
         'modificado_asc'  => 'd.Fecha_modificacion ASC',
     ];
-    $orden = $ordenOpciones[$_GET['orden'] ?? 'subido_desc'] 
+    $orden = $ordenOpciones[$_GET['orden'] ?? 'subido_desc']
            ?? $ordenOpciones['subido_desc'];
 
     // Filtro “desde profesional”
     if ($id_prof > 0) {
-        $where    .= " AND d.Id_prof_doc = ?";
-        $params[]  = $id_prof;
+        $where   .= " AND d.Id_prof_doc = ?";
+        $params[] = $id_prof;
         if ($sin_estud) {
             $where .= " AND d.Id_estudiante_doc IS NULL";
         }
     }
     // Filtro “desde estudiante”
     if ($id_est > 0) {
-        $where    .= " AND d.Id_estudiante_doc = ?";
-        $params[]  = $id_est;
+        $where   .= " AND d.Id_estudiante_doc = ?";
+        $params[] = $id_est;
         if ($sin_profes) {
             $where .= " AND d.Id_prof_doc IS NULL";
         }
@@ -108,7 +84,7 @@ try {
         WHERE $where
     ");
     $stmtTotal->execute($params);
-    $total = (int)$stmtTotal->fetchColumn();
+    $total    = (int)$stmtTotal->fetchColumn();
     $totalPag = max(1, ceil($total / $porPagina));
     if ($pagina > $totalPag) $pagina = $totalPag;
     $offset = ($pagina - 1) * $porPagina;
@@ -170,7 +146,7 @@ try {
 <div class="card p-4 mb-4">
   <form method="GET" class="form-grid">
     <input type="hidden" name="seccion" value="documentos">
-    <input type="hidden" name="id_prof" value="<?= htmlspecialchars($id_prof) ?>">
+    <input type="hidden" name="id_prof"       value="<?= htmlspecialchars($id_prof) ?>">
     <input type="hidden" name="sin_estudiante" value="<?= $sin_estud ? 1 : 0 ?>">
     <input type="hidden" name="id_estudiante" value="<?= htmlspecialchars($id_est) ?>">
     <input type="hidden" name="sin_profesional" value="<?= $sin_profes ? 1 : 0 ?>">
@@ -196,14 +172,23 @@ try {
         ?>
       </select>
     </div>
+
+    <!-- Buscador Estudiante -->
     <div>
-      <label>Nombre/RUT Estudiante</label>
-      <input type="text" name="estudiante" value="<?= htmlspecialchars($_GET['estudiante'] ?? '') ?>" class="form-control">
+      <label>Estudiante</label>
+      <input type="text" id="buscar_estudiante" class="form-control" placeholder="RUT o Nombre">
+      <input type="hidden" name="id_estudiante" id="id_estudiante" value="<?= htmlspecialchars($id_est) ?>">
+      <div id="resultados_estudiante" class="border mt-1"></div>
     </div>
+
+    <!-- Buscador Profesional -->
     <div>
-      <label>Nombre/RUT Profesional</label>
-      <input type="text" name="profesional" value="<?= htmlspecialchars($_GET['profesional'] ?? '') ?>" class="form-control">
+      <label>Profesional</label>
+      <input type="text" id="buscar_profesional" class="form-control" placeholder="RUT o Nombre">
+      <input type="hidden" name="id_prof" id="id_prof" value="<?= htmlspecialchars($id_prof) ?>">
+      <div id="resultados_profesional" class="border mt-1"></div>
     </div>
+
     <div>
       <label>Fecha subida (desde)</label>
       <input type="date" name="fecha_subida_desde" value="<?= htmlspecialchars($_GET['fecha_subida_desde'] ?? '') ?>" class="form-control">
@@ -251,8 +236,7 @@ try {
         </tr>
       </thead>
       <tbody>
-        <?php foreach ($documentos as $d): 
-          // calcular fecha formateada y tiempo transcurrido
+        <?php foreach ($documentos as $d):
           $fechaSubido = new DateTime($d['Fecha_subido']);
           $ahora       = new DateTime();
           $diff        = $ahora->diff($fechaSubido);
@@ -270,13 +254,9 @@ try {
             <small>Hace <?= $tiempo ?></small>
           </td>
           <td>
-            <?php 
-              if (!empty($d['Fecha_modificacion'])) {
-                echo (new DateTime($d['Fecha_modificacion']))->format('d-m-Y');
-              } else {
-                echo 'No Modificado';
-              }
-            ?>
+            <?= !empty($d['Fecha_modificacion'])
+               ? (new DateTime($d['Fecha_modificacion']))->format('d-m-Y')
+               : 'No Modificado' ?>
           </td>
           <td><?= htmlspecialchars($d['Descripcion']) ?></td>
           <td><?= htmlspecialchars($d['Nombre_estudiante']  ?: '-') ?></td>
@@ -284,9 +264,9 @@ try {
           <td><?= htmlspecialchars($d['Usuario_subio']) ?></td>
           <td>
             <a href="index.php?seccion=modificar_documento&id_documento=<?= $d['Id_documento'] ?>"
-              class="btn btn-warning btn-sm">Modificar</a>
+               class="btn btn-warning btn-sm">Modificar</a>
             <a href="descargar.php?id_documento=<?= $d['Id_documento'] ?>"
-              class="btn btn-primary btn-sm">Descargar</a>
+               class="btn btn-primary btn-sm">Descargar</a>
           </td>
         </tr>
         <?php endforeach; ?>
@@ -294,24 +274,19 @@ try {
     </table>
   </div>
 
-
   <!-- Paginación -->
   <nav>
     <ul class="pagination justify-content-center">
       <?php if ($pagina > 1): ?>
       <li class="page-item">
         <a class="page-link"
-           href="index.php?seccion=documentos&pagina=1
-                <?= $id_prof ? "&id_prof={$id_prof}&sin_estudiante=".($sin_estud?1:0) : '' ?>
-                <?= $id_est  ? "&id_estudiante={$id_est}&sin_profesional=".($sin_profes?1:0) : '' ?>">
+           href="index.php?seccion=documentos&pagina=1<?= $id_prof?"&id_prof=$id_prof&sin_estudiante=".($sin_estud?1:0):""?><?= $id_est?"&id_estudiante=$id_est&sin_profesional=".($sin_profes?1:0):""?>">
           « Primera
         </a>
       </li>
       <li class="page-item">
         <a class="page-link"
-           href="index.php?seccion=documentos&pagina=<?= $pagina-1 ?>
-                <?= $id_prof ? "&id_prof={$id_prof}&sin_estudiante=".($sin_estud?1:0) : '' ?>
-                <?= $id_est  ? "&id_estudiante={$id_est}&sin_profesional=".($sin_profes?1:0) : '' ?>">
+           href="index.php?seccion=documentos&pagina=<?= $pagina-1 ?><?= $id_prof?"&id_prof=$id_prof&sin_estudiante=".($sin_estud?1:0):""?><?= $id_est?"&id_estudiante=$id_est&sin_profesional=".($sin_profes?1:0):""?>">
           ‹ Anterior
         </a>
       </li>
@@ -320,9 +295,7 @@ try {
       <?php for ($i = 1; $i <= $totalPag; $i++): ?>
       <li class="page-item <?= $i === $pagina ? 'active' : '' ?>">
         <a class="page-link"
-           href="index.php?seccion=documentos&pagina=<?= $i ?>
-                <?= $id_prof ? "&id_prof={$id_prof}&sin_estudiante=".($sin_estud?1:0) : '' ?>
-                <?= $id_est  ? "&id_estudiante={$id_est}&sin_profesional=".($sin_profes?1:0) : '' ?>">
+           href="index.php?seccion=documentos&pagina=<?= $i ?><?= $id_prof?"&id_prof=$id_prof&sin_estudiante=".($sin_estud?1:0):""?><?= $id_est?"&id_estudiante=$id_est&sin_profesional=".($sin_profes?1:0):""?>">
           <?= $i ?>
         </a>
       </li>
@@ -331,24 +304,65 @@ try {
       <?php if ($pagina < $totalPag): ?>
       <li class="page-item">
         <a class="page-link"
-           href="index.php?seccion=documentos&pagina=<?= $pagina+1 ?>
-                <?= $id_prof ? "&id_prof={$id_prof}&sin_estudiante=".($sin_estud?1:0) : '' ?>
-                <?= $id_est  ? "&id_estudiante={$id_est}&sin_profesional=".($sin_profes?1:0) : '' ?>">
+           href="index.php?seccion=documentos&pagina=<?= $pagina+1 ?><?= $id_prof?"&id_prof=$id_prof&sin_estudiante=".($sin_estud?1:0):""?><?= $id_est?"&id_estudiante=$id_est&sin_profesional=".($sin_profes?1:0):""?>">
           Siguiente ›
         </a>
       </li>
       <li class="page-item">
         <a class="page-link"
-           href="index.php?seccion=documentos&pagina=<?= $totalPag ?>
-                <?= $id_prof ? "&id_prof={$id_prof}&sin_estudiante=".($sin_estud?1:0) : '' ?>
-                <?= $id_est  ? "&id_estudiante={$id_est}&sin_profesional=".($sin_profes?1:0) : '' ?>">
+           href="index.php?seccion=documentos&pagina=<?= $totalPag ?><?= $id_prof?"&id_prof=$id_prof&sin_estudiante=".($sin_estud?1:0):""?><?= $id_est?"&id_estudiante=$id_est&sin_profesional=".($sin_profes?1:0):""?>">
           Última »
         </a>
       </li>
       <?php endif; ?>
     </ul>
   </nav>
+
 <?php endif; ?>
+
+<script>
+// Función genérica de búsqueda
+function buscar(endpoint, query, cont, idInput) {
+  if (query.length < 3) { cont.innerHTML = ''; return; }
+  fetch(endpoint + '?q=' + encodeURIComponent(query))
+    .then(res => res.json())
+    .then(data => {
+      cont.innerHTML = '';
+      if (!data.length) {
+        cont.innerHTML = '<div class="p-2 text-muted">Sin resultados</div>';
+        return;
+      }
+      data.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'resultado';
+        div.textContent = `${item.rut} — ${item.nombre} ${item.apellido}`;
+        div.onclick = () => {
+          document.getElementById(idInput).value = item.id;
+          cont.innerHTML = `<div class="resultado seleccionado">${div.textContent} (Seleccionado)</div>`;
+        };
+        cont.appendChild(div);
+      });
+    });
+}
+
+// Autocomplete Estudiante
+document.getElementById('buscar_estudiante')
+  .addEventListener('input', e => {
+    buscar('buscar_estudiantes.php',
+           e.target.value.trim(),
+           document.getElementById('resultados_estudiante'),
+           'id_estudiante');
+  });
+
+// Autocomplete Profesional
+document.getElementById('buscar_profesional')
+  .addEventListener('input', e => {
+    buscar('buscar_profesionales.php',
+           e.target.value.trim(),
+           document.getElementById('resultados_profesional'),
+           'id_prof');
+  });
+</script>
 
 </body>
 </html>
