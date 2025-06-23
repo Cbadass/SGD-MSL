@@ -47,8 +47,8 @@ echo "<div style='flex:1; position:relative;'>
       </div>";
 
 // Botones
-echo "<button type='submit' class='btn btn-primary mt-4'>Buscar</button>
-      <button type='button' class='btn btn-secondary mt-4' onclick=\"window.location='?seccion=estudiantes'\">Limpiar filtros</button>";
+echo "<button type='submit' class='btn btn-primary btn-height mt-4'>Buscar</button>
+      <button type='button' class='btn btn-secondary btn-height mt-4' onclick=\"window.location='?seccion=estudiantes'\">Limpiar filtros</button>";
 echo "</form>";
 
 // 3) Construir consulta dinámica

@@ -142,6 +142,10 @@ table th {
   margin-bottom: 4px;
 }
 
+.btn-height{
+  height: 42px;
+}
+
 .btn:hover {
   background-color: #574cf0;
 }

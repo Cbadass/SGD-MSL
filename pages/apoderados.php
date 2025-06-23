@@ -22,8 +22,8 @@ echo "    <input type='text' id='buscar_apoderado' class='form-control' placehol
 echo "    <input type='hidden' name='Id_apoderado' id='Id_apoderado' value='".htmlspecialchars($filtro_id)."'>";
 echo "    <div id='resultados_apoderado' class='border mt-1' style='position:absolute; width:100%; z-index:10; background:#fff;'></div>";
 echo "  </div>";
-echo "  <button type='submit' class='btn btn-primary mt-4'>Buscar</button>";
-echo "  <button type='button' class='btn btn-secondary mt-4' onclick=\"window.location='?seccion=apoderados'\">Limpiar</button>";
+echo "  <button type='submit' class='btn btn-primary btn-height mt-4'>Buscar</button>";
+echo "  <button type='button' class='btn btn-secondary btn-height mt-4' onclick=\"window.location='?seccion=apoderados'\">Limpiar</button>";
 echo "</form>";
 
 // 4) Construir consulta dinámica

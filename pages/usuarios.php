@@ -26,7 +26,7 @@ $allowed_cargos = [
 
 // 3) Formulario de búsqueda avanzada
 echo "<h2 class='mb-4'>Visualización de Profesionales</h2> 
-        <form method='GET' style='display:flex; gap:8rem ; margin: 2rem 0;'>
+        <form method='GET'  btn-height>
           <input type='hidden' name='seccion' value='usuarios'>";
 
 // Escuela
@@ -72,8 +72,8 @@ echo "<div style='flex:1; position:relative;'>
 
 // Botones
 
-echo "<button type='submit' class='btn btn-primary mt-4'>Buscar</button>
-      <button type='button' class='btn btn-secondary mt-4' onclick=\"window.location='?seccion=usuarios'\">Limpiar filtros</button>";
+echo "<button type='submit' class='btn btn-primary btn-height mt-4'>Buscar</button>
+      <button type='button' class='btn btn-secondary btn-height mt-4' onclick=\"window.location='?seccion=usuarios'\">Limpiar filtros</button>";
 
 echo "</form>";
 
