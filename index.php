@@ -34,10 +34,12 @@ $modo_oscuro = $_COOKIE['modo_oscuro'] ?? 'false';
         <?php
         // Lista de secciones válidas
         $allowed = [
+          'perfil',
+
           'usuarios',
           'registrar_usuario',
           'modificar_profesional',
-          
+
           'cursos',
           'registrar_curso',
           'modificar_curso',
@@ -63,7 +65,6 @@ $modo_oscuro = $_COOKIE['modo_oscuro'] ?? 'false';
                  ? __DIR__ . "/pages/{$seccion}.php"
                  : __DIR__ . "/pages/error404.php";
 
-        // DEBUG: si falla, muestra ruta completa
         if (! file_exists($file)) {
             die("ERROR: Archivo no encontrado: $file");
         }
