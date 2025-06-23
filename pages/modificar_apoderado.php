@@ -187,7 +187,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <input name="Ocupacion_madre" class="form-control input-width" type="text"
            value="<?= htmlspecialchars($est['Ocupacion_madre']) ?>">
   </div>
-  <div class="col-12" style="margin-top: 1rem;">
+  <div class="col-12 mt-1">
     <button type="submit" class="btn btn-success btn-height mr-1">Guardar Cambios</button>
     <button class="btn btn-secondary btn-height">
         <a class="link-text" href="index.php?seccion=apoderados" >Cancelar</a>

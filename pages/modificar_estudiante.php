@@ -51,37 +51,37 @@ $cursos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 
     <div class="col-md-6">
       <label class="form-label">Nombres</label>
-      <input name="Nombre_estudiante" class="form-control" required
+      <input name="Nombre_estudiante" class="form-control input-width" type="text" required
              value="<?= htmlspecialchars($est['Nombre_estudiante']) ?>">
     </div>
 
     <div class="col-md-6">
       <label class="form-label">Apellidos</label>
-      <input name="Apellido_estudiante" class="form-control" required
+      <input name="Apellido_estudiante" class="form-control input-width" type="text" required
              value="<?= htmlspecialchars($est['Apellido_estudiante']) ?>">
     </div>
 
     <div class="col-md-4">
       <label class="form-label">Fecha de Nacimiento</label>
-      <input name="Fecha_nacimiento" type="date" class="form-control"
+      <input name="Fecha_nacimiento" type="date" class="form-control input-width"
              value="<?= htmlspecialchars($est['Fecha_nacimiento']) ?>">
     </div>
 
     <div class="col-md-4">
       <label class="form-label">Fecha de Ingreso</label>
-      <input name="Fecha_ingreso" type="date" class="form-control"
+      <input name="Fecha_ingreso" type="date" class="form-control input-width"
              value="<?= htmlspecialchars($est['Fecha_ingreso']) ?>">
     </div>
 
     <div class="col-md-4">
       <label class="form-label">RUT</label>
-      <input name="Rut_estudiante" class="form-control" required
+      <input name="Rut_estudiante" class="form-control input-width" type="text" required
              placeholder="20.384.593-4"
              value="<?= htmlspecialchars($est['Rut_estudiante']) ?>">
     </div>
 
     <div class="col-md-4">
-      <label class="form-label">Estado</label>
+      <label class="form-label input-width">Estado</label>
       <select name="Estado_estudiante" class="form-select" required>
         <option value="1" <?= $est['Estado_estudiante']==1?'selected':'' ?>>Activo</option>
         <option value="0" <?= $est['Estado_estudiante']==0?'selected':'' ?>>Inactivo</option>
@@ -90,7 +90,7 @@ $cursos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 
     <div class="col-md-6">
       <label class="form-label">Curso (opcional)</label>
-      <select name="Id_curso" class="form-select">
+      <select name="Id_curso" class="form-select input-width">
         <option value="">-- Sin cambio --</option>
         <?php foreach($cursos as $c): ?>
           <option value="<?= $c['Id_curso'] ?>"
@@ -103,12 +103,12 @@ $cursos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 
     <div class="col-md-6">
       <label class="form-label">Apoderado (opcional)</label>
-      <input type="text" id="buscar_apoderado" class="form-control" placeholder="RUT o Nombre">
+      <input type="text" id="buscar_apoderado" class="form-control input-width" placeholder="RUT o Nombre">
       <input type="hidden" name="Id_apoderado" id="Id_apoderado"
              value="<?= htmlspecialchars($est['Id_apoderado']) ?>">
       <div id="resultados_apoderado" class="border mt-1 p-2">
         <?php if($est['Id_apoderado']): ?>
-          <div class="resultado seleccionado">
+          <div class="resultado seleccionado input-width">
             <?= htmlspecialchars($est['Rut_apoderado']) ?> —
             <?= htmlspecialchars($est['Nombre_apoderado'].' '.$est['Apellido_apoderado']) ?>
             (Seleccionado)
@@ -117,9 +117,11 @@ $cursos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
       </div>
     </div>
 
-    <div class="col-12 d-flex gap-2">
-      <button type="submit" class="btn btn-success">Guardar cambios</button>
-      <a href="index.php?seccion=estudiantes" class="btn btn-secondary">Cancelar</a>
+    <div class="col-12 d-flex gap-2 mt-1">
+      <button type="submit" class="btn btn-success btn-height mr-1">Guardar cambios</button>
+      <button class="btn btn-secondary btn-height">
+        <a href="index.php?seccion=estudiantes">Cancelar</a>
+      </button>
     </div>
   </form>
 </div>
