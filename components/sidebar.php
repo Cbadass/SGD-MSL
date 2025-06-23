@@ -3,7 +3,6 @@
     <h3>Profesionales</h3>
     <a href="?seccion=usuarios" class="<?= $seccion === 'usuarios' ? 'active' : '' ?>">Profesionales</a>
     <a href="?seccion=registrar_usuario" class="<?= $seccion === 'registrar_usuario' ? 'active' : '' ?>">Registrar Profesional</a>
-    <a href="?seccion=asignaciones" class="<?= $seccion === 'asignaciones' ? 'active' : '' ?>">Asignaciones</a>
 
     <h3>Estudiantes</h3>
     <a href="?seccion=estudiantes" class="<?= $seccion === 'estudiantes' ? 'active' : '' ?>">Estudiantes</a>
