@@ -80,6 +80,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 
     .login-info {
+      text-align: center;
+
       background: #bdb3f6;
       color: white;
       width: 50%;
@@ -150,7 +152,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <div class="login-info">
         <img src="source/LogoMultisenluz.png" alt="Logo Multisenluz">
         <h4>Corporación Educacional Multisenluz</h4>
-        <p class="text-center">Comprometidos con la formación integral y la innovación educativa.</p>
+        <p>Comprometidos con la formación integral y la innovación educativa.</p>
       </div>
     </div>
   </div>
