@@ -1,4 +1,5 @@
 <?php
+// pages/estudiantes.php
 require_once 'includes/db.php';
 session_start();
 if (!isset($_SESSION['usuario'])) {
@@ -7,17 +8,14 @@ if (!isset($_SESSION['usuario'])) {
 }
 
 // 1) Recoger filtros
-$filtro_escuela    = $_GET['escuela']                ?? '';
-$filtro_estado     = $_GET['estado']                 ?? '';
-$filtro_nombre     = trim($_GET['nombre_estudiante'] ?? '');
-$filtro_apellido   = trim($_GET['apellido_estudiante'] ?? '');
-$filtro_rut        = trim($_GET['rut_estudiante']    ?? '');
-$buscar_libre      = trim($_GET['buscar']            ?? '');
+$filtro_escuela      = $_GET['escuela']                 ?? '';
+$filtro_estado       = $_GET['estado']                  ?? '';
+$filtro_estudiante   = intval($_GET['Id_estudiante']    ?? 0);
 
 // 2) Formulario de búsqueda avanzada
 echo "<h2 class='mb-4'>Visualización de Estudiantes</h2>";
 echo "<form method='GET' class='mb-3 d-flex flex-wrap gap-2 align-items-end'>";
-echo "<input type='hidden' name='seccion' value='estudiantes'>";
+echo "  <input type='hidden' name='seccion' value='estudiantes'>";
 
 // Escuela
 echo "<div>
@@ -40,28 +38,12 @@ echo "<div>
         </select>
       </div>";
 
-// Nombre
-echo "<div>
-        <label>Nombre</label>
-        <input type='text' name='nombre_estudiante' class='form-control' value='".htmlspecialchars($filtro_nombre)."'>
-      </div>";
-
-// Apellido
-echo "<div>
-        <label>Apellido</label>
-        <input type='text' name='apellido_estudiante' class='form-control' value='".htmlspecialchars($filtro_apellido)."'>
-      </div>";
-
-// RUT
-echo "<div>
-        <label>RUT</label>
-        <input type='text' name='rut_estudiante' class='form-control' value='".htmlspecialchars($filtro_rut)."'>
-      </div>";
-
-// Libre
-echo "<div style='flex:1'>
-        <label>Buscar</label>
-        <input type='text' name='buscar' class='form-control' placeholder='cualquier término' value='".htmlspecialchars($buscar_libre)."'>
+// Autocomplete Estudiante
+echo "<div style='flex:1; position:relative;'>
+        <label>Estudiante</label>
+        <input type='text' id='buscar_estudiante' class='form-control' placeholder='RUT o Nombre'>
+        <input type='hidden' name='Id_estudiante' id='Id_estudiante' value='".htmlspecialchars($filtro_estudiante)."'>
+        <div id='resultados_estudiante' class='border mt-1' style='position:absolute; width:100%; z-index:10; background:#fff;'></div>
       </div>";
 
 // Botones
@@ -75,25 +57,17 @@ echo "</form>";
 $where  = "1=1";
 $params = [];
 
-// Helper
-function filtrar(&$where,&$params,$campo,$valor){
-  if($valor!==''){
-    $where   .= " AND $campo LIKE ?";
-    $params[] = "%$valor%";
-  }
+if ($filtro_escuela !== '') {
+    $where   .= " AND e.Id_escuela = ?";
+    $params[] = $filtro_escuela;
 }
-
-filtrar($where,$params,"e.Id_escuela",$filtro_escuela);
-filtrar($where,$params,"e.Estado_estudiante",$filtro_estado);
-filtrar($where,$params,"e.Nombre_estudiante",$filtro_nombre);
-filtrar($where,$params,"e.Apellido_estudiante",$filtro_apellido);
-filtrar($where,$params,"e.Rut_estudiante",$filtro_rut);
-if($buscar_libre!==''){
-  // busca en nombre, apellido o rut
-  $where .= " AND (e.Nombre_estudiante LIKE ? OR e.Apellido_estudiante LIKE ? OR e.Rut_estudiante LIKE ?)";
-  $params[]= "%$buscar_libre%";
-  $params[]= "%$buscar_libre%";
-  $params[]= "%$buscar_libre%";
+if ($filtro_estado !== '') {
+    $where   .= " AND e.Estado_estudiante = ?";
+    $params[] = $filtro_estado;
+}
+if ($filtro_estudiante > 0) {
+    $where   .= " AND e.Id_estudiante = ?";
+    $params[] = $filtro_estudiante;
 }
 
 $sql = "
@@ -142,19 +116,17 @@ echo "<div style='max-height:400px; overflow-y:auto; border-radius:10px;'>
 
 $hoy = new DateTime();
 foreach($estudiantes as $row){
-    // calcular edad
-    $nac = new DateTime($row['Fecha_nacimiento']);
-    $edad= $hoy->diff($nac)->y;
-
-    $nombreCompleto  = "{$row['Nombre_estudiante']} {$row['Apellido_estudiante']}";
-    $cursoCompleto   = "{$row['Tipo_curso']}-{$row['Grado_curso']}-{$row['seccion_curso']}";
-    $apoderadoFull   = trim("{$row['Nombre_apoderado']} {$row['Apellido_apoderado']}");
+    $nac          = new DateTime($row['Fecha_nacimiento']);
+    $edad         = $hoy->diff($nac)->y;
+    $nombreComp   = "{$row['Nombre_estudiante']} {$row['Apellido_estudiante']}";
+    $cursoComp    = "{$row['Tipo_curso']}-{$row['Grado_curso']}-{$row['seccion_curso']}";
+    $apoderadoFull = trim("{$row['Nombre_apoderado']} {$row['Apellido_apoderado']}");
 
     echo "<tr>
-            <td>".htmlspecialchars($nombreCompleto)."</td>
+            <td>".htmlspecialchars($nombreComp)."</td>
             <td>".htmlspecialchars($row['Rut_estudiante'])."</td>
             <td>{$edad}</td>
-            <td>".htmlspecialchars($cursoCompleto)."</td>
+            <td>".htmlspecialchars($cursoComp)."</td>
             <td>".htmlspecialchars($row['Nombre_escuela'])."</td>
             <td>".($apoderadoFull?:'-')."</td>
             <td>".htmlspecialchars($row['Numero_apoderado'] ?? '-')."</td>
@@ -167,7 +139,7 @@ foreach($estudiantes as $row){
             </td>
           </tr>";
 }
-if(empty($estudiantes)){
+if (empty($estudiantes)) {
     echo "<tr><td colspan='9'>No se encontraron estudiantes.</td></tr>";
 }
 
@@ -177,7 +149,36 @@ echo "    </tbody>
 ?>
 
 <script>
-function limpiarFiltros(){
-  window.location.href = window.location.pathname + '?seccion=estudiantes';
+// Autocomplete para Estudiantes
+function buscarEstudiante(endpoint, query, cont, idInput) {
+  if (query.length < 3) {
+    cont.innerHTML = '';
+    return;
+  }
+  fetch(endpoint + '?q=' + encodeURIComponent(query))
+    .then(res => res.json())
+    .then(data => {
+      cont.innerHTML = '';
+      if (!data.length) {
+        cont.innerHTML = '<div class="p-2 text-muted">Sin resultados</div>';
+        return;
+      }
+      data.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'resultado';
+        div.textContent = `${item.rut} — ${item.nombre} ${item.apellido}`;
+        div.onclick = () => {
+          document.getElementById(idInput).value = item.id;
+          cont.innerHTML = `<div class="resultado seleccionado">${div.textContent} (Seleccionado)</div>`;
+        };
+        cont.appendChild(div);
+      });
+    });
 }
+
+const inp = document.getElementById('buscar_estudiante');
+const panel = document.getElementById('resultados_estudiante');
+inp.addEventListener('input', e => {
+  buscarEstudiante('buscar_estudiantes.php', e.target.value.trim(), panel, 'Id_estudiante');
+});
 </script>

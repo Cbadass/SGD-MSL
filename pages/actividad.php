@@ -22,10 +22,12 @@ echo "<h2 class='mb-4'>Registro de Auditoría</h2>";
 echo "<form method='GET' class='mb-3 d-flex flex-wrap gap-3 align-items-end'>";
 echo "  <input type='hidden' name='seccion' value='actividad'>";
 
-// Usuario ID
-echo "  <div>
-          <label class='form-label'>Usuario ID</label>
-          <input type='text' name='usuario_id' class='form-control' value='".htmlspecialchars($filtro_usuario)."'>
+// Buscador Usuario
+echo "  <div style='flex:1; min-width:240px;'>
+          <label class='form-label'>Usuario</label>
+          <input type='text' id='buscar_usuario' class='form-control' placeholder='Nombre o RUT'>
+          <input type='hidden' name='usuario_id' id='usuario_id' value='".htmlspecialchars($filtro_usuario)."'>
+          <div id='resultados_usuario' class='border mt-1'></div>
         </div>";
 
 // Tabla
@@ -135,7 +137,7 @@ echo "<div class='table-responsive'>";
 echo "<table class='table table-striped table-bordered'>";
 echo "<thead class='table-dark'><tr>
         <th>#</th>
-        <th>Usuario ID</th>
+        <th>Usuario</th>
         <th>Tabla</th>
         <th>ID Registro</th>
         <th>Acción</th>
@@ -169,3 +171,40 @@ if ($logs) {
 }
 echo "</tbody></table></div>";
 ?>
+
+<script>
+// Función genérica de búsqueda tipo autocomplete
+function buscar(endpoint, query, cont, idInput) {
+  if (query.length < 3) {
+    cont.innerHTML = '';
+    return;
+  }
+  fetch(endpoint + '?q=' + encodeURIComponent(query))
+    .then(res => res.json())
+    .then(data => {
+      cont.innerHTML = '';
+      if (!data.length) {
+        cont.innerHTML = '<div class="p-2 text-muted">Sin resultados</div>';
+        return;
+      }
+      data.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'resultado';
+        div.textContent = `${item.rut} - ${item.nombre} ${item.apellido}`;
+        div.onclick = () => {
+          document.getElementById(idInput).value = item.id;
+          cont.innerHTML = `<div class="resultado seleccionado">${div.textContent} (Seleccionado)</div>`;
+        };
+        cont.appendChild(div);
+      });
+    });
+}
+
+// Conecta el buscador de usuario al endpoint correspondiente
+document.getElementById('buscar_usuario')
+  .addEventListener('input', e => {
+    buscar('buscar_usuarios.php', e.target.value.trim(),
+           document.getElementById('resultados_usuario'),
+           'usuario_id');
+  });
+</script>

@@ -1,4 +1,5 @@
 <?php
+// pages/apoderados.php
 session_start();
 require_once __DIR__ . '/../includes/db.php';
 
@@ -8,51 +9,31 @@ if (!isset($_SESSION['usuario'])) {
     exit;
 }
 
-// 2) Recoger filtros
-$filtro_nombre   = trim($_GET['nombre_apoderado']   ?? '');
-$filtro_apellido = trim($_GET['apellido_apoderado'] ?? '');
-$filtro_rut      = trim($_GET['rut_apoderado']      ?? '');
+// 2) Recoger filtro único por selección
+$filtro_id = intval($_GET['Id_apoderado'] ?? 0);
 
-// 3) Formulario de búsqueda
+// 3) Formulario de búsqueda con autocomplete
 echo "<h2 class='mb-4'>Visualización de Apoderados</h2>";
 echo "<form method='GET' class='mb-3 d-flex flex-wrap gap-2 align-items-end'>";
 echo "  <input type='hidden' name='seccion' value='apoderados'>";
-
-echo "  <div>
-          <label>Nombre</label>
-          <input type='text' name='nombre_apoderado' class='form-control' value='".htmlspecialchars($filtro_nombre)."'>
-        </div>";
-
-echo "  <div>
-          <label>Apellido</label>
-          <input type='text' name='apellido_apoderado' class='form-control' value='".htmlspecialchars($filtro_apellido)."'>
-        </div>";
-
-echo "  <div>
-          <label>RUT</label>
-          <input type='text' name='rut_apoderado' class='form-control' value='".htmlspecialchars($filtro_rut)."'>
-        </div>";
-
-echo "  <div class='d-flex gap-2'>
-          <button type='submit' class='btn btn-primary mt-4'>Buscar</button>
-          <button type='button' class='btn btn-secondary mt-4' onclick=\"window.location='?seccion=apoderados'\">Limpiar</button>
-        </div>";
+echo "  <div style='flex:1; position:relative;'>";
+echo "    <label>Apoderado</label>";
+echo "    <input type='text' id='buscar_apoderado' class='form-control' placeholder='RUT o Nombre'>";
+echo "    <input type='hidden' name='Id_apoderado' id='Id_apoderado' value='".htmlspecialchars($filtro_id)."'>";
+echo "    <div id='resultados_apoderado' class='border mt-1' style='position:absolute; width:100%; z-index:10; background:#fff;'></div>";
+echo "  </div>";
+echo "  <div class='d-flex gap-2'>";
+echo "    <button type='submit' class='btn btn-primary mt-4'>Buscar</button>";
+echo "    <button type='button' class='btn btn-secondary mt-4' onclick=\"window.location='?seccion=apoderados'\">Limpiar</button>";
+echo "  </div>";
 echo "</form>";
 
 // 4) Construir consulta dinámica
 $where  = "1=1";
 $params = [];
-if ($filtro_nombre !== '') {
-    $where    .= " AND Nombre_apoderado LIKE ?";
-    $params[] = "%{$filtro_nombre}%";
-}
-if ($filtro_apellido !== '') {
-    $where    .= " AND Apellido_apoderado LIKE ?";
-    $params[] = "%{$filtro_apellido}%";
-}
-if ($filtro_rut !== '') {
-    $where    .= " AND Rut_apoderado LIKE ?";
-    $params[] = "%{$filtro_rut}%";
+if ($filtro_id > 0) {
+    $where   .= " AND Id_apoderado = ?";
+    $params[] = $filtro_id;
 }
 
 $sql = "
@@ -120,3 +101,38 @@ if ($apoderados) {
 echo "    </tbody>
         </table>
       </div>";
+?>
+<script>
+// Función de autocomplete usando buscar_apoderados.php
+function buscar(endpoint, query, cont, idInput) {
+  if (query.length < 3) {
+    cont.innerHTML = '';
+    return;
+  }
+  fetch(endpoint + '?q=' + encodeURIComponent(query))
+    .then(res => res.json())
+    .then(data => {
+      cont.innerHTML = '';
+      if (!data.length) {
+        cont.innerHTML = '<div class="p-2 text-muted">Sin resultados</div>';
+        return;
+      }
+      data.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'resultado';
+        div.textContent = `${item.rut} — ${item.nombre} ${item.apellido}`;
+        div.onclick = () => {
+          document.getElementById(idInput).value = item.id;
+          cont.innerHTML = `<div class="resultado seleccionado">${div.textContent} (Seleccionado)</div>`;
+        };
+        cont.appendChild(div);
+      });
+    });
+}
+
+const input = document.getElementById('buscar_apoderado');
+const resultados = document.getElementById('resultados_apoderado');
+input.addEventListener('input', e => {
+  buscar('buscar_apoderados.php', e.target.value.trim(), resultados, 'Id_apoderado');
+});
+</script>

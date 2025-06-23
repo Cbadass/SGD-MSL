@@ -1,4 +1,5 @@
 <?php
+// pages/usuarios.php
 require_once 'includes/db.php';
 session_start();
 
@@ -9,13 +10,10 @@ if (!isset($_SESSION['usuario'])) {
 }
 
 // 1) Recoger filtros
-$escuela_filtro       = $_GET['escuela']               ?? '';
-$estado_filtro        = $_GET['estado']                ?? '';
-$cargo_filtro         = $_GET['cargo']                 ?? '';
-$nombre_prof_filtro   = trim($_GET['nombre_profesional'] ?? '');
-$apellido_prof_filtro = trim($_GET['apellido_profesional'] ?? '');
-$rut_prof_filtro      = trim($_GET['rut_profesional']    ?? '');
-$buscar_usuario       = trim($_GET['buscar']            ?? '');
+$escuela_filtro     = $_GET['escuela']            ?? '';
+$estado_filtro      = $_GET['estado']             ?? '';
+$cargo_filtro       = $_GET['cargo']              ?? '';
+$filtro_prof_id     = intval($_GET['Id_profesional'] ?? 0);
 
 // 2) Cargos permitidos
 $allowed_cargos = [
@@ -28,8 +26,8 @@ $allowed_cargos = [
 
 // 3) Formulario de búsqueda avanzada
 echo "<h2 class='mb-4'>Visualización de Profesionales</h2>";
-echo "<form id='formFiltros' method='GET' class='mb-3 d-flex flex-wrap gap-2 align-items-end'>";
-echo "<input type='hidden' name='seccion' value='usuarios'>";
+echo "<form method='GET' class='mb-3 d-flex flex-wrap gap-2 align-items-end'>";
+echo "  <input type='hidden' name='seccion' value='usuarios'>";
 
 // Escuela
 echo "<div>
@@ -64,39 +62,23 @@ foreach ($allowed_cargos as $c) {
 echo   "</select>
       </div>";
 
-// Nombre profesional
-echo "<div>
-        <label>Nombre prof.</label>
-        <input type='text' name='nombre_profesional' class='form-control' value='".htmlspecialchars($nombre_prof_filtro)."'>
-      </div>";
-
-// Apellido profesional
-echo "<div>
-        <label>Apellido prof.</label>
-        <input type='text' name='apellido_profesional' class='form-control' value='".htmlspecialchars($apellido_prof_filtro)."'>
-      </div>";
-
-// RUT profesional
-echo "<div>
-        <label>RUT prof.</label>
-        <input type='text' name='rut_profesional' class='form-control' value='".htmlspecialchars($rut_prof_filtro)."'>
-      </div>";
-
-// Usuario (username)
-echo "<div style='flex:1'>
-        <label>Usuario</label>
-        <input type='text' name='buscar' class='form-control' placeholder='usuario o nombre' value='".htmlspecialchars($buscar_usuario)."'>
+// Autocomplete Profesional
+echo "<div style='flex:1; position:relative;'>
+        <label>Profesional</label>
+        <input type='text' id='buscar_profesional' class='form-control' placeholder='RUT o Nombre'>
+        <input type='hidden' name='Id_profesional' id='Id_profesional' value='".htmlspecialchars($filtro_prof_id)."'>
+        <div id='resultados_profesional' class='border mt-1' style='position:absolute; width:100%; z-index:10; background:#fff;'></div>
       </div>";
 
 // Botones
 echo "<div class='d-flex gap-2'>
         <button type='submit' class='btn btn-primary mt-4'>Buscar</button>
-        <button type='button' class='btn btn-secondary mt-4' onclick='limpiarFiltros()'>Limpiar filtros</button>
+        <button type='button' class='btn btn-secondary mt-4' onclick=\"window.location='?seccion=usuarios'\">Limpiar filtros</button>
       </div>";
 
 echo "</form>";
 
-// 4) Construir consulta explícita
+// 4) Construir consulta dinámica
 $sql = "
   SELECT
     u.Id_usuario,
@@ -116,7 +98,6 @@ $sql = "
 ";
 $params = [];
 
-// Aplicar filtros
 if ($escuela_filtro !== '') {
     $sql      .= " AND p.Id_escuela_prof = ?";
     $params[]  = $escuela_filtro;
@@ -129,21 +110,9 @@ if ($cargo_filtro !== '') {
     $sql      .= " AND p.Cargo_profesional = ?";
     $params[]  = $cargo_filtro;
 }
-if ($nombre_prof_filtro !== '') {
-    $sql      .= " AND p.Nombre_profesional LIKE ?";
-    $params[]  = "%{$nombre_prof_filtro}%";
-}
-if ($apellido_prof_filtro !== '') {
-    $sql      .= " AND p.Apellido_profesional LIKE ?";
-    $params[]  = "%{$apellido_prof_filtro}%";
-}
-if ($rut_prof_filtro !== '') {
-    $sql      .= " AND p.Rut_profesional LIKE ?";
-    $params[]  = "%{$rut_prof_filtro}%";
-}
-if ($buscar_usuario !== '') {
-    $sql      .= " AND u.Nombre_usuario LIKE ?";
-    $params[]  = "%{$buscar_usuario}%";
+if ($filtro_prof_id > 0) {
+    $sql      .= " AND p.Id_profesional = ?";
+    $params[]  = $filtro_prof_id;
 }
 
 $sql .= " ORDER BY u.Id_usuario DESC
@@ -198,7 +167,36 @@ echo "    </tbody>
 ?>
 
 <script>
-function limpiarFiltros() {
-  window.location.href = window.location.pathname + '?seccion=usuarios';
+// Autocomplete para Profesionales
+function buscarProfesional(endpoint, query, cont, idInput) {
+  if (query.length < 3) {
+    cont.innerHTML = '';
+    return;
+  }
+  fetch(endpoint + '?q=' + encodeURIComponent(query))
+    .then(res => res.json())
+    .then(data => {
+      cont.innerHTML = '';
+      if (!data.length) {
+        cont.innerHTML = '<div class="p-2 text-muted">Sin resultados</div>';
+        return;
+      }
+      data.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'resultado';
+        div.textContent = `${item.rut} — ${item.nombre} ${item.apellido}`;
+        div.onclick = () => {
+          document.getElementById(idInput).value = item.id;
+          cont.innerHTML = `<div class="resultado seleccionado">${div.textContent} (Seleccionado)</div>`;
+        };
+        cont.appendChild(div);
+      });
+    });
 }
+document.getElementById('buscar_profesional')
+  .addEventListener('input', e => {
+    buscarProfesional('buscar_profesionales.php', e.target.value.trim(),
+                      document.getElementById('resultados_profesional'),
+                      'Id_profesional');
+  });
 </script>
