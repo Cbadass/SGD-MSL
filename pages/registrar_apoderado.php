@@ -138,42 +138,42 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <input name="Nombre_apoderado" class="form-control" required
            value="<?= htmlspecialchars($data['Nombre_apoderado']) ?>">
   </div>
-  <div class="col-md-6">
+  <div class="mb-4">
     <label class="form-label">Apellidos</label>
     <input name="Apellido_apoderado" class="form-control" required
            value="<?= htmlspecialchars($data['Apellido_apoderado']) ?>">
   </div>
-  <div class="col-md-4">
+  <div class="mb-4">
     <label class="form-label">RUT</label>
     <input name="Rut_apoderado" class="form-control" placeholder="20.384.593-4" required
            value="<?= htmlspecialchars($data['Rut_apoderado']) ?>">
   </div>
-  <div class="col-md-4">
+  <div class="mb-4">
     <label class="form-label">Teléfono</label>
     <input name="Numero_apoderado" class="form-control"
            value="<?= htmlspecialchars($data['Numero_apoderado']) ?>">
   </div>
-  <div class="col-md-4">
+  <div class="mb-4">
     <label class="form-label">Correo electrónico</label>
     <input name="Correo_apoderado" type="email" class="form-control"
            value="<?= htmlspecialchars($data['Correo_apoderado']) ?>">
   </div>
-  <div class="col-md-6">
+  <div class="mb-4">
     <label class="form-label">Escolaridad Padre</label>
     <input name="Escolaridad_padre" class="form-control"
            value="<?= htmlspecialchars($data['Escolaridad_padre']) ?>">
   </div>
-  <div class="col-md-6">
+  <div class="mb-4">
     <label class="form-label">Escolaridad Madre</label>
     <input name="Escolaridad_madre" class="form-control"
            value="<?= htmlspecialchars($data['Escolaridad_madre']) ?>">
   </div>
-  <div class="col-md-6">
+  <div class="mb-4">
     <label class="form-label">Ocupación Padre</label>
     <input name="Ocupacion_padre" class="form-control"
            value="<?= htmlspecialchars($data['Ocupacion_padre']) ?>">
   </div>
-  <div class="col-md-6">
+  <div class="mb-4">
     <label class="form-label">Ocupación Madre</label>
     <input name="Ocupacion_madre" class="form-control"
            value="<?= htmlspecialchars($data['Ocupacion_madre']) ?>">
