@@ -228,6 +228,15 @@ h2 {
   width: 20rem;
 }
 
+.mr-1{
+  margin-right: 1rem;
+}
+
+.link-text{
+  color: #fff;
+  text-decoration: none;
+}
+
 input[type="text"],
 input[type="number"],
 input[type="email"],
