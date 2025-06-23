@@ -28,9 +28,7 @@ if ($id_est && !$id_apo) {
 }
 ?>
 <body class="<?= ($_COOKIE['modo_oscuro'] ?? 'false') === 'true' ? 'dark-mode' : '' ?>">
-  <?php include __DIR__ . '/../components/header.php'; ?>
   <div class="container d-flex">
-    <?php include __DIR__ . '/../components/sidebar.php'; ?>
     <main class="main">
 
       <?php if ($id_prof): 
