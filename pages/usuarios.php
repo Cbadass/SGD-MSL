@@ -26,7 +26,7 @@ $allowed_cargos = [
 
 // 3) Formulario de búsqueda avanzada
 echo "<h2 class='mb-4'>Visualización de Profesionales</h2> 
-        <form method='GET'  btn-height>
+        <form method='GET' style='display:flex; gap:8rem ; margin: 2rem 0; align-items: flex-end;'>
           <input type='hidden' name='seccion' value='usuarios'>";
 
 // Escuela

@@ -37,7 +37,7 @@ $docentes = $conn->query("
 
 // 4) Formulario de búsqueda avanzada
 echo "<h2 class='mb-4'>Visualización de Cursos</h2>";
-echo "<form method='GET' class='mb-3 d-flex flex-wrap gap-3 align-items-end'>";
+echo "<form method='GET' style='display:flex; gap:8rem ; margin: 2rem 0; align-items: flex-end;'";
 echo "<input type='hidden' name='seccion' value='cursos'>";
 
 // Escuela
@@ -77,7 +77,7 @@ foreach ($secciones as $s) {
 echo "</select></div>";
 
 // Docente
-echo "<div style='flex:1'><label>Docente</label><select name='docente' class='form-select'>";
+echo "<div><label>Docente</label><select name='docente' class='form-select'>";
 echo "<option value=''>Todos</option>";
 foreach ($docentes as $d) {
     $nombre = "{$d['Nombre_profesional']} {$d['Apellido_profesional']}";
@@ -87,10 +87,8 @@ foreach ($docentes as $d) {
 echo "</select></div>";
 
 // Botones
-echo "<div class='d-flex gap-2'>";
-echo "  <button type='submit' class='btn btn-primary'>Buscar</button>";
-echo "  <button type='button' class='btn btn-secondary' onclick=\"window.location='?seccion=cursos'\">Limpiar</button>";
-echo "</div>";
+echo "  <button type='submit' class='btn btn-primary btn-height'>Buscar</button>";
+echo "  <button type='button' class='btn btn-secondary btn-height' onclick=\"window.location='?seccion=cursos'\">Limpiar</button>";
 
 echo "</form>";
 

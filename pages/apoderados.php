@@ -14,7 +14,7 @@ $filtro_id = intval($_GET['Id_apoderado'] ?? 0);
 
 // 3) Formulario de búsqueda con autocomplete
 echo "<h2 class='mb-4'>Visualización de Apoderados</h2>";
-echo "<form method='GET' style='display:flex; gap:8rem ; margin: 2rem 0;'";
+echo "<form method='GET' style='display:flex; gap:8rem ; margin: 2rem 0; align-items: flex-end;'";
 echo "  <input type='hidden' name='seccion' value='apoderados'>";
 echo "  <div style='flex:1; position:relative;'>";
 echo "    <label>Apoderado</label>";
