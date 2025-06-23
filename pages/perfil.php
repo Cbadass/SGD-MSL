@@ -134,8 +134,9 @@ if ($id_est && !$id_apo) {
           <table class="table table-striped table-bordered">
             <thead class="table-dark">
               <tr>
-                <th>Nombre completo</th>
+                <th>Nombre Completo</th>
                 <th>RUT</th>
+                <th>Fecha de Nacimiento</th>
                 <th>Edad</th>
                 <th>Ingreso</th>
                 <th>Estado</th>
@@ -156,6 +157,7 @@ if ($id_est && !$id_apo) {
               <tr>
                 <td><?= htmlspecialchars($full) ?></td>
                 <td><?= htmlspecialchars($h['Rut_estudiante']) ?></td>
+                <td><?= htmlspecialchars($h['Fecha_nacimiento']) ?></td>
                 <td><?= $edad ?></td>
                 <td><?= htmlspecialchars($h['Fecha_ingreso']) ?></td>
                 <td><?= $h['Estado_estudiante']==1?'Activo':'Inactivo' ?></td>

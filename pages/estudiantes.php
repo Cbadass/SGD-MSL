@@ -99,13 +99,13 @@ echo "<div style='max-height:400px; overflow-y:auto; border-radius:10px;'>
         <table class='table table-striped table-bordered'>
           <thead class='table-dark'>
             <tr>
-              <th>Nombre completo</th>
+              <th>Nombre Completo</th>
               <th>RUT</th>
               <th>Edad</th>
               <th>Curso</th>
               <th>Escuela</th>
               <th>Apoderado</th>
-              <th>Número</th>
+              <th>Número Emergencia</th>
               <th>Correo apoderado</th>
               <th>Acciones</th>
             </tr>
