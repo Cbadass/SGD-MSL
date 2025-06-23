@@ -71,7 +71,8 @@ body {
 .header {
   /* dispoción */
   display: flex;
-  justify-content: space-around;
+  justify-content: space-between;
+  padding: 0 1.5rem;
   /* estilos */
   background-color: #875ff5;
   color: white;
@@ -225,6 +226,12 @@ h2 {
   font-weight: bold;
 }
 
+.header-title{
+  color: #fff;
+  font-size: 24px;
+  font-weight: 600;
+  align-content: center;
+}
 .input-width{
   width: 24rem !important;
 }
