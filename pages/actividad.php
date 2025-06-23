@@ -10,86 +10,76 @@ if (!isset($_SESSION['usuario'])) {
 }
 
 // 2) Recoger filtros
-$filtro_usuario    = trim($_GET['usuario_id']   ?? '');
-$filtro_tabla      = $_GET['tabla']            ?? '';
-$filtro_accion     = $_GET['accion']           ?? '';
-$filtro_registro   = trim($_GET['registro_id'] ?? '');
-$filtro_fecha_desde = $_GET['fecha_desde']     ?? '';
-$filtro_fecha_hasta = $_GET['fecha_hasta']     ?? '';
+$filtro_usuario     = trim($_GET['usuario_id']   ?? '');
+$filtro_tabla       = $_GET['tabla']            ?? '';
+$filtro_accion      = $_GET['accion']           ?? '';
+$filtro_registro    = trim($_GET['registro_id'] ?? '');
+$filtro_fecha_desde = $_GET['fecha_desde']      ?? '';
+$filtro_fecha_hasta = $_GET['fecha_hasta']      ?? '';
 
 // 3) Formulario de búsqueda avanzada
 echo "<h2 class='mb-4'>Registro de Actividad</h2>";
 echo "<form method='GET'>
-      <input type='hidden' name='seccion' value='actividad'>
-      ";
+      <input type='hidden' name='seccion' value='actividad'>";
 
-/* primera row de filtros */
+// Fila 1
 echo "<div style='display:flex; gap:8rem; margin: 2rem 0; align-items: flex-end;'>
-      <div style='min-width:240px;'>
+        <div style='min-width:240px;'>
           <label class='form-label'>Usuario</label>
           <input type='text' id='buscar_usuario' class='form-control' placeholder='Nombre o RUT'>
           <input type='hidden' name='usuario_id' id='usuario_id' value='".htmlspecialchars($filtro_usuario)."'>
           <div id='resultados_usuario' class='border mt-1'></div>
-      </div>";
-
-// Tabla
-$tablas = ['usuarios','profesionales','estudiantes','cursos','apoderados','documentos','Auditoria'];
-echo "  <div>
+        </div>
+        <div>
           <label class='form-label'>Tabla</label>
           <select name='tabla' class='form-select'>
             <option value=''>Todas</option>";
+$tablas = ['usuarios','profesionales','estudiantes','cursos','apoderados','documentos','Auditoria'];
 foreach ($tablas as $t) {
     $sel = $filtro_tabla === $t ? ' selected' : '';
     echo "<option value='$t'$sel>".htmlspecialchars($t)."</option>";
 }
 echo "    </select>
-        </div>";
-
-// Acción
-$acciones = ['INSERT','UPDATE','DELETE'];
-echo "  <div>
+        </div>
+        <div>
           <label class='form-label'>Acción</label>
           <select name='accion' class='form-select'>
             <option value=''>Todas</option>";
+$acciones = ['INSERT','UPDATE','DELETE'];
 foreach ($acciones as $a) {
     $sel = $filtro_accion === $a ? ' selected' : '';
     echo "<option value='$a'$sel>$a</option>";
 }
 echo "    </select>
-        </div>";
+        </div>
+        <div>
+          <label class='form-label'>ID Registro</label>
+          <input type='text' name='registro_id' class='form-control' value='".htmlspecialchars($filtro_registro)."'>
+        </div>
+      </div>";
 
-// Registro ID
-echo "    <div>
-            <label class='form-label'>ID Registro</label>
-            <input type='text' name='registro_id' class='form-control' value='".htmlspecialchars($filtro_registro)."'>
-          </div>
-        </div>";
-
-// Fecha desde
-echo "<div style='display:flex; gap:8rem; margin: 2rem 0; align-items: flex-end;'>  
+// Fila 2
+echo "<div style='display:flex; gap:8rem; margin: 2rem 0; align-items: flex-end;'>
         <div>
           <label class='form-label'>Fecha desde</label>
           <input type='date' name='fecha_desde' class='form-control' value='".htmlspecialchars($filtro_fecha_desde)."'>
-        </div>";
-
-// Fecha hasta
-echo "  <div>
+        </div>
+        <div>
           <label class='form-label'>Fecha hasta</label>
           <input type='date' name='fecha_hasta' class='form-control' value='".htmlspecialchars($filtro_fecha_hasta)."'>
-        </div>";
-
-// Botones
-echo "<button type='submit' class='btn btn-primary btn-height'>Buscar</button>
-      <button type='button' class='btn btn-secondary btn-height' onclick=\"window.location='?seccion=actividad'\">Limpiar</button>
-      </div>";
-
-echo "</form>";
+        </div>
+        <div style='display:flex; gap:1rem;'>
+          <button type='submit' class='btn btn-primary btn-height'>Buscar</button>
+          <button type='button' class='btn btn-secondary btn-height' onclick=\"window.location='?seccion=actividad'\">Limpiar</button>
+        </div>
+      </div>
+      </form>";
 
 // 4) Construir consulta dinámica
 $where  = "1=1";
 $params = [];
 
-function filtrar(&$where,&$params,$campo,$valor,$exact = true) {
+function filtrar(&$where, &$params, $campo, $valor, $exact = true) {
     if ($valor !== '') {
         if ($exact) {
             $where   .= " AND $campo = ?";
@@ -101,78 +91,102 @@ function filtrar(&$where,&$params,$campo,$valor,$exact = true) {
     }
 }
 
-filtrar($where,$params,"Usuario_id",   $filtro_usuario);
-filtrar($where,$params,"Tabla",         $filtro_tabla);
-filtrar($where,$params,"Accion",        $filtro_accion);
-filtrar($where,$params,"Registro_id",   $filtro_registro,false);
+filtrar($where, $params, "a.Usuario_id",   $filtro_usuario);
+filtrar($where, $params, "a.Tabla",        $filtro_tabla);
+filtrar($where, $params, "a.Accion",       $filtro_accion);
+filtrar($where, $params, "a.Registro_id",  $filtro_registro, false);
 
 if ($filtro_fecha_desde !== '') {
-    $where   .= " AND Fecha >= ?";
+    $where   .= " AND a.Fecha >= ?";
     $params[] = $filtro_fecha_desde . ' 00:00:00';
 }
 if ($filtro_fecha_hasta !== '') {
-    $where   .= " AND Fecha <= ?";
+    $where   .= " AND a.Fecha <= ?";
     $params[] = $filtro_fecha_hasta . ' 23:59:59';
 }
 
-// 5) Ejecutar consulta
+// 5) Ejecutar consulta con JOIN para mostrar nombre completo
 $sql = "
     SELECT
-      Id_auditoria,
-      Usuario_id,
-      Tabla,
-      Registro_id,
-      Accion,
-      Datos_anteriores,
-      Datos_nuevos,
-      Fecha
-    FROM Auditoria
+      a.Id_auditoria,
+      a.Tabla,
+      a.Registro_id,
+      a.Accion,
+      a.Datos_nuevos,
+      a.Fecha,
+      u.Nombre_usuario,
+      p.Nombre_profesional,
+      p.Apellido_profesional
+    FROM Auditoria a
+    LEFT JOIN usuarios      u ON a.Usuario_id   = u.Id_usuario
+    LEFT JOIN profesionales p ON u.Id_profesional = p.Id_profesional
     WHERE $where
-    ORDER BY Fecha DESC
+    ORDER BY a.Fecha DESC
     OFFSET 0 ROWS FETCH NEXT 200 ROWS ONLY
 ";
 $stmt = $conn->prepare($sql);
 $stmt->execute($params);
 $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// 6) Mostrar tabla
-echo "<div class='table-responsive'>";
-echo "<table class='table table-striped table-bordered'>";
-echo "<thead class='table-dark'><tr>
-        <th>#</th>
-        <th>Usuario</th>
-        <th>Tabla</th>
-        <th>ID Registro</th>
-        <th>Acción</th>
-        <th>Datos Anteriores</th>
-        <th>Datos Nuevos</th>
-        <th>Fecha</th>
-      </tr></thead>";
-echo "<tbody>";
+// 6) Mostrar tabla sin columna "Datos Anteriores"
+echo "<div class='table-responsive'>
+        <table class='table table-striped table-bordered'>
+          <thead class='table-dark'>
+            <tr>
+              <th>#</th>
+              <th>Usuario</th>
+              <th>Tabla</th>
+              <th>ID Registro</th>
+              <th>Acción</th>
+              <th>Datos Nuevos</th>
+              <th>Fecha</th>
+            </tr>
+          </thead>
+          <tbody>";
+
+$accionMap = [
+  'INSERT' => 'Creación',
+  'UPDATE' => 'Actualización',
+  'DELETE' => 'Eliminación'
+];
+
 if ($logs) {
     foreach ($logs as $row) {
-        $antes = $row['Datos_anteriores']
-               ? '<pre style="max-height:100px;overflow:auto;">'.htmlspecialchars($row['Datos_anteriores']).'</pre>'
-               : '-';
-        $nuevos = $row['Datos_nuevos']
-                ? '<pre style="max-height:100px;overflow:auto;">'.htmlspecialchars($row['Datos_nuevos']).'</pre>'
-                : '-';
+        // Usuario completo
+        $userFull = $row['Nombre_profesional'] && $row['Apellido_profesional']
+                  ? "{$row['Nombre_profesional']} {$row['Apellido_profesional']}"
+                  : $row['Nombre_usuario'];
+
+        // Acción descriptiva
+        $accionDesc = $accionMap[$row['Accion']] ?? $row['Accion'];
+
+        // Datos nuevos legibles
+        $datosArr = json_decode($row['Datos_nuevos'], true) ?: [];
+        $nuevosHtml = '<div style="max-height:150px;overflow:auto;">';
+        foreach ($datosArr as $k => $v) {
+            $nuevosHtml .= "<div><strong>".htmlspecialchars($k)."</strong>: ".htmlspecialchars((string)$v)."</div>";
+        }
+        $nuevosHtml .= '</div>';
+
         $fecha = date('Y-m-d H:i:s', strtotime($row['Fecha']));
+
         echo "<tr>
                 <td>{$row['Id_auditoria']}</td>
-                <td>{$row['Usuario_id']}</td>
+                <td>".htmlspecialchars($userFull)."</td>
                 <td>".htmlspecialchars($row['Tabla'])."</td>
                 <td>".htmlspecialchars($row['Registro_id'])."</td>
-                <td>".htmlspecialchars($row['Accion'])."</td>
-                <td>$antes</td>
-                <td>$nuevos</td>
-                <td>$fecha</td>
+                <td>{$accionDesc}</td>
+                <td>{$nuevosHtml}</td>
+                <td>{$fecha}</td>
               </tr>";
     }
 } else {
-    echo "<tr><td colspan='8'>No se encontraron registros.</td></tr>";
+    echo "<tr><td colspan='7'>No se encontraron registros.</td></tr>";
 }
-echo "</tbody></table></div>";
+
+echo "    </tbody>
+        </table>
+      </div>";
 ?>
 
 <script>
