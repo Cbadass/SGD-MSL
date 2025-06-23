@@ -25,7 +25,7 @@ echo "<form method='GET'>
 
 /* primera row de filtros */
 echo "<div style='display:flex; gap:8rem; margin: 2rem 0; align-items: flex-end;'>
-      <div style='flex:1; min-width:240px;'>
+      <div min-width:240px;'>
           <label class='form-label'>Usuario</label>
           <input type='text' id='buscar_usuario' class='form-control' placeholder='Nombre o RUT'>
           <input type='hidden' name='usuario_id' id='usuario_id' value='".htmlspecialchars($filtro_usuario)."'>

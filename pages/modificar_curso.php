@@ -30,7 +30,7 @@ $escuelas = $conn->query("
     ORDER BY Nombre_escuela
 ")->fetchAll(PDO::FETCH_ASSOC);
 ?>
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html lang="es">
 <head>
   <meta charset="UTF-8">
@@ -42,7 +42,7 @@ $escuelas = $conn->query("
     .seleccionado { background:#d1e7dd!important; font-weight:bold; }
   </style>
 </head>
-<body class="p-4">
+<body class="p-4">  -->
   <h2>Editar Curso</h2>
 
   <form method="POST" action="../guardar_modificacion_curso.php" class="row g-3 needs-validation" novalidate>
