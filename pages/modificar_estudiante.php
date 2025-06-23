@@ -40,7 +40,7 @@ $cursos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
 
 <h2 class="mb-4">Editar Estudiante</h2>
 
-<div class="card p-4 mb-4">
+<div class="p-4 mb-4">
   <form method="POST"
         action="../guardar_modificacion_estudiante.php"
         enctype="multipart/form-data"
