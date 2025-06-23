@@ -113,6 +113,10 @@ try {
     $stmt->execute($params);
     $documentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// Para el select de tipos únicos
+    $stmtTipos = $conn->query("SELECT DISTINCT Tipo_documento FROM documentos");
+    $tiposDb   = $stmtTipos->fetchAll(PDO::FETCH_COLUMN);
+
 } catch (Exception $e) {
     $errorMsg = $e->getMessage();
 }
@@ -130,10 +134,10 @@ try {
 <h2 class="mb-4">
   <?php
     if ($id_prof > 0) {
-      echo "Documentos del Profesional #{$id_prof}" 
+      echo "Documentos del Profesional #{$id_prof}"
          . ($sin_estud ? " (sin estudiante)" : "");
     } elseif ($id_est > 0) {
-      echo "Documentos del Estudiante #{$id_est}" 
+      echo "Documentos del Estudiante #{$id_est}"
          . ($sin_profes ? " (sin profesional)" : "");
     } else {
       echo "Lista de Documentos";
@@ -147,10 +151,10 @@ try {
   <form method="GET" class="form-grid">
     <input type="hidden" name="seccion" value="documentos">
     <input type="hidden" name="pagina"      value="<?= $pagina ?>">
-    <input type="hidden" name="id_prof"      id="hidden_prof"      value="<?= htmlspecialchars($id_prof) ?>">
-    <input type="hidden" name="sin_estudiante" id="hidden_sin_est" value="<?= $sin_estud ? 1 : 0 ?>">
-    <input type="hidden" name="id_estudiante" id="hidden_est"     value="<?= htmlspecialchars($id_est) ?>">
-    <input type="hidden" name="sin_profesional" id="hidden_sin_prof" value="<?= $sin_profes ? 1 : 0 ?>">
+    <input type="hidden" name="id_prof"      id="id_prof"      value="<?= htmlspecialchars($id_prof) ?>">
+    <input type="hidden" name="sin_estudiante" id="sin_estudiante" value="<?= $sin_estud ? 1 : 0 ?>">
+    <input type="hidden" name="id_estudiante" id="id_estudiante" value="<?= htmlspecialchars($id_est) ?>">
+    <input type="hidden" name="sin_profesional" id="sin_profesional" value="<?= $sin_profes ? 1 : 0 ?>">
 
     <div>
       <label>Nombre documento</label>
@@ -160,28 +164,21 @@ try {
       <label>Tipo de documento</label>
       <select name="tipo_documento" class="form-select">
         <option value="">Todos</option>
-        <?php
-        $tipos = [
-          "Certificado de Nacimiento", "Ficha de Matrícula", "Informe Psicológico",
-          "Informe Pedagógico 1er semestre", "Recetas médicas", "Curriculum",
-          "Contrato de trabajo", "Certificados de perfeccionamientos"
-        ];
-        foreach ($tipos as $t) {
+        <?php foreach ($tiposDb as $t): 
           $sel = ($_GET['tipo_documento'] ?? '') === $t ? 'selected' : '';
-          echo "<option value=\"".htmlspecialchars($t)."\" $sel>".htmlspecialchars($t)."</option>";
-        }
         ?>
+          <option value="<?= htmlspecialchars($t) ?>" <?= $sel ?>><?= htmlspecialchars($t) ?></option>
+        <?php endforeach; ?>
       </select>
     </div>
 
-    <!-- Controles de ocultar campos -->
     <div style="display:flex; gap:1rem; align-items:center;">
       <label>
-        <input type="checkbox" id="toggle_est" <?= $sin_estud?'checked':'' ?>>
+        <input type="checkbox" id="toggle_est" <?= $sin_estud ? 'checked' : '' ?>>
         Ocultar Estudiante
       </label>
       <label>
-        <input type="checkbox" id="toggle_prof" <?= $sin_profes?'checked':'' ?>>
+        <input type="checkbox" id="toggle_prof" <?= $sin_profes ? 'checked' : '' ?>>
         Ocultar Profesional
       </label>
     </div>
@@ -230,7 +227,6 @@ try {
 <?php elseif (empty($documentos)): ?>
   <div class="alert alert-warning">No se encontraron documentos.</div>
 <?php else: ?>
-
   <div class="table-responsive">
     <table class="table table-striped">
       <thead>
@@ -248,7 +244,7 @@ try {
       </thead>
       <tbody>
         <?php foreach ($documentos as $d):
-          $fs = new DateTime($d['Fecha_subido']);
+          $fs   = new DateTime($d['Fecha_subido']);
           $diff = (new DateTime())->diff($fs);
           if      ($diff->y) $t = $diff->y . ' año' . ($diff->y>1?'s':'');
           elseif  ($diff->m) $t = $diff->m . ' mes' . ($diff->m>1?'es':'');
@@ -280,28 +276,67 @@ try {
       </tbody>
     </table>
   </div>
-
-  <!-- Paginación omitida por brevedad... -->
-
 <?php endif; ?>
 
 <script>
 // alterna visibilidad de bloques y actualiza hidden inputs
 function toggleBlock(checkbox, blockId, hiddenName) {
-  const block = document.getElementById(blockId);
+  const block  = document.getElementById(blockId);
   const hidden = document.getElementById(hiddenName);
   block.style.display = checkbox.checked ? 'none' : '';
-  hidden.value     = checkbox.checked ? '1' : '0';
+  hidden.value        = checkbox.checked ? '1' : '0';
+}
+
+// genérico de autocomplete
+function buscar(endpoint, query, cont, idInput) {
+  if (query.length < 3) { cont.innerHTML = ''; return; }
+  fetch(endpoint + '?q=' + encodeURIComponent(query))
+    .then(r => r.json())
+    .then(data => {
+      cont.innerHTML = '';
+      if (!data.length) {
+        cont.innerHTML = '<div class="p-2 text-muted">Sin resultados</div>';
+        return;
+      }
+      data.forEach(item => {
+        const div = document.createElement('div');
+        div.className = 'resultado';
+        div.textContent = `${item.rut} — ${item.nombre} ${item.apellido}`;
+        div.onclick = () => {
+          document.getElementById(idInput).value = item.id;
+          cont.innerHTML = `<div class="resultado seleccionado">${div.textContent} (Seleccionado)</div>`;
+        };
+        cont.appendChild(div);
+      });
+    });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+  // toggles
   const chkEst  = document.getElementById('toggle_est');
   const chkProf = document.getElementById('toggle_prof');
-  chkEst .addEventListener('change', () => toggleBlock(chkEst,  'block_est',  'hidden_sin_est'));
-  chkProf.addEventListener('change', () => toggleBlock(chkProf, 'block_prof', 'hidden_sin_prof'));
-  // inicializa
-  toggleBlock(chkEst,  'block_est',  'hidden_sin_est');
-  toggleBlock(chkProf, 'block_prof', 'hidden_sin_prof');
+  chkEst .addEventListener('change', () => toggleBlock(chkEst,  'block_est',  'sin_estudiante'));
+  chkProf.addEventListener('change', () => toggleBlock(chkProf, 'block_prof', 'sin_profesional'));
+  toggleBlock(chkEst,  'block_est',  'sin_estudiante');
+  toggleBlock(chkProf, 'block_prof', 'sin_profesional');
+
+  // autocomplete estudiante
+  document.getElementById('buscar_estudiante')
+    .addEventListener('input', e => {
+      buscar('buscar_estudiantes.php',
+             e.target.value.trim(),
+             document.getElementById('resultados_estudiante'),
+             'id_estudiante');
+    });
+
+  // autocomplete profesional
+  document.getElementById('buscar_profesional')
+    .addEventListener('input', e => {
+      buscar('buscar_profesionales.php',
+             e.target.value.trim(),
+             document.getElementById('resultados_profesional'),
+             'id_prof');
+    });
 });
 </script>
 
