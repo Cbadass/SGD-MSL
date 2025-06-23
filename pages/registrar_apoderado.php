@@ -102,85 +102,60 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-<!-- <!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Registrar Estudiante</title>
-  <link rel="stylesheet" href="style.css">
-  <style>
-    /* Grid para el layout principal */
-    .layout { display:grid; grid-template-columns:250px 1fr; gap:1rem; }
-    /* Grid para el formulario */
-    .form-grid {
-      display:grid;
-      grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
-      gap:1rem;
-      margin-top:1rem;
-    }
-    .form-grid label {
-      font-weight:600; margin-bottom:0.25rem;
-    }
-    .form-grid input,
-    .form-grid select {
-      padding:0.5rem;
-      border:1px solid #ccc;
-      border-radius:4px;
-      width:100%;
-    }
-    .alert { padding:0.75rem; background:#f8d7da; color:#842029; border-radius:4px; }
-  </style>
-</head> -->
+
 <h2 class="mb-4">Registrar Nuevo Apoderado</h2>
 <?= $message ?>
 <form method="POST" class="form-grid" novalidate>
+  <h3 class = "mb-4 subtitle">Datos personales</h3>
   <div class="mb-4">
     <label class="form-label">Nombres</label>
-    <input name="Nombre_apoderado" class="form-control" required
+    <input name="Nombre_apoderado" class="form-control input-width" type="text" required
            value="<?= htmlspecialchars($data['Nombre_apoderado']) ?>">
   </div>
   <div class="mb-4">
     <label class="form-label">Apellidos</label>
-    <input name="Apellido_apoderado" class="form-control" required
+    <input name="Apellido_apoderado" class="form-control input-width" type="text" required
            value="<?= htmlspecialchars($data['Apellido_apoderado']) ?>">
   </div>
   <div class="mb-4">
     <label class="form-label">RUT</label>
-    <input name="Rut_apoderado" class="form-control" placeholder="20.384.593-4" required
+    <input name="Rut_apoderado" class="form-control input-width" type="text" placeholder="20.384.593-4" required
            value="<?= htmlspecialchars($data['Rut_apoderado']) ?>">
   </div>
   <div class="mb-4">
     <label class="form-label">Teléfono</label>
-    <input name="Numero_apoderado" class="form-control"
+    <input name="Numero_apoderado" class="form-control input-width" type="text"
            value="<?= htmlspecialchars($data['Numero_apoderado']) ?>">
   </div>
   <div class="mb-4">
     <label class="form-label">Correo electrónico</label>
-    <input name="Correo_apoderado" type="email" class="form-control"
+    <input name="Correo_apoderado" type="email" class="form-control input-width"
            value="<?= htmlspecialchars($data['Correo_apoderado']) ?>">
   </div>
   <div class="mb-4">
     <label class="form-label">Escolaridad Padre</label>
-    <input name="Escolaridad_padre" class="form-control"
+    <input name="Escolaridad_padre" class="form-control input-width" type="text"
            value="<?= htmlspecialchars($data['Escolaridad_padre']) ?>">
   </div>
   <div class="mb-4">
     <label class="form-label">Escolaridad Madre</label>
-    <input name="Escolaridad_madre" class="form-control"
+    <input name="Escolaridad_madre" class="form-control input-width" type="text"
            value="<?= htmlspecialchars($data['Escolaridad_madre']) ?>">
   </div>
   <div class="mb-4">
     <label class="form-label">Ocupación Padre</label>
-    <input name="Ocupacion_padre" class="form-control"
+    <input name="Ocupacion_padre" class="form-control input-width" type="text"
            value="<?= htmlspecialchars($data['Ocupacion_padre']) ?>">
   </div>
   <div class="mb-4">
     <label class="form-label">Ocupación Madre</label>
-    <input name="Ocupacion_madre" class="form-control"
+    <input name="Ocupacion_madre" class="form-control input-width" type="text"
            value="<?= htmlspecialchars($data['Ocupacion_madre']) ?>">
   </div>
   <div class="col-12">
-    <button type="submit" class="btn btn-success">Guardar Datos</button>
-    <a href="index.php?seccion=apoderados" class="btn btn-secondary">Cancelar</a>
+    <button type="submit" class="btn btn-success btn-height mr-1">Guardar Datos</button>
+    <button class="btn btn-secondary btn-height">
+      <a class="link-text" href="index.php?seccion=apoderados">Cancelar</a>
+    </button>
   </div>
 </form>
