@@ -46,15 +46,7 @@ $permisos    = ['user'=>'Usuario','admin'=>'Administrador'];
 $estados_usr = ['1'=>'Activo','0'=>'Inactivo'];
 ?>
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Editar Profesional</title>
-  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet" href="style.css">
-</head>
-<body class="p-4">
-  <h2>Editar Profesional</h2>
+<h2>Editar Profesional</h2>
 
   <form method="POST" action="../guardar_modificacion_profesional.php" class="row g-3 needs-validation" novalidate>
     <input type="hidden" name="Id_profesional" value="<?= $prof['Id_profesional'] ?>">
