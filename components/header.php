@@ -6,11 +6,13 @@ if (!isset($_SESSION['usuario'])) {
 }
 $usuario = $_SESSION['usuario'];
 ?>
-<header class="header d-flex justify-content-between align-items-center px-3 py-2 bg-dark text-white">
-  <span class="fw-bold">SGD Multisenluz</span>
-  <div class="d-flex align-items-center">
-    <a href="index.php?seccion=perfil" class="btn btn-sm btn-outline-light me-2">👤 Mi Perfil</a>
-    <span class="me-3">
+<header class="header">
+  <span>SGD Multisenluz</span>
+  <div>
+    <button class="btn btn-sm btn-outline-light me-2">
+      <a class="link-text" href="index.php?seccion=perfil">👤 Mi Perfil</a>
+    </button>
+    <span>
       Usuario: <strong><?= htmlspecialchars($usuario['nombre']) ?></strong>
       (<?= htmlspecialchars($usuario['permisos']) ?>)
     </span>
