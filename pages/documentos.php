@@ -175,11 +175,11 @@ try {
     <div style="display:flex; gap:1rem; align-items:center;">
       <label>
         <input type="checkbox" id="toggle_est" <?= $sin_estud ? 'checked' : '' ?>>
-        Ocultar Estudiante
+        Documentos Especificos de profesionales
       </label>
       <label>
         <input type="checkbox" id="toggle_prof" <?= $sin_profes ? 'checked' : '' ?>>
-        Ocultar Profesional
+        Documentos Especificos de Estudiantes
       </label>
     </div>
 

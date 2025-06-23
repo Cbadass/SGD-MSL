@@ -1,4 +1,5 @@
 <?php
+//modificar_profesional.php
 session_start();
 // 1) Conecta a la BD  
 require_once __DIR__ . '/../includes/db.php';
