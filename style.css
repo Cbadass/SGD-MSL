@@ -219,6 +219,15 @@ h2 {
   font-weight: 600;
 }
 
+.text-danger{
+  color: red;
+  font-weight: bold;
+}
+
+.input-width{
+  width: 20rem;
+}
+
 input[type="text"],
 input[type="number"],
 input[type="email"],

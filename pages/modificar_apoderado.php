@@ -144,51 +144,51 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
   <div class="col-md-6">
     <label class="form-label">Nombres</label>
-    <input name="Nombre_apoderado" class="form-control" required
+    <input name="Nombre_apoderado" class="form-control input-width" type="text" required
            value="<?= htmlspecialchars($est['Nombre_apoderado']) ?>">
   </div>
   <div class="col-md-6">
     <label class="form-label">Apellidos</label>
-    <input name="Apellido_apoderado" class="form-control" required
+    <input name="Apellido_apoderado" class="form-control input-width" type="text" required
            value="<?= htmlspecialchars($est['Apellido_apoderado']) ?>">
   </div>
   <div class="col-md-4">
     <label class="form-label">RUT</label>
-    <input name="Rut_apoderado" class="form-control" placeholder="20.384.593-4" required
+    <input name="Rut_apoderado" class="form-control input-width" type="text" placeholder="20.384.593-4" required
            value="<?= htmlspecialchars($est['Rut_apoderado']) ?>">
   </div>
   <div class="col-md-4">
     <label class="form-label">Teléfono</label>
-    <input name="Numero_apoderado" class="form-control"
+    <input name="Numero_apoderado" class="form-control input-width" type="text"
            value="<?= htmlspecialchars($est['Numero_apoderado']) ?>">
   </div>
   <div class="col-md-4">
     <label class="form-label">Correo electrónico</label>
-    <input name="Correo_apoderado" type="email" class="form-control"
+    <input name="Correo_apoderado" type="email" class="form-control input-width"
            value="<?= htmlspecialchars($est['Correo_apoderado']) ?>">
   </div>
   <div class="col-md-6">
     <label class="form-label">Escolaridad Padre</label>
-    <input name="Escolaridad_padre" class="form-control"
+    <input name="Escolaridad_padre" class="form-control input-width" type="text"
            value="<?= htmlspecialchars($est['Escolaridad_padre']) ?>">
   </div>
   <div class="col-md-6">
     <label class="form-label">Escolaridad Madre</label>
-    <input name="Escolaridad_madre" class="form-control"
+    <input name="Escolaridad_madre" class="form-control input-width" type="text"
            value="<?= htmlspecialchars($est['Escolaridad_madre']) ?>">
   </div>
   <div class="col-md-6">
     <label class="form-label">Ocupación Padre</label>
-    <input name="Ocupacion_padre" class="form-control"
+    <input name="Ocupacion_padre" class="form-control input-width" type="text"
            value="<?= htmlspecialchars($est['Ocupacion_padre']) ?>">
   </div>
   <div class="col-md-6">
     <label class="form-label">Ocupación Madre</label>
-    <input name="Ocupacion_madre" class="form-control"
+    <input name="Ocupacion_madre" class="form-control input-width" type="text"
            value="<?= htmlspecialchars($est['Ocupacion_madre']) ?>">
   </div>
   <div class="col-12">
-    <button type="submit" class="btn btn-success">Guardar Cambios</button>
-    <a href="index.php?seccion=apoderados" class="btn btn-secondary">Cancelar</a>
+    <button type="submit" class="btn btn-success btn-height">Guardar Cambios</button>
+    <a href="index.php?seccion=apoderados" class="btn btn-secondary btn-height">Cancelar</a>
   </div>
 </form>
