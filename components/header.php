@@ -9,7 +9,7 @@ $usuario = $_SESSION['usuario'];
 <header class="header">
   <span class="header-title">SGD Multisenluz</span>
   <div>
-    <span style="mr-1">
+    <span class="mr-1">
       <?= htmlspecialchars($usuario['nombre']) ?>
       (<?= htmlspecialchars($usuario['permisos']) ?>)
     </span>
