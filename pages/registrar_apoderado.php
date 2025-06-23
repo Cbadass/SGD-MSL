@@ -1,7 +1,8 @@
 <?php
-//registrar_apoderado.php
+// registrar_apoderado.php
 session_start();
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/auditoria.php';  // <-- auditoría integrado
 
 // 1) Protege la página
 if (!isset($_SESSION['usuario'])) {
@@ -81,6 +82,19 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             ";
             $stmt = $conn->prepare($sql);
             $stmt->execute(array_values($data));
+
+            // registrar auditoría
+            $newId     = $conn->lastInsertId();
+            $usuarioId = $_SESSION['usuario']['id'];
+            registrarAuditoria(
+                $conn,
+                $usuarioId,
+                'apoderados',
+                $newId,
+                'INSERT',
+                null,
+                $data
+            );
 
             header("Location: index.php?seccion=apoderados");
             exit;

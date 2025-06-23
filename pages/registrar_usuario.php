@@ -1,14 +1,13 @@
 <?php
 // create_profesional.php
 require_once 'includes/db.php';
+require_once 'includes/auditoria.php';  // <-- integración auditoría
 session_start();
 
-// /* Descomenta en producción
 if (!isset($_SESSION['usuario'])) {
     header("Location: login.php");
     exit;
 }
-// */
 
 // — Funciones de validación y formateo —
 function cleanRut($rut) {
@@ -209,6 +208,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                     WHERE Id_profesional = ?
                 ");
                 $stmt3->execute([$id_user, $id_prof]);
+
+                // --- Auditoría INSERT 'profesionales' ---
+                $usuarioLog = $_SESSION['usuario']['id'];
+                $datosNuevosProf = [
+                    'Nombre_profesional'       => $nombre,
+                    'Apellido_profesional'     => $apellido,
+                    'Rut_profesional'          => $rut_fmt,
+                    'Nacimiento_profesional'   => $nacimiento,
+                    'Domicilio_profesional'    => $domicilio,
+                    'Celular_profesional'      => $telefono,
+                    'Correo_profesional'       => $correo,
+                    'Estado_civil_profesional' => $estado_civ,
+                    'Banco_profesional'        => $banco,
+                    'Tipo_cuenta_profesional'  => $tipo_cta_sel,
+                    'Cuenta_B_profesional'     => $cuenta,
+                    'AFP_profesional'          => $afp_sel,
+                    'Salud_profesional'        => $salud_sel,
+                    'Cargo_profesional'        => $cargo,
+                    'Horas_profesional'        => $horas,
+                    'Fecha_ingreso'            => $fecha_ing,
+                    'Tipo_profesional'         => $tipo_profes,
+                    'Id_escuela_prof'          => $escuelas[$escuela_sel]
+                ];
+                registrarAuditoria($conn, $usuarioLog, 'profesionales', $id_prof, 'INSERT', null, $datosNuevosProf);
+
+                // --- Auditoría INSERT 'usuarios' ---
+                $datosNuevosUsr = [
+                    'Nombre_usuario' => $usr,
+                    'Permisos'       => strtolower($permiso),
+                    'Id_profesional' => $id_prof
+                ];
+                registrarAuditoria($conn, $usuarioLog, 'usuarios', $id_user, 'INSERT', null, $datosNuevosUsr);
 
                 $conn->commit();
 

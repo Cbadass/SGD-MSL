@@ -2,6 +2,7 @@
 // modificar_apoderado.php
 session_start();
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/auditoria.php';  // <-- auditoría
 
 // 1) Protege la página
 if (!isset($_SESSION['usuario'])) {
@@ -78,6 +79,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         if ($chk->fetchColumn() > 0) {
             $message = "<p class='text-danger'>Otro apoderado ya usa el RUT $rutFmt.</p>";
         } else {
+            // guardar datos anteriores para auditoría
+            $antes = $est;
+
             // 5) UPDATE
             $sql = "
               UPDATE apoderados
@@ -100,6 +104,32 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                 $ocPadre, $ocMadre,
                 $id
             ]);
+
+            // datos nuevos para auditoría
+            $despues = [
+                'Nombre_apoderado'   => $nombre,
+                'Apellido_apoderado' => $apellido,
+                'Rut_apoderado'      => $rutFmt,
+                'Numero_apoderado'   => $numero,
+                'Correo_apoderado'   => $correo,
+                'Escolaridad_padre'  => $esPadre,
+                'Escolaridad_madre'  => $esMadre,
+                'Ocupacion_padre'    => $ocPadre,
+                'Ocupacion_madre'    => $ocMadre
+            ];
+
+            // registrar auditoría
+            $usuarioLog = $_SESSION['usuario']['id'];
+            registrarAuditoria(
+                $conn,
+                $usuarioLog,
+                'apoderados',
+                $id,
+                'UPDATE',
+                $antes,
+                $despues
+            );
+
             header("Location: index.php?seccion=apoderados");
             exit;
         }
