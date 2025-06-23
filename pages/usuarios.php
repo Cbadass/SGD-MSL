@@ -71,10 +71,7 @@ echo "<div style='flex:1; position:relative;'>
       </div>";
 
 // Botones
-// echo "<div class='d-flex gap-2'>
-        // <button type='submit' class='btn btn-primary mt-4'>Buscar</button>
-        // <button type='button' class='btn btn-secondary mt-4' onclick=\"window.location='?seccion=usuarios'\">Limpiar filtros</button>
-      // </div>";
+
 echo "<button type='submit' class='btn btn-primary mt-4'>Buscar</button>
       <button type='button' class='btn btn-secondary mt-4' onclick=\"window.location='?seccion=usuarios'\">Limpiar filtros</button>";
 

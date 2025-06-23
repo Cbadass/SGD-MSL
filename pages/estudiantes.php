@@ -14,7 +14,7 @@ $filtro_estudiante   = intval($_GET['Id_estudiante']    ?? 0);
 
 // 2) Formulario de búsqueda avanzada
 echo "<h2 class='mb-4'>Visualización de Estudiantes</h2>";
-echo "<form method='GET' class='mb-3 d-flex flex-wrap gap-2 align-items-end'>";
+echo "<form method='GET' style='display:flex; gap:8rem ; margin: 2rem 0;'";
 echo "  <input type='hidden' name='seccion' value='estudiantes'>";
 
 // Escuela
@@ -47,10 +47,8 @@ echo "<div style='flex:1; position:relative;'>
       </div>";
 
 // Botones
-echo "<div class='d-flex gap-2'>
-        <button type='submit' class='btn btn-primary mt-4'>Buscar</button>
-        <button type='button' class='btn btn-secondary mt-4' onclick=\"window.location='?seccion=estudiantes'\">Limpiar filtros</button>
-      </div>";
+echo "<button type='submit' class='btn btn-primary mt-4'>Buscar</button>
+      <button type='button' class='btn btn-secondary mt-4' onclick=\"window.location='?seccion=estudiantes'\">Limpiar filtros</button>";
 echo "</form>";
 
 // 3) Construir consulta dinámica
