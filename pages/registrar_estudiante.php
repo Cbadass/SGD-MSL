@@ -235,9 +235,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
                value="<?= htmlspecialchars($data['Fecha_ingreso']) ?>">
       </div>
       <!-- Datos apoderado -->
-      <div class="mb-4 subtitle">
-        <h3>Datos de Apoderados</h3>
-      </div>
+      <h3 class="mb-4 subtitle">Datos de Apoderados</h3>
       <div>
         <label for="buscar_apoderado">Apoderado (opcional)</label>
         <input type="text" id="buscar_apoderado" placeholder="RUT o Nombre">
