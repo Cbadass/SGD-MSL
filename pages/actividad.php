@@ -19,16 +19,18 @@ $filtro_fecha_hasta = $_GET['fecha_hasta']     ?? '';
 
 // 3) Formulario de búsqueda avanzada
 echo "<h2 class='mb-4'>Registro de Actividad</h2>";
-echo "<form method='GET' style='display:flex; gap:8rem; margin: 2rem 0; align-items: flex-end;'>";
-echo "  <input type='hidden' name='seccion' value='actividad'>";
+echo "<form method='GET'>
+      <input type='hidden' name='seccion' value='actividad'>
+      ";
 
-// Buscador Usuario
-echo "  <div style='flex:1; min-width:240px;'>
+/* primera row de filtros */
+echo "<div style='display:flex; gap:8rem; margin: 2rem 0; align-items: flex-end;'>
+      <div style='flex:1; min-width:240px;'>
           <label class='form-label'>Usuario</label>
           <input type='text' id='buscar_usuario' class='form-control' placeholder='Nombre o RUT'>
           <input type='hidden' name='usuario_id' id='usuario_id' value='".htmlspecialchars($filtro_usuario)."'>
           <div id='resultados_usuario' class='border mt-1'></div>
-        </div>";
+      </div>";
 
 // Tabla
 $tablas = ['usuarios','profesionales','estudiantes','cursos','apoderados','documentos','Auditoria'];
@@ -57,13 +59,15 @@ echo "    </select>
         </div>";
 
 // Registro ID
-echo "  <div>
-          <label class='form-label'>ID Registro</label>
-          <input type='text' name='registro_id' class='form-control' value='".htmlspecialchars($filtro_registro)."'>
+echo "    <div>
+            <label class='form-label'>ID Registro</label>
+            <input type='text' name='registro_id' class='form-control' value='".htmlspecialchars($filtro_registro)."'>
+          </div>
         </div>";
 
 // Fecha desde
-echo "  <div>
+echo "<div style='display:flex; gap:8rem; margin: 2rem 0; align-items: flex-end;'>  
+        <div>
           <label class='form-label'>Fecha desde</label>
           <input type='date' name='fecha_desde' class='form-control' value='".htmlspecialchars($filtro_fecha_desde)."'>
         </div>";
@@ -75,8 +79,9 @@ echo "  <div>
         </div>";
 
 // Botones
-echo "<button type='submit' class='btn btn-primary'>Buscar</button>
-      <button type='button' class='btn btn-secondary' onclick=\"window.location='?seccion=actividad'\">Limpiar</button>";
+echo "<button type='submit' class='btn btn-primary btn-height'>Buscar</button>
+      <button type='button' class='btn btn-secondary btn-height' onclick=\"window.location='?seccion=actividad'\">Limpiar</button>
+      </div>";
 
 echo "</form>";
 
