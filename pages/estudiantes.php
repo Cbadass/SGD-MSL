@@ -14,7 +14,7 @@ $filtro_estudiante   = intval($_GET['Id_estudiante']    ?? 0);
 
 // 2) Formulario de búsqueda avanzada
 echo "<h2 class='mb-4'>Visualización de Estudiantes</h2>";
-echo "<form method='GET' style='display:flex; gap:8rem ; margin: 2rem 0; align-items: flex-end;'";
+echo "<form method='GET' style='display:flex; gap:8rem ; margin: 2rem 0; align-items: flex-end;'>";
 echo "  <input type='hidden' name='seccion' value='estudiantes'>";
 
 // Escuela
