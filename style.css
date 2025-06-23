@@ -301,7 +301,7 @@ body.dark-mode .card { background: #1f1f1f; border-color: #333; }
 /*-------------------------------------------------------------------------*/
 
 .table-scrollable {
-  display: block;          /* Para que overflow funcione */
+  display: table;          /* Para que overflow funcione */
   max-height: 400px;       /* Altura máxima antes de aparecer la barra */
   overflow-y: auto;        /* Scroll vertical */
   margin-bottom: 1rem;     /* Un pequeño espacio bajo la tabla */
