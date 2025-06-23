@@ -102,11 +102,38 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
 }
 ?>
-
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Registrar Estudiante</title>
+  <link rel="stylesheet" href="style.css">
+  <style>
+    /* Grid para el layout principal */
+    .layout { display:grid; grid-template-columns:250px 1fr; gap:1rem; }
+    /* Grid para el formulario */
+    .form-grid {
+      display:grid;
+      grid-template-columns:repeat(auto-fit,minmax(240px,1fr));
+      gap:1rem;
+      margin-top:1rem;
+    }
+    .form-grid label {
+      font-weight:600; margin-bottom:0.25rem;
+    }
+    .form-grid input,
+    .form-grid select {
+      padding:0.5rem;
+      border:1px solid #ccc;
+      border-radius:4px;
+      width:100%;
+    }
+    .alert { padding:0.75rem; background:#f8d7da; color:#842029; border-radius:4px; }
+  </style>
+</head>
 <h2 class="mb-4">Registrar Nuevo Apoderado</h2>
 <?= $message ?>
-<form method="POST" class="row g-3 needs-validation" novalidate>
-  <div class="col-md-6">
+<form method="POST" class="form-grid" novalidate>
     <label class="form-label">Nombres</label>
     <input name="Nombre_apoderado" class="form-control" required
            value="<?= htmlspecialchars($data['Nombre_apoderado']) ?>">
