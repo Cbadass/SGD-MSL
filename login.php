@@ -136,11 +136,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <form method="POST">
           <div class="mb-3">
             <label for="nombre_usuario" class="form-label">Nombre de usuario</label>
-            <input type="text" name="nombre_usuario" id="nombre_usuario" class="form-control" required>
+            <!-- ELIMINAR VALUE -->
+            <input type="text" name="nombre_usuario" id="nombre_usuario" class="form-control" required value="sebastian.morales">
           </div>
           <div class="mb-3">
             <label for="contrasena" class="form-label">Contraseña</label>
-            <input type="password" name="contrasena" id="contrasena" class="form-control" required>
+            <!-- ELIMINAR VALUE -->
+            <input type="password" name="contrasena" id="contrasena" class="form-control" required value="$2y$10$IyDazAlDz3oWfyOpZrR5cubzBTlxtWqde08R0mcFe5XHyME7tTurO">
           </div>
           <button type="submit" class="btn btn-primary w-100">Ingresar</button>
         </form>
