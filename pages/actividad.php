@@ -18,8 +18,8 @@ $filtro_fecha_desde = $_GET['fecha_desde']     ?? '';
 $filtro_fecha_hasta = $_GET['fecha_hasta']     ?? '';
 
 // 3) Formulario de búsqueda avanzada
-echo "<h2 class='mb-4'>Registro de Auditoría</h2>";
-echo "<form method='GET' class='mb-3 d-flex flex-wrap gap-3 align-items-end'>";
+echo "<h2 class='mb-4'>Registro de Actividad</h2>";
+echo "<form method='GET' style='display:flex; gap:8rem; margin: 2rem 0; align-items: flex-end;'>";
 echo "  <input type='hidden' name='seccion' value='actividad'>";
 
 // Buscador Usuario
@@ -75,10 +75,8 @@ echo "  <div>
         </div>";
 
 // Botones
-echo "  <div class='d-flex gap-2'>
-          <button type='submit' class='btn btn-primary'>Filtrar</button>
-          <button type='button' class='btn btn-secondary' onclick=\"window.location='?seccion=actividad'\">Limpiar</button>
-        </div>";
+echo "<button type='submit' class='btn btn-primary'>Buscar</button>
+      <button type='button' class='btn btn-secondary' onclick=\"window.location='?seccion=actividad'\">Limpiar</button>";
 
 echo "</form>";
 
