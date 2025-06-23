@@ -225,7 +225,7 @@ h2 {
 }
 
 .input-width{
-  width: 20rem;
+  width: 20rem !important;
 }
 
 .mr-1{
