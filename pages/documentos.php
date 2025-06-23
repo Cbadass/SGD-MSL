@@ -276,6 +276,44 @@ try {
       </tbody>
     </table>
   </div>
+    <!-- ------------- NUEVO BLOQUE DE PAGINACIÓN ------------- -->
+    <nav style="margin-top:1.5rem">
+    <ul class="pagination justify-content-center">
+    <?php
+      $baseURL = 'index.php?seccion=documentos&';
+      $params  = $_GET;               // conserva todos los filtros
+      unset($params['pagina']);       // lo fijaremos manualmente
+      $ventana = 2;                   // nº de páginas a la izquierda y derecha
+
+      // primera / anterior
+      if ($pagina > 1) {
+          $params['pagina'] = 1;
+          echo '<li class="page-item"><a class="page-link" href="'.$baseURL.http_build_query($params).'">« Primera</a></li>';
+
+          $params['pagina'] = $pagina - 1;
+          echo '<li class="page-item"><a class="page-link" href="'.$baseURL.http_build_query($params).'">‹ Anterior</a></li>';
+      }
+
+      // rango de números
+      $inicio = max(1, $pagina - $ventana);
+      $fin    = min($totalPag, $pagina + $ventana);
+      for ($p = $inicio; $p <= $fin; $p++) {
+          $params['pagina'] = $p;
+          $act = $p == $pagina ? ' active' : '';
+          echo '<li class="page-item'.$act.'"><a class="page-link" href="'.$baseURL.http_build_query($params).'">'.$p.'</a></li>';
+      }
+
+      // siguiente / última
+      if ($pagina < $totalPag) {
+          $params['pagina'] = $pagina + 1;
+          echo '<li class="page-item"><a class="page-link" href="'.$baseURL.http_build_query($params).'">Siguiente ›</a></li>';
+
+          $params['pagina'] = $totalPag;
+          echo '<li class="page-item"><a class="page-link" href="'.$baseURL.http_build_query($params).'">Última »</a></li>';
+      }
+    ?>
+    </ul>
+  </nav>
 <?php endif; ?>
 
 <script>
