@@ -13,7 +13,7 @@ try {
     $documentos = [];
 
     // Parámetros de paginación
-    $porPagina = 5;
+    $porPagina = 10;
     $pagina    = max((int)($_GET['pagina'] ?? 1), 1);
 
     // Parámetros de filtro específicos
