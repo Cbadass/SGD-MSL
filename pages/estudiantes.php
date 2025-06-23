@@ -131,9 +131,11 @@ foreach($estudiantes as $row){
             <td>".htmlspecialchars($row['Correo_apoderado'] ?? '-')."</td>
             <td>
               <a href=\"index.php?seccion=modificar_estudiante&Id_estudiante={$row['Id_estudiante']}\" 
-                 class=\"btn btn-sm btn-warning\">Editar</a>
+                class=\"btn btn-sm btn-warning\">Editar</a>
               <a href=\"index.php?seccion=documentos&id_estudiante={$row['Id_estudiante']}&sin_profesional=1\" 
                  class=\"btn btn-sm btn-info\">Documentos</a>
+              <a href=\"index.php?seccion=perfil&Id_estudiante={$row['Id_estudiante']}\"
+                 class=\"btn btn-sm btn-primary\">Ver perfil</a> 
             </td>
           </tr>";
 }
