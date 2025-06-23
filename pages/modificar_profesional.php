@@ -48,18 +48,18 @@ $estados_usr = ['1'=>'Activo','0'=>'Inactivo'];
 
 <h2>Editar Profesional</h2>
 
-  <form method="POST" action="../guardar_modificacion_profesional.php" class="row g-3 needs-validation" novalidate>
+  <form method="POST" action="../guardar_modificacion_profesional.php" class="form-grid" novalidate>
     <input type="hidden" name="Id_profesional" value="<?= $prof['Id_profesional'] ?>">
 
     <div class="col-md-6">
       <label class="form-label">Nombres</label>
-      <input name="nombre" class="form-control" required
+      <input name="nombre" class="form-control" type="text" required
              value="<?= htmlspecialchars($prof['Nombre_profesional']) ?>">
     </div>
 
     <div class="col-md-6">
       <label class="form-label">Apellidos</label>
-      <input name="apellido" class="form-control" required
+      <input name="apellido" class="form-control" type="text" required
              value="<?= htmlspecialchars($prof['Apellido_profesional']) ?>">
     </div>
 
@@ -71,13 +71,13 @@ $estados_usr = ['1'=>'Activo','0'=>'Inactivo'];
 
     <div class="col-md-4">
       <label class="form-label">Teléfono</label>
-      <input name="telefono" class="form-control" placeholder="+56 9 1234 5678" required
+      <input name="telefono" class="form-control" type="text" placeholder="+56 9 1234 5678" required
              value="<?= htmlspecialchars($prof['Celular_profesional']) ?>">
     </div>
 
     <div class="col-md-4">
       <label class="form-label">RUT</label>
-      <input name="rut" class="form-control" placeholder="20.384.593-4" required
+      <input name="rut" class="form-control" type="text" placeholder="20.384.593-4" required
              value="<?= htmlspecialchars($prof['Rut_profesional']) ?>">
     </div>
 
@@ -125,7 +125,7 @@ $estados_usr = ['1'=>'Activo','0'=>'Inactivo'];
 
     <div class="col-md-6">
       <label class="form-label">Domicilio</label>
-      <input name="domicilio" class="form-control"
+      <input name="domicilio" class="form-control" type="text"
              value="<?= htmlspecialchars($prof['Domicilio_profesional']) ?>">
     </div>
 
@@ -174,7 +174,7 @@ $estados_usr = ['1'=>'Activo','0'=>'Inactivo'];
 
     <div class="col-md-4">
       <label class="form-label">N° de cuenta</label>
-      <input name="cuenta" class="form-control" required
+      <input name="cuenta" class="form-control" type="text" required
              value="<?= htmlspecialchars($prof['Cuenta_B_profesional']) ?>">
     </div>
 
@@ -226,9 +226,11 @@ $estados_usr = ['1'=>'Activo','0'=>'Inactivo'];
       </select>
     </div>
 
-    <div class="col-12">
-      <button type="submit" class="btn btn-success">Guardar cambios</button>
-      <a href="index.php?seccion=usuarios" class="btn btn-secondary">Cancelar</a>
+    <div class="col-12 subtitle">
+      <button type="submit" class="btn btn-success btn-height">Guardar cambios</button>
+      <button class="btn btn-secondary btn-height">
+        <a class="link-text" href="index.php?seccion=usuarios">Cancelar</a>
+      </button>
     </div>
   </form>
 </body>
