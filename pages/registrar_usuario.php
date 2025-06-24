@@ -325,6 +325,15 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <input name="domicilio" class="form-control" type="text">
           </div>
           <div>
+            <label class="form-label">Escuela</label>
+            <select name="escuela" class="form-select" required>
+              <option value="">Seleccione...</option>
+              <?php foreach ($escuelas as $e => $id): ?>
+                <option><?= htmlspecialchars($e) ?></option>
+              <?php endforeach ?>
+            </select>
+          </div>
+          <div>
             <label class="form-label">Estado civil</label>
             <select name="estado_civil" class="form-select" required>
               <option value="">Seleccione...</option>
@@ -388,15 +397,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             <select name="permiso" class="form-select" required>
               <?php foreach ($permisos as $p): ?>
                 <option><?= htmlspecialchars($p) ?></option>
-              <?php endforeach ?>
-            </select>
-          </div>
-          <div>
-            <label class="form-label">Escuela</label>
-            <select name="escuela" class="form-select" required>
-              <option value="">Seleccione...</option>
-              <?php foreach ($escuelas as $e => $id): ?>
-                <option><?= htmlspecialchars($e) ?></option>
               <?php endforeach ?>
             </select>
           </div>

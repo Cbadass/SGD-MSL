@@ -51,6 +51,8 @@ $estados_usr = ['1'=>'Activo','0'=>'Inactivo'];
   <form method="POST" action="../guardar_modificacion_profesional.php" class="form-grid" novalidate>
     <input type="hidden" name="Id_profesional" value="<?= $prof['Id_profesional'] ?>">
 
+    <!-- DAtos personales -->
+    <h3 class = 'mb-4 subtitle'>Datos personales</h3>
     <div class="col-md-6">
       <label class="form-label">Nombres</label>
       <input name="nombre" class="form-control" type="text" required
@@ -148,6 +150,8 @@ $estados_usr = ['1'=>'Activo','0'=>'Inactivo'];
              value="<?= htmlspecialchars($prof['Estado_civil_profesional']) ?>">
     </div>
 
+    <!-- DATOS BANCARIOS -->
+    <h3 class = 'mb-4 subtitle'>Datos Bancarios</h3>
     <div class="col-md-4">
       <label class="form-label">Banco</label>
       <select name="banco" class="form-select" required>
@@ -178,6 +182,8 @@ $estados_usr = ['1'=>'Activo','0'=>'Inactivo'];
              value="<?= htmlspecialchars($prof['Cuenta_B_profesional']) ?>">
     </div>
 
+    <!-- Datos salud -->
+    <h3 class = 'mb-4 subtitle'>Datos Salud</h3>
     <div class="col-md-4">
       <label class="form-label">AFP</label>
       <select name="afp" class="form-select" required>
@@ -202,6 +208,7 @@ $estados_usr = ['1'=>'Activo','0'=>'Inactivo'];
       </select>
     </div>
 
+    <!-- Otros -->
     <div class="col-md-4">
       <label class="form-label">Permisos</label>
       <select name="permiso" class="form-select" required>
