@@ -73,10 +73,10 @@ if ($id_est && !$id_apo) {
           </div>
           <div class="mt-3">
             <button class="btn btn-sm btn-height btn-warning mr-1">
-              <a class="text-link" href="index.php?seccion=modificar_profesional&Id_profesional=<?= $id_prof ?>">Editar</a>
+              <a class="link-text" href="index.php?seccion=modificar_profesional&Id_profesional=<?= $id_prof ?>">Editar</a>
             </button>
             <button class="btn btn-sm btn-height btn-info">
-              <a class="text-link" href="index.php?seccion=documentos&id_prof=<?= $id_prof ?>&sin_estudiante=1">Documentos</a>
+              <a class="link-text" href="index.php?seccion=documentos&id_prof=<?= $id_prof ?>&sin_estudiante=1">Documentos</a>
             </button>
           </div>
         </div>
@@ -164,7 +164,7 @@ if ($id_est && !$id_apo) {
                 <td><?= htmlspecialchars($h['Fecha_ingreso']) ?></td>
                 <td><?= $h['Estado_estudiante']==1?'Activo':'Inactivo' ?></td>
                 <td><?= htmlspecialchars($curso) ?></td>
-                <td><?= htmlspecialchars($h['Nombre_escuela']) ?></td>
+                <td><?= htmlspecialchars($h['Nombre_escuela']) ?><//td>
                 <td>
                   <a href="index.php?seccion=modificar_estudiante&Id_estudiante=<?= $h['Id_estudiante'] ?>"
                      class="btn btn-sm btn-warning">Editar</a>
