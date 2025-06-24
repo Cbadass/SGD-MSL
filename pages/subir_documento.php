@@ -105,7 +105,7 @@ if (!isset($_SESSION['usuario'])) {
 
   <div class="mb-3">
     <label for="descripcion" class="form-label">Descripción</label>
-    <textarea class="form-control" name="descripcion" id="descripcion"></textarea>
+    <textarea class="form-control" name="descripcion" id="descripcion" style="padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; width: 100%;" placeholder="Ingresa una descripción"></textarea>
   </div>
 
   <div class="mb-3">
