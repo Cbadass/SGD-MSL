@@ -234,7 +234,7 @@ $estados_usr = ['1'=>'Activo','0'=>'Inactivo'];
     </div>
 
     <div class="col-12 subtitle">
-      <button type="submit" class="btn btn-success btn-height">Guardar cambios</button>
+      <button type="submit" class="btn btn-success btn-height mr-1">Guardar cambios</button>
       <button class="btn btn-secondary btn-height">
         <a class="link-text" href="index.php?seccion=usuarios">Cancelar</a>
       </button>

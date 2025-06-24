@@ -50,7 +50,7 @@ $escuelas = $conn->query("
     </div>
 
     <div class="col-12 mt-1 subtitle">
-      <button type="submit" class="btn btn-success btn-height">Guardar Curso</button>
+      <button type="submit" class="btn btn-success btn-height mr-1">Guardar Curso</button>
       <button class="btn btn-secondary btn-height">
         <a class="link-text" href="index.php?seccion=cursos">Cancelar</a>
       </button>

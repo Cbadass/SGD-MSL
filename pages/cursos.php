@@ -149,7 +149,7 @@ if ($cursos) {
                 <td>".htmlspecialchars($r['Grado_curso'])."</td>
                 <td>".htmlspecialchars($r['seccion_curso'])."</td>
                 <td>{$doc}</td>
-                <td>
+                <td style='text-align:center;'>
                   <a href='index.php?seccion=modificar_curso&Id_curso={$r['Id_curso']}' 
                      class='btn btn-sm btn-warning link-text'>Editar</a>
                 </td>
