@@ -14,13 +14,20 @@ body {
 }
 
 .sidebar {
-  width: 177px;
+  width: 180px;
   background-color: #d3d2f3;
   /* height: 100vh; */ /* Altura completa del viewport, sin definir usa el espacio hasta el final */
   padding: 20px 0;
   display: grid;
   flex-direction: column;
   justify-content: space-between;
+}
+
+.sidebar nav a {
+  transition: 100ms ease-in-out;
+}
+.sidebar nav h3 {
+  cursor: default;
 }
 
 /* Color = letras sidebar general */
