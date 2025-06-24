@@ -18,7 +18,7 @@ $escuelas = $conn->query("
 <h2>Registrar Nuevo Curso</h2>
   <form method="POST" action="../guardar_registro_curso.php" class="form-grid row g-3 needs-validation" novalidate>
     <div class="col-md-6">
-      <label class="form-label">Tipo de Curso</label>
+      <label class="form-label mt-1">Tipo de Curso</label>
       <input name="Tipo_curso" type="text" class="form-control" required>
     </div>
     <div class="col-md-3 mt-1">
