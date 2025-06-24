@@ -121,16 +121,7 @@ try {
     $errorMsg = $e->getMessage();
 }
 ?>
-
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Lista de Documentos</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body class="container mt-4">
-
+<link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
 <h2 class="mb-4">
   <?php
     if ($id_prof > 0) {
@@ -147,7 +138,7 @@ try {
 </h2>
 
 <!-- Filtro de búsqueda -->
-<div class="card p-4 mb-4">
+<div class="card profile">
   <form method="GET" class="form-grid">
     <input type="hidden" name="seccion" value="documentos">
     <input type="hidden" name="pagina"      value="<?= $pagina ?>">
@@ -215,9 +206,11 @@ try {
         <?php endforeach; ?>
       </select>
     </div>
-    <div style="display:flex; gap:10px; align-items:end;">
-      <button type="submit" class="btn btn-primary">Buscar</button>
-      <a href="?seccion=documentos" class="btn btn-secondary">Limpiar filtros</a>
+    <div class="mt-1" style="display:flex; gap:10px; align-items:end;">
+      <button type="submit" class="btn btn-primary btn-height">Buscar</button>
+      <button class="btn btn-secondary btn-height">
+        <a href="?seccion=documentos" class="link-text">Limpiar filtros</a>
+      </button>
     </div>
   </form>
 </div>
@@ -377,6 +370,3 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 </script>
-
-</body>
-</html>

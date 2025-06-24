@@ -69,7 +69,7 @@ $escuelas = $conn->query("
       <input type="text" id="buscar_profesional" class="form-control input-width" placeholder="RUT o Nombre">
       <input type="hidden" name="Id_profesional" id="Id_profesional"
              value="<?= htmlspecialchars($curso['Id_profesional']) ?>">
-      <div id="resultados_profesional" class="border mt-1">
+      <div id="resultados_profesional" class="border">
         <?php if($curso['Id_profesional']): ?>
           <div class="resultado seleccionado input-width">
             <?= htmlspecialchars($curso['Rut_profesional']) ?> —
