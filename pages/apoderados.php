@@ -88,9 +88,9 @@ if ($apoderados) {
                 <td>".htmlspecialchars($row['Correo_apoderado'])."</td>
                 <td>
                   <a href='index.php?seccion=modificar_apoderado&Id_apoderado={$row['Id_apoderado']}' 
-                    class='btn btn-sm btn-warning'>Editar</a>
+                    class='btn btn-sm btn-warning link-text'>Editar</a>
                   <a href=\"index.php?seccion=perfil&Id_apoderado={$row['Id_apoderado']}\"
-                    class=\"btn btn-sm btn-primary\">Ver perfil</a> 
+                    class=\"btn btn-sm btn-primary link-text\">Ver perfil</a> 
                      
                 </td>
               </tr>";

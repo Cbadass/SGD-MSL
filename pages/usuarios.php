@@ -151,10 +151,10 @@ if ($usuarios) {
                 <td>".htmlspecialchars($row['Permisos']           ?? 'user')."</td>
                 <td>".($row['Estado_usuario']==1 ? 'Activo':'Inactivo')."</td>
                 <td>
-                    <a href='index.php?seccion=modificar_profesional&Id_profesional=" . htmlspecialchars($row['Id_profesional']) . "' class='btn btn-sm btn-warning me-1'>Editar</a>
-                    <a href='index.php?seccion=documentos&id_prof=" . htmlspecialchars($row['Id_profesional']) . "&sin_estudiante=1' class='btn btn-sm btn-info'>Docs libres</a>
+                    <a href='index.php?seccion=modificar_profesional&Id_profesional=" . htmlspecialchars($row['Id_profesional']) . "' class='btn btn-sm btn-warning me-1 link-text'>Editar</a>
+                    <a href='index.php?seccion=documentos&id_prof=" . htmlspecialchars($row['Id_profesional']) . "&sin_estudiante=1' class='btn btn-sm btn-info link-text'>Docs libres</a>
                     <a href=\"index.php?seccion=perfil&Id_profesional={$row['Id_profesional']}\"
-                    class=\"btn btn-sm btn-primary\">Ver perfil</a> 
+                    class=\"btn btn-sm btn-primary link-text\">Ver perfil</a> 
                 </td>
               </tr>";
     }

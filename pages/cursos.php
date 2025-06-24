@@ -151,7 +151,7 @@ if ($cursos) {
                 <td>{$doc}</td>
                 <td>
                   <a href='index.php?seccion=modificar_curso&Id_curso={$r['Id_curso']}' 
-                     class='btn btn-sm btn-warning'>Editar</a>
+                     class='btn btn-sm btn-warning link-text'>Editar</a>
                 </td>
               </tr>";
     }
