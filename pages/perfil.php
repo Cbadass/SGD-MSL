@@ -47,7 +47,7 @@ if ($id_est && !$id_apo) {
         if ($prof): ?>
 
         <h2 class="mb-4">Perfil Profesional</h2>
-        <div class="card p-4 mb-4 profile" style="padding: 2rem;">
+        <div class="card p-4 mb-4 profile">
           <div class="form-grid">
             <div><label class="form-label">Usuario</label><div><?= htmlspecialchars($prof['Nombre_usuario']) ?></div></div>
             <div><label class="form-label">Permisos</label><div><?= htmlspecialchars($prof['Permisos']) ?></div></div>
@@ -93,7 +93,7 @@ if ($id_est && !$id_apo) {
         if ($apo): ?>
 
         <h2 class="mb-4">Perfil Apoderado</h2>
-        <div class="card p-4 mb-4">
+        <div class="card profile">
           <div class="form-grid">
             <div><label class="form-label">Nombres</label><div><?= htmlspecialchars($apo['Nombre_apoderado']) ?></div></div>
             <div><label class="form-label">Apellidos</label><div><?= htmlspecialchars($apo['Apellido_apoderado']) ?></div></div>
@@ -106,8 +106,9 @@ if ($id_est && !$id_apo) {
             <div><label class="form-label">Ocupación Madre</label><div><?= htmlspecialchars($apo['Ocupacion_madre']) ?></div></div>
           </div>
           <div class="mt-3">
-            <a href="index.php?seccion=modificar_apoderado&Id_apoderado=<?= $id_apo ?>"
-               class="btn btn-sm btn-warning">Editar</a>
+            <button class="btn btn-sm btn-warning btn-height">
+              <a href="index.php?seccion=modificar_apoderado&Id_apoderado=<?= $id_apo ?>" class="link-text">Editar</a>
+            </button>
           </div>
         </div>
 
@@ -164,12 +165,12 @@ if ($id_est && !$id_apo) {
                 <td><?= htmlspecialchars($h['Fecha_ingreso']) ?></td>
                 <td><?= $h['Estado_estudiante']==1?'Activo':'Inactivo' ?></td>
                 <td><?= htmlspecialchars($curso) ?></td>
-                <td><?= htmlspecialchars($h['Nombre_escuela']) ?><//td>
+                <td><?= htmlspecialchars($h['Nombre_escuela']) ?></td>
                 <td>
                   <a href="index.php?seccion=modificar_estudiante&Id_estudiante=<?= $h['Id_estudiante'] ?>"
-                     class="btn btn-sm btn-warning">Editar</a>
+                     class="btn btn-sm btn-warning link-text">Editar</a>
                   <a href="index.php?seccion=documentos&id_estudiante=<?= $h['Id_estudiante'] ?>&sin_profesional=1"
-                     class="btn btn-sm btn-info">Documentos</a>
+                     class="btn btn-sm btn-info link-text">Documentos</a>
                 </td>
               </tr>
               <?php endforeach; ?>
