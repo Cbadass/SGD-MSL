@@ -139,10 +139,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
 <h2 class="mb-4">Editar Apoderado</h2>
 <?= $message ?>
-<form method="POST" class="row g-3 needs-validation" novalidate>
+<form method="POST" class="form-grid row g-3 needs-validation" novalidate>
   <input type="hidden" name="Id_apoderado" value="<?= $est['Id_apoderado'] ?>">
 
-  <div class="col-md-6">
+  <div class="col-md-6 mt-1">
     <label class="form-label">Nombres</label>
     <input name="Nombre_apoderado" class="form-control input-width" type="text" required
            value="<?= htmlspecialchars($est['Nombre_apoderado']) ?>">
