@@ -15,36 +15,22 @@ $escuelas = $conn->query("
     ORDER BY Nombre_escuela
 ")->fetchAll(PDO::FETCH_ASSOC);
 ?>
-<!DOCTYPE html>
-<html lang="es">
-<head>
-  <meta charset="UTF-8">
-  <title>Registrar Curso</title>
-  <link rel="stylesheet" href="style.css">
-  <style>
-    .resultado { cursor:pointer; padding:6px; border-bottom:1px solid #ddd; }
-    .resultado:hover { background:#f0f0f0; }
-    .seleccionado { background:#d1e7dd!important; font-weight:bold; }
-  </style>
-</head>
-<body class="p-4">
-  <h2>Registrar Nuevo Curso</h2>
-
-  <form method="POST" action="../guardar_registro_curso.php" class="row g-3 needs-validation" novalidate>
+<h2>Registrar Nuevo Curso</h2>
+  <form method="POST" action="../guardar_registro_curso.php" class="form-grid row g-3 needs-validation" novalidate>
     <div class="col-md-6">
       <label class="form-label">Tipo de Curso</label>
-      <input name="Tipo_curso" class="form-control" required>
+      <input name="Tipo_curso" type="text" class="form-control" required>
     </div>
-    <div class="col-md-3">
-      <label class="form-label">Grado</label>Grado_curso
-      <input name="Grado_curso" class="form-control" required>
+    <div class="col-md-3 mt-1">
+      <label class="form-label">Grado</label>
+      <input name="Grado_curso" type="text" class="form-control" required>
     </div>
-    <div class="col-md-3">
+    <div class="col-md-3 mt-1">
       <label class="form-label">Sección</label>
-      <input name="seccion_curso" class="form-control" required>
+      <input name="seccion_curso" type="text" class="form-control" required>
     </div>
 
-    <div class="col-md-6">
+    <div class="col-md-6 mt-1">
       <label class="form-label">Escuela</label>
       <select name="Id_escuela" class="form-select" required>
         <option value="">Seleccione...</option>
@@ -56,16 +42,18 @@ $escuelas = $conn->query("
       </select>
     </div>
 
-    <div class="col-md-6">
+    <div class="col-md-6 mt-1">
       <label class="form-label">Docente (opcional)</label>
       <input type="text" id="buscar_profesional" class="form-control" placeholder="RUT o Nombre">
       <input type="hidden" name="Id_profesional" id="Id_profesional">
       <div id="resultados_profesional" class="border mt-1"></div>
     </div>
 
-    <div class="col-12">
-      <button type="submit" class="btn btn-success">Guardar Curso</button>
-      <a href="index.php?seccion=cursos" class="btn btn-secondary">Cancelar</a>
+    <div class="col-12 mt-1 subtitle">
+      <button type="submit" class="btn btn-success btn-height">Guardar Curso</button>
+      <button class="btn btn-secondary btn-height">
+        <a class="link-text" href="index.php?seccion=cursos">Cancelar</a>
+      </button>
     </div>
   </form>
 

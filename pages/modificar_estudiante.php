@@ -44,7 +44,7 @@ $cursos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
   <form method="POST"
         action="../guardar_modificacion_estudiante.php"
         enctype="multipart/form-data"
-        class="row g-3 needs-validation"
+        class="form-grid row g-3 needs-validation"
         novalidate>
         
     <input type="hidden" name="Id_estudiante" value="<?= $est['Id_estudiante'] ?>">
@@ -117,7 +117,7 @@ $cursos = $stmt2->fetchAll(PDO::FETCH_ASSOC);
       </div>
     </div>
 
-    <div class="col-12 d-flex gap-2 mt-1">
+    <div class="subtitle col-12 d-flex gap-2 mt-1">
       <button type="submit" class="btn btn-success btn-height mr-1">Guardar cambios</button>
       <button class="btn btn-secondary btn-height">
         <a class="link-text" href="index.php?seccion=estudiantes">Cancelar</a>
