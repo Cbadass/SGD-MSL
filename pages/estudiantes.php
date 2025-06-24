@@ -129,7 +129,7 @@ foreach($estudiantes as $row){
             <td>".($apoderadoFull?:'-')."</td>
             <td>".htmlspecialchars($row['Numero_apoderado'] ?? '-')."</td>
             <td>".htmlspecialchars($row['Correo_apoderado'] ?? '-')."</td>
-            <td style='display:flex; justify-content:space-around;'>
+            <td style='text-align:center;'>
               <a href=\"index.php?seccion=modificar_estudiante&Id_estudiante={$row['Id_estudiante']}\" 
                 class=\"btn btn-sm btn-warning link-text\">Editar</a>
               <a href=\"index.php?seccion=documentos&id_estudiante={$row['Id_estudiante']}&sin_profesional=1\" 
