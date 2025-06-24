@@ -17,42 +17,20 @@ $doc = $stmt->fetch();
 if (!$doc) die("Documento no encontrado.");
 ?>
 
-<!DOCTYPE html>
-<html lang="es">
-<head>
-<meta charset="UTF-8">
-<title>Modificar Documento</title>
-<link rel="stylesheet" href="style.css">
-<style>
-.resultado {
-  cursor: pointer;
-  padding: 6px 10px;
-  border-bottom: 1px solid #ddd;
-}
-.resultado:hover {
-  background-color: #f0f0f0;
-}
-.seleccionado {
-  background-color: #d1e7dd !important;
-  font-weight: bold;
-}
-</style>
-</head>
-<body class="container mt-4">
 
 <h2 class="mb-4">Modificar Documento</h2>
 
-<form method="POST" action="/guardar_modificacion_documento.php" enctype="multipart/form-data">
+<form method="POST" class="form-grid" action="/guardar_modificacion_documento.php" enctype="multipart/form-data">
     <input type="hidden" name="id_documento" value="<?= $doc['Id_documento'] ?>">
     <input type="hidden" name="id_estudiante" id="id_estudiante" value="<?= htmlspecialchars($doc['Id_estudiante_doc'] ?? '') ?>">
     <input type="hidden" name="id_profesional" id="id_profesional" value="<?= htmlspecialchars($doc['Id_prof_doc'] ?? '') ?>">
 
-    <div class="mb-3">
+    <div class="mt-1">
         <label for="nombre" class="form-label">Nombre del Documento</label>
         <input type="text" class="form-control" name="nombre" value="<?= htmlspecialchars($doc['Nombre_documento']) ?>" required>
     </div>
 
-    <div class="mb-3">
+    <div class="mt-1">
         <label for="tipo_documento" class="form-label">Tipo de documento</label>
         <select name="tipo_documento" id="tipo_documento" class="form-select" required>
           <?php
@@ -101,22 +79,22 @@ if (!$doc) die("Documento no encontrado.");
     </div>
 
 
-  <div class="mb-3">
+  <div class="mt-1">
     <label for="descripcion" class="form-label">Descripción</label>
-    <textarea class="form-control" name="descripcion"><?= htmlspecialchars($doc['Descripcion']) ?></textarea>
+    <textarea class="form-control" name="descripcion" style="padding: 10px; border-radius: 6px; border: 1px solid #ccc; font-size: 14px; width: 100%;" placeholder="Ingresa una descripción"><?= htmlspecialchars($doc['Descripcion']) ?></textarea>
   </div>
 
-  <div class="mb-3">
+  <div class="mt-1">
     <label for="archivo" class="form-label">Actualizar archivo (opcional)</label>
     <input type="file" class="form-control" name="archivo" id="archivo">
     </div>
 
 <!-- Buscador Estudiante -->
-<div class="mb-3">
+<div class="mt-1">
   <label class="form-label">Buscar Estudiante</label>
   <input type="text" id="buscar_estudiante" class="form-control" placeholder="RUT o Nombre">
   <input type="hidden" name="id_estudiante" id="id_estudiante" value="<?= htmlspecialchars($doc['Id_estudiante_doc'] ?? '') ?>">
-  <div id="resultados_estudiante" class="border mt-1"></div>
+  <div id="resultados_estudiante" class="border"></div>
   <?php
     if ($doc['Id_estudiante_doc']) {
         $stmtEst = $conn->prepare("SELECT Rut_estudiante, Nombre_estudiante, Apellido_estudiante FROM estudiantes WHERE Id_estudiante = ?");
@@ -135,11 +113,11 @@ if (!$doc) die("Documento no encontrado.");
 </div>
 
 <!-- Buscador Profesional -->
-<div class="mb-3">
+<div class="mt-1">
   <label class="form-label">Buscar Profesional</label>
   <input type="text" id="buscar_profesional" class="form-control" placeholder="RUT o Nombre">
   <input type="hidden" name="id_profesional" id="id_profesional" value="<?= htmlspecialchars($doc['Id_prof_doc'] ?? '') ?>">
-  <div id="resultados_profesional" class="border mt-1"></div>
+  <div id="resultados_profesional" class="border"></div>
   <?php
     if ($doc['Id_prof_doc']) {
         $stmtProf = $conn->prepare("SELECT Rut_profesional, Nombre_profesional, Apellido_profesional FROM profesionales WHERE Id_profesional = ?");
@@ -158,9 +136,11 @@ if (!$doc) die("Documento no encontrado.");
 </div>
 
 
-  <div class="mt-3">
-    <button type="submit" class="btn btn-success">Guardar cambios</button>
-    <a href="index.php?seccion=documentos" class="btn btn-secondary">Cancelar</a>
+  <div class="subtitle mt-1">
+    <button type="submit" class="btn btn-success btn-height mr-1">Guardar cambios</button>
+    <button class="btn btn-secondary btn-height">
+      <a href="index.php?seccion=documentos" class="link-text">Cancelar</a>
+    </button>
   </div>
 </form>
 
@@ -218,6 +198,3 @@ document.getElementById('archivo').addEventListener('change', function() {
   }
 });
 </script>
-
-</body>
-</html>

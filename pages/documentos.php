@@ -363,11 +363,11 @@ a:-webkit-any-link {
           <td><?= htmlspecialchars($d['Nombre_estudiante']  ?: '-') ?></td>
           <td><?= htmlspecialchars($d['Nombre_profesional'] ?: '-') ?></td>
           <td><?= htmlspecialchars($d['Usuario_subio']) ?></td>
-          <td>
+          <td style="text-align:center;">
             <a href="index.php?seccion=modificar_documento&id_documento=<?= $d['Id_documento'] ?>"
-               class="btn btn-warning btn-sm">Modificar</a>
+               class="btn btn-warning btn-sm link-text">Modificar</a>
             <a href="descargar.php?id_documento=<?= $d['Id_documento'] ?>"
-               class="btn btn-primary btn-sm">Descargar</a>
+               class="btn btn-primary btn-sm link-text">Descargar</a>
           </td>
         </tr>
         <?php endforeach; ?>
