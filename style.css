@@ -193,10 +193,6 @@ label {
   cursor: pointer;
 }
 
-h2 {
-  margin-top: 100;
-}
-
 .card {
   background-color: #fff;
   border: 1px solid #ddd;
@@ -235,6 +231,11 @@ h2 {
   font-weight: 600;
   align-content: center;
 }
+
+.profile{
+  padding: 1rem;
+}
+
 .input-width{
   width: 24rem !important;
 }

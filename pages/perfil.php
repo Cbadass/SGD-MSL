@@ -47,7 +47,7 @@ if ($id_est && !$id_apo) {
         if ($prof): ?>
 
         <h2 class="mb-4">Perfil Profesional</h2>
-        <div class="card p-4 mb-4">
+        <div class="card p-4 mb-4 profile" style="padding: 2rem;">
           <div class="form-grid">
             <div><label class="form-label">Usuario</label><div><?= htmlspecialchars($prof['Nombre_usuario']) ?></div></div>
             <div><label class="form-label">Permisos</label><div><?= htmlspecialchars($prof['Permisos']) ?></div></div>
@@ -72,10 +72,12 @@ if ($id_est && !$id_apo) {
             <div><label class="form-label">Escuela</label><div><?= htmlspecialchars($prof['Nombre_escuela']) ?></div></div>
           </div>
           <div class="mt-3">
-            <a href="index.php?seccion=modificar_profesional&Id_profesional=<?= $id_prof ?>"
-               class="btn btn-sm btn-warning">Editar</a>
-            <a href="index.php?seccion=documentos&id_prof=<?= $id_prof ?>&sin_estudiante=1"
-               class="btn btn-sm btn-info">Documentos</a>
+            <button class="btn btn-sm btn-height btn-warning mr-1">
+              <a class="text-link" href="index.php?seccion=modificar_profesional&Id_profesional=<?= $id_prof ?>">Editar</a>
+            </button>
+            <button class="btn btn-sm btn-height btn-info">
+              <a class="text-link" href="index.php?seccion=documentos&id_prof=<?= $id_prof ?>&sin_estudiante=1">Documentos</a>
+            </button>
           </div>
         </div>
 
