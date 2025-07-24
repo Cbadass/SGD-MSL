@@ -129,7 +129,7 @@ $stmt->execute($params);
 $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
 // 6) Mostrar tabla sin columna "Datos Anteriores"
-echo "<div class='table-responsive'>
+echo "<div class='table-responsive' style='max-height: 400px; overflow-y:auto; border-radius:10px;'>
         <table class='table table-striped table-bordered'>
           <thead class='table-dark'>
             <tr>

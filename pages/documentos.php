@@ -325,7 +325,7 @@ a:-webkit-any-link {
 <?php elseif (empty($documentos)): ?>
   <div class="alert alert-warning">No se encontraron documentos.</div>
 <?php else: ?>
-  <div class="table-responsive">
+  <div class="table-responsive" style="max-height: 400px; overflow-y:auto; border-radius:10px;">
     <table class="table table-striped">
       <thead>
         <tr>
