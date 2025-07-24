@@ -21,6 +21,7 @@ body {
   display: grid;
   flex-direction: column;
   justify-content: space-between;
+  height: calc(100vh - 92px);
 }
 
 .sidebar nav a {
