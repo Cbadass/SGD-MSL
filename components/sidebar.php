@@ -1,27 +1,77 @@
+<?php
+// sidebar.php
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
+
+// Rol del usuario (ADMIN / DIRECTOR / PROFESIONAL)
+$rol = $_SESSION['usuario']['permisos'] ?? 'GUEST';
+
+// Archivo actual (para resaltar activo)
+$currentPath = parse_url($_SERVER['REQUEST_URI'] ?? '', PHP_URL_PATH) ?: '';
+$currentFile = basename($currentPath) ?: 'index.php';
+
+function activeClass(string $file, string $currentFile): string {
+    return $currentFile === $file ? 'active' : '';
+}
+function canSee(array $roles, string $rol): bool {
+    return in_array($rol, $roles, true);
+}
+
+// Helpers para imprimir enlaces con control de rol
+function navItem(string $file, string $label, array $roles, string $rol, string $currentFile): void {
+    if (!canSee($roles, $rol)) return;
+    $cls = activeClass($file, $currentFile);
+    // Escapado básico
+    $fileSafe = htmlspecialchars($file, ENT_QUOTES, 'UTF-8');
+    $labelSafe = htmlspecialchars($label, ENT_QUOTES, 'UTF-8');
+    echo "<a href=\"{$fileSafe}\" class=\"{$cls}\">{$labelSafe}</a>\n";
+}
+?>
+<!-- Componente de Sidebar -->
 <aside class="sidebar">
-  <nav>
-    <h3>Profesionales</h3>
-    <a href="?seccion=usuarios" class="<?= $seccion === 'usuarios' ? 'active' : '' ?>">Profesionales</a>
-    <a href="?seccion=registrar_usuario" class="<?= $seccion === 'registrar_usuario' ? 'active' : '' ?>">Registrar Profesional</a>
+  <div>
+    <h3>Navegación</h3>
+    <?php
+      // Inicio: visible para todos los roles válidos
+      navItem('index.php', 'Inicio', ['ADMIN','DIRECTOR','PROFESIONAL'], $rol, $currentFile);
 
-    <h3>Estudiantes</h3>
-    <a href="?seccion=estudiantes" class="<?= $seccion === 'estudiantes' ? 'active' : '' ?>">Estudiantes</a>
-    <a href="?seccion=registrar_estudiante" class="<?= $seccion === 'registrar_estudiante' ? 'active' : '' ?>">Registrar Estudiante</a>
-    
-    <h3>APODERADOS</h3>
-    <a href="?seccion=apoderados" class="<?= $seccion === 'apoderados' ? 'active' : '' ?>">Apoderados</a>
-    <a href="?seccion=registrar_apoderado" class="<?= $seccion === 'registrar_apoderado' ? 'active' : '' ?>">Registrar Apoderado</a>
+      // Bloque de gestión (solo Admin/Director)
+      if (canSee(['ADMIN','DIRECTOR'], $rol)) {
+        echo "<h3>Gestión</h3>\n";
+        navItem('usuarios.php',      'Usuarios',      ['ADMIN','DIRECTOR'], $rol, $currentFile);
+        navItem('profesionales.php', 'Profesionales', ['ADMIN','DIRECTOR'], $rol, $currentFile);
+        navItem('cursos.php',        'Cursos',        ['ADMIN','DIRECTOR'], $rol, $currentFile);
+        navItem('estudiantes.php',   'Estudiantes',   ['ADMIN','DIRECTOR'], $rol, $currentFile);
+        navItem('apoderados.php',    'Apoderados',    ['ADMIN','DIRECTOR'], $rol, $currentFile);
+        navItem('documentos.php',    'Documentos',    ['ADMIN','DIRECTOR'], $rol, $currentFile);
+        navItem('asignaciones.php',  'Asignaciones',  ['ADMIN','DIRECTOR'], $rol, $currentFile); // NUEVO módulo
+      }
 
-    <h3>Cursos</h3>
-    <a href="?seccion=cursos" class="<?= $seccion === 'cursos' ? 'active' : '' ?>">Cursos</a>
-    <a href="?seccion=registrar_curso" class="<?= $seccion === 'registrar_curso' ? 'active' : '' ?>">Crear Curso</a>
+      // Bloque de trabajo para Profesional (tabs limitados)
+      if ($rol === 'PROFESIONAL') {
+        echo "<h3>Mi trabajo</h3>\n";
+        navItem('cursos.php',      'Cursos',      ['PROFESIONAL'], $rol, $currentFile);
+        navItem('estudiantes.php', 'Estudiantes', ['PROFESIONAL'], $rol, $currentFile);
+        navItem('apoderados.php',  'Apoderados',  ['PROFESIONAL'], $rol, $currentFile);
+        navItem('documentos.php',  'Documentos',  ['PROFESIONAL'], $rol, $currentFile);
+        // Importante: PROFESIONAL **no** ve Usuarios, Profesionales, Asignaciones ni Actividad.
+      }
 
-    <h3>Documentos</h3>
-    <a href="?seccion=documentos" class="<?= $seccion === 'documentos' ? 'active' : '' ?>">Documentos</a>
-    <a href="?seccion=subir_documento" class="<?= $seccion === 'subir_documento' ? 'active' : '' ?>">Subir Documento</a>
+      // Auditoría / Actividad (solo Admin/Director)
+      if (canSee(['ADMIN','DIRECTOR'], $rol)) {
+        echo "<h3>Monitoreo</h3>\n";
+        navItem('actividad.php', 'Actividad', ['ADMIN','DIRECTOR'], $rol, $currentFile);
+      }
+    ?>
+  </div>
 
-
-    <h3>Actividad</h3>
-    <a href="?seccion=actividad" class="<?= $seccion === 'actividad' ? 'active' : '' ?>">Registro de actividad</a>
-  </nav>
+  <div>
+    <h3>Cuenta</h3>
+    <?php
+      // Opcional: perfil
+      // navItem('perfil.php', 'Mi perfil', ['ADMIN','DIRECTOR','PROFESIONAL'], $rol, $currentFile);
+      navItem('logout.php', 'Cerrar sesión', ['ADMIN','DIRECTOR','PROFESIONAL'], $rol, $currentFile);
+    ?>
+  </div>
 </aside>
