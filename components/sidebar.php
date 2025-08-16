@@ -34,18 +34,18 @@ function navItem(string $file, string $label, array $roles, string $rol, string 
     <h3>Navegación</h3>
     <?php
       // Inicio: visible para todos los roles válidos
-      navItem('index.php', 'Inicio', ['ADMIN','DIRECTOR','PROFESIONAL'], $rol, $currentFile);
+      navItem('index.php', 'Inicio', ['admin','DIRECTOR','PROFESIONAL'], $rol, $currentFile);
 
       // Bloque de gestión (solo Admin/Director)
-      if (canSee(['ADMIN','DIRECTOR'], $rol)) {
+      if (canSee(['admin','DIRECTOR'], $rol)) {
         echo "<h3>Gestión</h3>\n";
-        navItem('usuarios.php',      'Usuarios',      ['ADMIN','DIRECTOR'], $rol, $currentFile);
-        navItem('profesionales.php', 'Profesionales', ['ADMIN','DIRECTOR'], $rol, $currentFile);
-        navItem('cursos.php',        'Cursos',        ['ADMIN','DIRECTOR'], $rol, $currentFile);
-        navItem('estudiantes.php',   'Estudiantes',   ['ADMIN','DIRECTOR'], $rol, $currentFile);
-        navItem('apoderados.php',    'Apoderados',    ['ADMIN','DIRECTOR'], $rol, $currentFile);
-        navItem('documentos.php',    'Documentos',    ['ADMIN','DIRECTOR'], $rol, $currentFile);
-        navItem('asignaciones.php',  'Asignaciones',  ['ADMIN','DIRECTOR'], $rol, $currentFile); // NUEVO módulo
+        navItem('usuarios.php',      'Usuarios',      ['admin','DIRECTOR'], $rol, $currentFile);
+        navItem('profesionales.php', 'Profesionales', ['admin','DIRECTOR'], $rol, $currentFile);
+        navItem('cursos.php',        'Cursos',        ['admin','DIRECTOR'], $rol, $currentFile);
+        navItem('estudiantes.php',   'Estudiantes',   ['admin','DIRECTOR'], $rol, $currentFile);
+        navItem('apoderados.php',    'Apoderados',    ['admin','DIRECTOR'], $rol, $currentFile);
+        navItem('documentos.php',    'Documentos',    ['admin','DIRECTOR'], $rol, $currentFile);
+        navItem('asignaciones.php',  'Asignaciones',  ['admin','DIRECTOR'], $rol, $currentFile); // NUEVO módulo
       }
 
       // Bloque de trabajo para Profesional (tabs limitados)
@@ -59,9 +59,9 @@ function navItem(string $file, string $label, array $roles, string $rol, string 
       }
 
       // Auditoría / Actividad (solo Admin/Director)
-      if (canSee(['ADMIN','DIRECTOR'], $rol)) {
+      if (canSee(['admin','DIRECTOR'], $rol)) {
         echo "<h3>Monitoreo</h3>\n";
-        navItem('actividad.php', 'Actividad', ['ADMIN','DIRECTOR'], $rol, $currentFile);
+        navItem('actividad.php', 'Actividad', ['admin','DIRECTOR'], $rol, $currentFile);
       }
     ?>
   </div>
@@ -70,8 +70,8 @@ function navItem(string $file, string $label, array $roles, string $rol, string 
     <h3>Cuenta</h3>
     <?php
       // Opcional: perfil
-      // navItem('perfil.php', 'Mi perfil', ['ADMIN','DIRECTOR','PROFESIONAL'], $rol, $currentFile);
-      navItem('logout.php', 'Cerrar sesión', ['ADMIN','DIRECTOR','PROFESIONAL'], $rol, $currentFile);
+      // navItem('perfil.php', 'Mi perfil', ['admin','DIRECTOR','PROFESIONAL'], $rol, $currentFile);
+      navItem('logout.php', 'Cerrar sesión', ['admin','DIRECTOR','PROFESIONAL'], $rol, $currentFile);
     ?>
   </div>
 </aside>
