@@ -36,11 +36,11 @@ $grp_mi_trabajo   = ['cursos','estudiantes','apoderados','documentos'];
       .sidebar details { margin: 8px 0; }
       .sidebar summary {
         list-style: none; cursor: pointer; padding: 10px 16px; margin: 0 12px 6px 12px;
-        border-radius: 10px; background:rgb(134, 130, 238); color: #333; font-weight: 600;
+        border-radius: 10px; background:rgb(255, 255, 255); color: #333; font-weight: 600;
         user-select: none; outline: none; border-left: 5px solid #6e62f4;
       }
       .sidebar summary::-webkit-details-marker { display: none; }
-      .sidebar details[open] > summary { background: #d3d2f3; }
+      .sidebar details[open] > summary { background:rgb(178, 176, 235); }
       .sidebar .group-links { padding: 0 0 8px 0; }
       .sidebar .group-links a { display:block; margin: 2px 12px; }
       .sidebar h3 { display:none; } /* ocultamos h3 para usar summary como encabezado */
