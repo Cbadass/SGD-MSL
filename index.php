@@ -57,7 +57,8 @@ $modo_oscuro = $_COOKIE['modo_oscuro'] ?? 'false';
           'modificar_documento',
 
           'asignaciones',
-          'actividad'
+          'actividad',
+          'administrar_contraseña'
         ];
 
         $seccion = $_GET['seccion'] ?? 'usuarios';
