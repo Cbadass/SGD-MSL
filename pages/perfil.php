@@ -78,6 +78,17 @@ if ($id_est && !$id_apo) {
             <button class="btn btn-sm btn-height btn-info">
               <a class="link-text" href="index.php?seccion=documentos&id_prof=<?= $id_prof ?>&sin_estudiante=1">Documentos</a>
             </button>
+            <?php
+            // mismo bloque para resolver $idUsuarioPerfil que en la opción A (puedes reutilizarlo)
+            $urlAdminPass = "index.php?seccion=administrar_contraseña&id=".$idUsuarioPerfil;
+            ?>
+            <a href="<?= htmlspecialchars($urlAdminPass) ?>"
+              style="background:#ffc107;border:1px solid #e0a800;color:#111;
+                      padding:10px 14px;border-radius:10px;display:inline-block;
+                      font-weight:600;text-decoration:none"
+              title="Administrar contraseña (cambiar propia o generar temporal)">
+              🔑 Administrar contraseña
+            </a>
           </div>
         </div>
 

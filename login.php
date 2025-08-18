@@ -24,18 +24,18 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $usuario = $stmt->fetch();
 
         if ($usuario && password_verify($contrasena, $usuario['Contraseña'])) {
-            $_SESSION['usuario'] = [
-                'id' => $usuario['Id_usuario'],
-                'nombre' => $usuario['Nombre_usuario'],
-                'permisos' => $usuario['Permisos'] ?? 'user',
-                'id_profesional' => $usuario['Id_profesional'] ?? null
-            ];
-
-            header("Location: index.php");
-            exit;
-        } else {
-            $error = "Usuario o contraseña incorrectos, o usuario inactivo.";
-        }
+          $_SESSION['usuario'] = [
+              'id' => $usuario['Id_usuario'],
+              'nombre' => $usuario['Nombre_usuario'],
+              'permisos' => $usuario['Permisos'] ?? 'user',
+              'id_profesional' => $usuario['Id_profesional'] ?? null
+          ];
+          header("Location: index.php");
+          exit;
+      } else {
+          $error = "Usuario o contraseña incorrectos, o usuario inactivo.";
+      }
+      
     }
 }
 ?>
