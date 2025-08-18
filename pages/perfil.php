@@ -35,7 +35,7 @@ if ($id_est && !$id_apo) {
         // === Perfil PROFESIONAL ===
         $stmt = $conn->prepare("
           SELECT p.*, 
-                 u.Nombre_usuario, u.Permisos, u.Estado_usuario, 
+                 u.Id_usuario AS UidUsuario, u.Nombre_usuario, u.Permisos, u.Estado_usuario, 
                  esc.Nombre_escuela
             FROM profesionales p
        LEFT JOIN usuarios      u   ON u.Id_profesional = p.Id_profesional
@@ -75,20 +75,14 @@ if ($id_est && !$id_apo) {
             <button class="btn btn-sm btn-height btn-warning mr-1">
               <a class="link-text" href="index.php?seccion=modificar_profesional&Id_profesional=<?= $id_prof ?>">Editar</a>
             </button>
-            <button class="btn btn-sm btn-height btn-info">
+            <button class="btn btn-sm btn-height btn-info mr-1">
               <a class="link-text" href="index.php?seccion=documentos&id_prof=<?= $id_prof ?>&sin_estudiante=1">Documentos</a>
             </button>
-            <?php
-            // mismo bloque para resolver $idUsuarioPerfil que en la opción A (puedes reutilizarlo)
-            $urlAdminPass = "index.php?seccion=administrar_contraseña&id=".$idUsuarioPerfil;
-            ?>
-            <a href="<?= htmlspecialchars($urlAdminPass) ?>"
-              style="background:#ffc107;border:1px solid #e0a800;color:#111;
-                      padding:10px 14px;border-radius:10px;display:inline-block;
-                      font-weight:600;text-decoration:none"
-              title="Administrar contraseña (cambiar propia o generar temporal)">
-              🔑 Administrar contraseña
-            </a>
+            <?php if (!empty($prof['UidUsuario'])): ?>
+            <button class="btn btn-sm btn-height btn-warning">
+              <a class="link-text" href="index.php?seccion=administrar_contraseña&id=<?= (int)$prof['UidUsuario'] ?>">🔑 Administrar contraseña</a>
+            </button>
+            <?php endif; ?>
           </div>
         </div>
 
