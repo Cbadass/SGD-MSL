@@ -17,6 +17,7 @@ class ComposerStaticInit68e62a701eee823ba213d46c80497897
         array (
             'Psr\\Http\\Message\\' => 17,
             'Psr\\Http\\Client\\' => 16,
+            'PHPMailer\\PHPMailer\\' => 20,
         ),
         'M' => 
         array (
@@ -44,6 +45,10 @@ class ComposerStaticInit68e62a701eee823ba213d46c80497897
         'Psr\\Http\\Client\\' => 
         array (
             0 => __DIR__ . '/..' . '/psr/http-client/src',
+        ),
+        'PHPMailer\\PHPMailer\\' => 
+        array (
+            0 => __DIR__ . '/..' . '/phpmailer/phpmailer/src',
         ),
         'MicrosoftAzure\\Storage\\Common\\' => 
         array (

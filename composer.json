@@ -4,7 +4,8 @@
     "type": "project",
     "require": {
       "microsoft/azure-storage-blob": "^1.5",
-        "microsoft/azure-storage-common": "^1.5"
+        "microsoft/azure-storage-common": "^1.5",
+        "phpmailer/phpmailer": "^6.10"
     },
     "autoload": {
       "psr-4": {
