@@ -78,7 +78,6 @@ function fetchUser(PDO $db, int $id): ?array {
 }
 
 function updatePasswordHash(PDO $db, int $id, string $newHash): bool {
-  // Named params y verificación de filas afectadas
   $sql = "UPDATE " . TBL_USERS . " SET " . COL_PASS . " = :hash WHERE " . COL_ID . " = :id";
   $st  = $db->prepare($sql);
   $ok  = $st->execute([':hash' => $newHash, ':id' => $id]);
@@ -94,6 +93,8 @@ function updatePasswordHash(PDO $db, int $id, string $newHash): bool {
 }
 
 function audit(PDO $db, int $actorId, string $tabla, int $registroId, string $accion, array $old, array $new): void {
+  // Truncar 'Accion' a 10 chars para evitar error por tamaño de columna (NVARCHAR(10) común)
+  $accionShort = mb_substr($accion, 0, 10, 'UTF-8');
   $sql = "INSERT INTO " . TBL_AUD . " ("
        . A_COL_UID . ", " . A_COL_TAB . ", " . A_COL_RID . ", " . A_COL_ACC . ", "
        . A_COL_OLD . ", " . A_COL_NEW . ", " . A_COL_FE . ")
@@ -103,7 +104,7 @@ function audit(PDO $db, int $actorId, string $tabla, int $registroId, string $ac
     $actorId,
     $tabla,
     $registroId,
-    $accion,
+    $accionShort,
     json_encode($old, JSON_UNESCAPED_UNICODE),
     json_encode($new, JSON_UNESCAPED_UNICODE),
     date('Y-m-d H:i:s')
@@ -131,7 +132,7 @@ $defaultReturn = $target['IdProf'] ? ('index.php?seccion=perfil&Id_profesional='
                                    : ('index.php?seccion=perfil&uid=' . $targetId);
 $returnUrl = $_GET['return'] ?? $defaultReturn;
 
-$isOwn   = ($targetId === $ME_ID);
+$isOwn    = ($targetId === $ME_ID);
 $copyUser = $target['Usuario']; // Para UI copiar
 $copyPass = null;
 
@@ -167,7 +168,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           $conn->beginTransaction();
           $ok = updatePasswordHash($conn, $targetId, $newHash);
           if ($ok) {
-            audit($conn, $ME_ID, 'usuarios', $targetId, 'CHANGE_PASSWORD_SELF',
+            // Accion <= 10 chars
+            audit($conn, $ME_ID, 'usuarios', $targetId, 'CHG_SELF',
                   ['Contraseña' => $oldHash],
                   ['Contraseña' => $newHash]);
             $conn->commit();
@@ -200,7 +202,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $conn->beginTransaction();
         $ok = updatePasswordHash($conn, $targetId, $newHash);
         if ($ok) {
-          audit($conn, $ME_ID, 'usuarios', $targetId, 'RESET_PASSWORD_OTHER',
+          // Accion <= 10 chars
+          audit($conn, $ME_ID, 'usuarios', $targetId, 'RST_OTHER',
                 ['Contraseña' => $oldHash],
                 ['Contraseña' => $newHash]);
           $conn->commit();
