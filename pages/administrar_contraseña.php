@@ -7,26 +7,38 @@ session_start();
 $root = dirname(__DIR__);
 require_once $root . '/includes/db.php'; // Debe definir $conn (PDO)
 
+// Asegurar manejo de errores con excepciones
+try {
+  if (!($conn instanceof PDO)) {
+    throw new RuntimeException('La conexión $conn no es PDO.');
+  }
+  $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+} catch (Throwable $e) {
+  http_response_code(500);
+  exit('Error de conexión: ' . $e->getMessage());
+}
+
+// ====== SESIÓN / ROLES ======
 if (!isset($_SESSION['usuario'])) {
   http_response_code(401);
   exit('No autenticado.');
 }
-
-$ME = $_SESSION['usuario'];
-$ME_ID     = (int)($ME['id'] ?? 0);
-$ME_ROLE   = strtoupper((string)($ME['permisos'] ?? 'PROFESIONAL'));
-$ALLOWED   = ['ADMIN','DIRECTOR','PROFESIONAL'];
+$ME       = $_SESSION['usuario'];
+$ME_ID    = (int)($ME['id'] ?? 0);
+$ME_ROLE  = strtoupper((string)($ME['permisos'] ?? 'PROFESIONAL'));
+$ALLOWED  = ['ADMIN','DIRECTOR','PROFESIONAL'];
 if (!$ME_ID || !in_array($ME_ROLE, $ALLOWED, true)) {
   http_response_code(403);
   exit('Sesión inválida o rol no permitido.');
 }
 
-// ====== CONSTANTES DE TABLAS/COLUMNAS (SQL Server) ======
+// ====== CONSTANTES DE TABLAS/COLUMNAS ======
 const TBL_USERS = '[dbo].[usuarios]';
 const COL_ID    = '[Id_usuario]';
 const COL_USER  = '[Nombre_usuario]';
 const COL_PASS  = '[Contraseña]';
 const COL_ROLE  = '[Permisos]';
+const COL_PROF  = '[Id_profesional]';
 
 const TBL_AUD   = '[dbo].[Auditoria]';
 const A_COL_UID = '[Usuario_id]';
@@ -52,8 +64,13 @@ function check_csrf(): void {
 }
 
 function fetchUser(PDO $db, int $id): ?array {
-  $sql = "SELECT ".COL_ID." AS Id, ".COL_USER." AS Usuario, ".COL_PASS." AS Hash, ".COL_ROLE." AS Rol
-          FROM ".TBL_USERS." WHERE ".COL_ID." = ?";
+  $sql = "SELECT "
+       . COL_ID   . " AS Id, "
+       . COL_USER . " AS Usuario, "
+       . COL_PASS . " AS Hash, "
+       . COL_ROLE . " AS Rol, "
+       . COL_PROF . " AS IdProf
+          FROM " . TBL_USERS . " WHERE " . COL_ID . " = ?";
   $st = $db->prepare($sql);
   $st->execute([$id]);
   $row = $st->fetch(PDO::FETCH_ASSOC);
@@ -61,15 +78,26 @@ function fetchUser(PDO $db, int $id): ?array {
 }
 
 function updatePasswordHash(PDO $db, int $id, string $newHash): bool {
-  $sql = "UPDATE ".TBL_USERS." SET ".COL_PASS." = ? WHERE ".COL_ID." = ?";
-  $st = $db->prepare($sql);
-  return $st->execute([$newHash, $id]);
+  // Named params y verificación de filas afectadas
+  $sql = "UPDATE " . TBL_USERS . " SET " . COL_PASS . " = :hash WHERE " . COL_ID . " = :id";
+  $st  = $db->prepare($sql);
+  $ok  = $st->execute([':hash' => $newHash, ':id' => $id]);
+
+  if ($ok && $st->rowCount() === 0) {
+    // Si no afectó filas, verificar si el hash ya estaba igual
+    $chk = $db->prepare("SELECT " . COL_PASS . " FROM " . TBL_USERS . " WHERE " . COL_ID . " = :id");
+    $chk->execute([':id' => $id]);
+    $curr = $chk->fetchColumn();
+    return $curr === $newHash;
+  }
+  return $ok && $st->rowCount() > 0;
 }
 
 function audit(PDO $db, int $actorId, string $tabla, int $registroId, string $accion, array $old, array $new): void {
-  $sql = "INSERT INTO ".TBL_AUD." ("
-       . A_COL_UID.", ".A_COL_TAB.", ".A_COL_RID.", ".A_COL_ACC.", ".A_COL_OLD.", ".A_COL_NEW.", ".A_COL_FE
-       . ") VALUES (?, ?, ?, ?, ?, ?, ?)";
+  $sql = "INSERT INTO " . TBL_AUD . " ("
+       . A_COL_UID . ", " . A_COL_TAB . ", " . A_COL_RID . ", " . A_COL_ACC . ", "
+       . A_COL_OLD . ", " . A_COL_NEW . ", " . A_COL_FE . ")
+       VALUES (?, ?, ?, ?, ?, ?, ?)";
   $st = $db->prepare($sql);
   $st->execute([
     $actorId,
@@ -85,31 +113,32 @@ function audit(PDO $db, int $actorId, string $tabla, int $registroId, string $ac
 function genTempPassword(int $len = 12): string {
   $chars = 'ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$%';
   $pwd = '';
-  for ($i=0;$i<$len;$i++) $pwd .= $chars[random_int(0, strlen($chars)-1)];
+  for ($i = 0; $i < $len; $i++) {
+    $pwd .= $chars[random_int(0, strlen($chars) - 1)];
+  }
   return $pwd;
 }
-
 function isAdminOrDirector(string $role): bool {
   return in_array($role, ['ADMIN','DIRECTOR'], true);
 }
 
 // ====== TARGET ======
 $targetId  = isset($_GET['id']) ? (int)$_GET['id'] : $ME_ID;
-$returnUrl = $_GET['return'] ?? ('index.php?seccion=perfil&uid=' . $targetId);
-
-$target = fetchUser($conn, $targetId);
+$target    = fetchUser($conn, $targetId);
 if (!$target) { http_response_code(404); exit('Usuario no encontrado.'); }
 
-$isOwn = ($targetId === $ME_ID);
+$defaultReturn = $target['IdProf'] ? ('index.php?seccion=perfil&Id_profesional=' . (int)$target['IdProf'])
+                                   : ('index.php?seccion=perfil&uid=' . $targetId);
+$returnUrl = $_GET['return'] ?? $defaultReturn;
 
-// ====== ESTADO UI ======
-$successMsg = null;
-$errorMsg   = null;
-// Para copiar (usuario y contraseña nueva/temporal si aplica):
-$copyUser = $target['Usuario'];
+$isOwn   = ($targetId === $ME_ID);
+$copyUser = $target['Usuario']; // Para UI copiar
 $copyPass = null;
 
 // ====== ACCIONES ======
+$successMsg = null;
+$errorMsg   = null;
+
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   check_csrf();
   $op = $_POST['op'] ?? '';
@@ -134,21 +163,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $oldHash = $target['Hash'];
         $newHash = password_hash($new1, PASSWORD_DEFAULT);
 
-        $conn->beginTransaction();
-        $ok = updatePasswordHash($conn, $targetId, $newHash);
-        if ($ok) {
-          // Auditar
-          audit($conn, $ME_ID, 'usuarios', $targetId, 'CHANGE_PASSWORD_SELF',
-                ['Contraseña'=>$oldHash],
-                ['Contraseña'=>$newHash]);
-          $conn->commit();
-          $successMsg = 'Contraseña actualizada correctamente.';
-          $copyPass   = $new1; // para copiar en UI (no se guarda en texto plano)
-          // refrescar target
-          $target = fetchUser($conn, $targetId);
-        } else {
-          $conn->rollBack();
-          $errorMsg = 'No se pudo actualizar la contraseña.';
+        try {
+          $conn->beginTransaction();
+          $ok = updatePasswordHash($conn, $targetId, $newHash);
+          if ($ok) {
+            audit($conn, $ME_ID, 'usuarios', $targetId, 'CHANGE_PASSWORD_SELF',
+                  ['Contraseña' => $oldHash],
+                  ['Contraseña' => $newHash]);
+            $conn->commit();
+            $successMsg = 'Contraseña actualizada correctamente.';
+            $copyPass   = $new1;        // para copiar en UI (no se guarda en texto plano)
+            $target     = fetchUser($conn, $targetId); // refrescar
+          } else {
+            $conn->rollBack();
+            $errorMsg = 'No se pudo actualizar la contraseña (sin filas afectadas). Revisa el tamaño de la columna.';
+          }
+        } catch (Throwable $ex) {
+          if ($conn->inTransaction()) { $conn->rollBack(); }
+          $errorMsg = 'Error al actualizar: ' . $ex->getMessage();
         }
       }
     }
@@ -164,20 +196,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $newHash  = password_hash($temp, PASSWORD_DEFAULT);
       $oldHash  = $target['Hash'];
 
-      $conn->beginTransaction();
-      $ok = updatePasswordHash($conn, $targetId, $newHash);
-      if ($ok) {
-        audit($conn, $ME_ID, 'usuarios', $targetId, 'RESET_PASSWORD_OTHER',
-              ['Contraseña'=>$oldHash],
-              ['Contraseña'=>$newHash]);
-        $conn->commit();
-        $successMsg = 'Se generó una contraseña temporal.';
-        $copyPass   = $temp; // mostrar para copiar
-        // refrescar
-        $target = fetchUser($conn, $targetId);
-      } else {
-        $conn->rollBack();
-        $errorMsg = 'No se pudo restablecer la contraseña.';
+      try {
+        $conn->beginTransaction();
+        $ok = updatePasswordHash($conn, $targetId, $newHash);
+        if ($ok) {
+          audit($conn, $ME_ID, 'usuarios', $targetId, 'RESET_PASSWORD_OTHER',
+                ['Contraseña' => $oldHash],
+                ['Contraseña' => $newHash]);
+          $conn->commit();
+          $successMsg = 'Se generó una contraseña temporal.';
+          $copyPass   = $temp;      // mostrar para copiar
+          $target     = fetchUser($conn, $targetId); // refrescar
+        } else {
+          $conn->rollBack();
+          $errorMsg = 'No se pudo restablecer la contraseña (sin filas afectadas). Revisa el tamaño de la columna.';
+        }
+      } catch (Throwable $ex) {
+        if ($conn->inTransaction()) { $conn->rollBack(); }
+        $errorMsg = 'Error al restablecer: ' . $ex->getMessage();
       }
     }
   }
