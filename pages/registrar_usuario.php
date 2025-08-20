@@ -4,36 +4,26 @@ declare(strict_types=1);
 session_start();
 require_once __DIR__ . '/../includes/db.php'; // Debe definir $conn (PDO)
 
-// Seguridad mínima
 if (!isset($_SESSION['usuario'])) {
   http_response_code(401);
-  exit('No autenticado');
-}
-$yo = $_SESSION['usuario'];
-$miRol = strtoupper($yo['permisos'] ?? 'PROFESIONAL');
-if (!in_array($miRol, ['ADMIN','DIRECTOR','PROFESIONAL'], true)) {
-  http_response_code(403);
-  exit('Rol inválido');
+  exit('No autenticado.');
 }
 
-// Forzar errores con excepciones
-$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+try { $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); } catch (Throwable $e) {}
 
-// Utilidades
-function toNull($v){ $v = trim((string)$v); return ($v === '' ? null : $v); }
+function nvl($v){ $v = trim((string)$v); return $v === '' ? null : $v; }
 function genPwd($len=10){
-  $chars='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$%';
-  $s=''; for($i=0;$i<$len;$i++) $s.=$chars[random_int(0,strlen($chars)-1)];
+  $c='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$%';
+  $s=''; for($i=0;$i<$len;$i++) $s.=$c[random_int(0,strlen($c)-1)];
   return $s;
 }
 function getEscuelas(PDO $db){
-  try {
+  try{
     $st=$db->query("SELECT Id_escuela, Nombre_escuela FROM dbo.escuelas ORDER BY Nombre_escuela");
     return $st->fetchAll(PDO::FETCH_ASSOC);
-  } catch(Throwable $e){ return []; }
+  }catch(Throwable $e){ return []; }
 }
 
-// catálogos
 $bancos = [
  'Banco de Chile','BancoEstado','Banco Santander Chile','Scotiabank Chile','Bci',
  'Itaú Chile','Banco Security','Banco Falabella','Banco Ripley','Banco Consorcio',
@@ -41,42 +31,42 @@ $bancos = [
 ];
 $afps = ['AFP Habitat','AFP Provida','AFP Capital','AFP Cuprum','AFP Modelo','AFP PlanVital','AFP Uno'];
 
-// Estado UI
-$exito = false;
-$msg   = null;
-$copiable = ['usuario'=>null,'pwd'=>null,'correo'=>null];
+$escuelas = getEscuelas($conn);
 
-// POST -> insertar
-if ($_SERVER['REQUEST_METHOD']==='POST') {
-  // Datos PROFESIONAL (opcionales varios)
-  $Nombre_profesional     = toNull($_POST['Nombre_profesional'] ?? '');
-  $Apellido_profesional   = toNull($_POST['Apellido_profesional'] ?? '');
-  $Rut_profesional        = toNull($_POST['Rut_profesional'] ?? '');
-  $Nacimiento_profesional = toNull($_POST['Nacimiento_profesional'] ?? '');
-  $Domicilio_profesional  = toNull($_POST['Domicilio_profesional'] ?? '');
-  $Celular_profesional    = toNull($_POST['Celular_profesional'] ?? '');
-  $Correo_profesional     = toNull($_POST['Correo_profesional'] ?? '');
-  $Estado_civil_profesional = toNull($_POST['Estado_civil_profesional'] ?? '');
-  $Banco_profesional      = toNull($_POST['Banco_profesional'] ?? '');
-  $Tipo_cuenta_profesional= toNull($_POST['Tipo_cuenta_profesional'] ?? '');
-  $Cuenta_B_profesional   = toNull($_POST['Cuenta_B_profesional'] ?? '');
-  $AFP_profesional        = toNull($_POST['AFP_profesional'] ?? '');
-  $Salud_profesional      = toNull($_POST['Salud_profesional'] ?? '');
-  $Cargo_profesional      = toNull($_POST['Cargo_profesional'] ?? '');
-  $Horas_profesional      = toNull($_POST['Horas_profesional'] ?? '');
-  $Fecha_ingreso          = toNull($_POST['Fecha_ingreso'] ?? '');
-  $Tipo_profesional       = toNull($_POST['Tipo_profesional'] ?? '');
-  $Id_escuela_prof        = toNull($_POST['Id_escuela_prof'] ?? '');
+$msg = null;
+$ok  = false;
+$panelUsuario = $panelCorreo = $panelPass = null;
 
-  // Datos USUARIO
+// === GUARDAR ===
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  // Datos del profesional (opcionales varios)
+  $Nombre_profesional      = nvl($_POST['Nombre_profesional'] ?? '');
+  $Apellido_profesional    = nvl($_POST['Apellido_profesional'] ?? '');
+  $Rut_profesional         = nvl($_POST['Rut_profesional'] ?? '');
+  $Nacimiento_profesional  = nvl($_POST['Nacimiento_profesional'] ?? '');
+  $Domicilio_profesional   = nvl($_POST['Domicilio_profesional'] ?? '');
+  $Celular_profesional     = nvl($_POST['Celular_profesional'] ?? '');
+  $Correo_profesional      = nvl($_POST['Correo_profesional'] ?? '');
+  $Estado_civil_profesional= nvl($_POST['Estado_civil_profesional'] ?? '');
+  $Banco_profesional       = nvl($_POST['Banco_profesional'] ?? '');
+  $Tipo_cuenta_profesional = nvl($_POST['Tipo_cuenta_profesional'] ?? '');
+  $Cuenta_B_profesional    = nvl($_POST['Cuenta_B_profesional'] ?? '');
+  $AFP_profesional         = nvl($_POST['AFP_profesional'] ?? '');
+  $Salud_profesional       = nvl($_POST['Salud_profesional'] ?? '');
+  $Cargo_profesional       = nvl($_POST['Cargo_profesional'] ?? '');
+  $Horas_profesional       = nvl($_POST['Horas_profesional'] ?? '');
+  $Fecha_ingreso           = nvl($_POST['Fecha_ingreso'] ?? '');
+  $Tipo_profesional        = nvl($_POST['Tipo_profesional'] ?? '');
+  $Id_escuela_prof         = nvl($_POST['Id_escuela_prof'] ?? '');
+
+  // Usuario
   $Nombre_usuario = trim((string)($_POST['Nombre_usuario'] ?? ''));
-  $Permisos       = strtoupper(trim((string)($_POST['Permisos'] ?? 'PROFESIONAL')));
+  $Permisos = strtoupper(trim((string)($_POST['Permisos'] ?? 'PROFESIONAL')));
+  if (!in_array($Permisos, ['ADMIN','DIRECTOR','PROFESIONAL'], true)) $Permisos = 'PROFESIONAL';
+
   if ($Nombre_usuario === '') {
-    $msg = 'Debes ingresar un nombre de usuario.';
-  } elseif (!in_array($Permisos, ['ADMIN','DIRECTOR','PROFESIONAL'], true)) {
-    $msg = 'Permisos inválidos.';
+    $msg = 'Debes ingresar el nombre de usuario.';
   } else {
-    // Transacción: insert profesional + usuario
     try {
       $conn->beginTransaction();
 
@@ -96,165 +86,149 @@ if ($_SERVER['REQUEST_METHOD']==='POST') {
         $Salud_profesional, $Cargo_profesional, $Horas_profesional, $Fecha_ingreso, $Tipo_profesional,
         $Id_escuela_prof
       ]);
-      // Id insertado
       $id_prof = (int)$conn->lastInsertId();
 
-      // Generar contraseña
+      // Generar contraseña y crear usuario
       $pwdPlano = genPwd(10);
-      $pwdHash  = password_hash($pwdPlano, PASSWORD_DEFAULT);
+      $hash = password_hash($pwdPlano, PASSWORD_DEFAULT);
 
-      // Insert usuario
       $sqlU = "INSERT INTO dbo.usuarios (Nombre_usuario, Contraseña, Estado_usuario, Id_profesional, Permisos)
                VALUES (?,?,?,?,?)";
       $stU = $conn->prepare($sqlU);
-      $stU->execute([$Nombre_usuario, $pwdHash, 1, $id_prof, $Permisos]);
+      $stU->execute([$Nombre_usuario, $hash, 1, $id_prof, $Permisos]);
 
       $conn->commit();
-      $exito = true;
-      $msg   = "Profesional y usuario creados correctamente.";
-      $copiable = [
-        'usuario' => $Nombre_usuario,
-        'pwd'     => $pwdPlano,
-        'correo'  => $Correo_profesional
-      ];
-    } catch(Throwable $e){
+      $ok = true;
+      $msg = 'Profesional y usuario creados.';
+
+      // Panel de copiado
+      $panelUsuario = $Nombre_usuario;
+      $panelCorreo  = $Correo_profesional ?? '';
+      $panelPass    = $pwdPlano;
+
+    } catch (Throwable $e) {
       if ($conn->inTransaction()) $conn->rollBack();
-      $msg = 'Error al registrar: '.$e->getMessage();
+      $msg = 'Error al registrar: ' . $e->getMessage();
     }
   }
 }
-
-// Escuelas para select (si aplica)
-$escuelas = getEscuelas($conn);
 ?>
 <!doctype html>
 <html lang="es">
 <head>
 <meta charset="utf-8">
-<title>Registrar profesional / usuario</title>
+<title>Registrar profesional y usuario</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-/* mínimo para no romper tu CSS existente */
-.copy-wrap{background:#111a2b;border:1px solid #1f2a44;border-radius:12px;padding:14px;margin-top:16px}
-.copy-row{display:flex;gap:8px;margin:.35rem 0}
-.copy-row input{flex:1} .copy-btn{white-space:nowrap}
-</style>
 </head>
 <body class="<?= ($_COOKIE['modo_oscuro'] ?? 'false') === 'true' ? 'dark-mode' : '' ?>">
 <div class="container">
-  <h2 class="mb-3">Registrar Profesional y Usuario</h2>
+
+  <h2 class="mb-3">Registrar profesional y usuario</h2>
 
   <?php if ($msg): ?>
-    <div class="alert <?= $exito?'alert-success':'alert-danger' ?>"><?= htmlspecialchars($msg) ?></div>
+    <div class="alert <?= $ok ? 'alert-success' : 'alert-danger' ?>"><?= htmlspecialchars($msg) ?></div>
   <?php endif; ?>
 
-  <?php if ($exito && $copiable['usuario']): ?>
-    <div class="copy-wrap">
-      <h5 class="mb-2">Credenciales generadas</h5>
-      <div class="copy-row">
-        <input class="form-control" id="c_user" value="<?= htmlspecialchars($copiable['usuario']) ?>" readonly>
-        <button class="btn btn-secondary copy-btn" onclick="copy('c_user')">Copiar usuario</button>
-      </div>
-      <div class="copy-row">
-        <input class="form-control" id="c_pwd" value="<?= htmlspecialchars($copiable['pwd']) ?>" readonly>
-        <button class="btn btn-secondary copy-btn" onclick="copy('c_pwd')">Copiar contraseña</button>
-      </div>
-      <div class="copy-row">
-        <input class="form-control" id="c_mail" value="<?= htmlspecialchars($copiable['correo'] ?? '') ?>" readonly>
-        <button class="btn btn-secondary copy-btn" onclick="copy('c_mail')">Copiar correo</button>
-      </div>
+  <?php if ($ok): ?>
+  <div class="alert alert-info" style="max-width:720px;">
+    <p class="mb-2"><strong>Credenciales generadas</strong></p>
+
+    <div class="row g-2 align-items-center" style="margin-bottom:8px;">
+      <div class="col-auto"><label class="col-form-label">Usuario</label></div>
+      <div class="col"><input id="cred-user" class="form-control" value="<?= htmlspecialchars($panelUsuario) ?>" readonly></div>
+      <div class="col-auto"><button type="button" class="btn btn-secondary" onclick="copiar('cred-user')">Copiar</button></div>
     </div>
-    <hr>
+
+    <div class="row g-2 align-items-center" style="margin-bottom:8px;">
+      <div class="col-auto"><label class="col-form-label">Correo</label></div>
+      <div class="col"><input id="cred-mail" class="form-control" value="<?= htmlspecialchars($panelCorreo) ?>" readonly></div>
+      <div class="col-auto"><button type="button" class="btn btn-secondary" onclick="copiar('cred-mail')">Copiar</button></div>
+    </div>
+
+    <div class="row g-2 align-items-center">
+      <div class="col-auto"><label class="col-form-label">Contraseña</label></div>
+      <div class="col"><input id="cred-pass" class="form-control" value="<?= htmlspecialchars($panelPass) ?>" readonly></div>
+      <div class="col-auto"><button type="button" class="btn btn-secondary" onclick="copiar('cred-pass')">Copiar</button></div>
+    </div>
+  </div>
   <?php endif; ?>
 
   <form method="post" autocomplete="off">
     <div class="row">
       <div class="col-md-6">
         <label class="form-label">Nombres</label>
-        <input name="Nombre_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Nombre_profesional']??'') ?>">
+        <input name="Nombre_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Nombre_profesional'] ?? '') ?>">
       </div>
       <div class="col-md-6">
         <label class="form-label">Apellidos</label>
-        <input name="Apellido_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Apellido_profesional']??'') ?>">
+        <input name="Apellido_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Apellido_profesional'] ?? '') ?>">
       </div>
 
       <div class="col-md-4">
         <label class="form-label">RUT</label>
-        <input name="Rut_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Rut_profesional']??'') ?>">
+        <input name="Rut_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Rut_profesional'] ?? '') ?>">
       </div>
       <div class="col-md-4">
         <label class="form-label">Nacimiento</label>
-        <input type="date" name="Nacimiento_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Nacimiento_profesional']??'') ?>">
+        <input type="date" name="Nacimiento_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Nacimiento_profesional'] ?? '') ?>">
       </div>
       <div class="col-md-4">
         <label class="form-label">Teléfono</label>
-        <input name="Celular_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Celular_profesional']??'') ?>">
+        <input name="Celular_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Celular_profesional'] ?? '') ?>">
       </div>
 
       <div class="col-md-6">
         <label class="form-label">Domicilio</label>
-        <input name="Domicilio_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Domicilio_profesional']??'') ?>">
+        <input name="Domicilio_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Domicilio_profesional'] ?? '') ?>">
       </div>
       <div class="col-md-6">
         <label class="form-label">Correo</label>
-        <input type="email" name="Correo_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Correo_profesional']??'') ?>">
+        <input type="email" name="Correo_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Correo_profesional'] ?? '') ?>">
       </div>
 
       <div class="col-md-4">
         <label class="form-label">Estado civil</label>
-        <input name="Estado_civil_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Estado_civil_profesional']??'') ?>">
+        <input name="Estado_civil_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Estado_civil_profesional'] ?? '') ?>">
       </div>
 
       <div class="col-md-4">
         <label class="form-label">Banco</label>
-        <input list="bancosCL" name="Banco_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Banco_profesional']??'') ?>">
-        <datalist id="bancosCL">
-          <?php foreach($bancos as $b): ?><option value="<?= htmlspecialchars($b) ?>"></option><?php endforeach; ?>
-        </datalist>
+        <input name="Banco_profesional" list="bancosCL" class="form-control" value="<?= htmlspecialchars($_POST['Banco_profesional'] ?? '') ?>">
       </div>
       <div class="col-md-4">
         <label class="form-label">Tipo de cuenta</label>
-        <input list="tipocuenta" name="Tipo_cuenta_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Tipo_cuenta_profesional']??'') ?>">
-        <datalist id="tipocuenta">
-          <option value="Cuenta Corriente"></option>
-          <option value="Cuenta Vista"></option>
-          <option value="Cuenta RUT"></option>
-          <option value="Ahorro"></option>
-        </datalist>
+        <input name="Tipo_cuenta_profesional" list="tipocuenta" class="form-control" value="<?= htmlspecialchars($_POST['Tipo_cuenta_profesional'] ?? '') ?>">
       </div>
 
       <div class="col-md-4">
         <label class="form-label">N° de cuenta</label>
-        <input name="Cuenta_B_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Cuenta_B_profesional']??'') ?>">
+        <input name="Cuenta_B_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Cuenta_B_profesional'] ?? '') ?>">
       </div>
       <div class="col-md-4">
         <label class="form-label">AFP</label>
-        <input list="afpCL" name="AFP_profesional" class="form-control" value="<?= htmlspecialchars($_POST['AFP_profesional']??'') ?>">
-        <datalist id="afpCL">
-          <?php foreach($afps as $a): ?><option value="<?= htmlspecialchars($a) ?>"></option><?php endforeach; ?>
-        </datalist>
+        <input name="AFP_profesional" list="afpCL" class="form-control" value="<?= htmlspecialchars($_POST['AFP_profesional'] ?? '') ?>">
       </div>
       <div class="col-md-4">
         <label class="form-label">Salud</label>
-        <input name="Salud_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Salud_profesional']??'') ?>">
+        <input name="Salud_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Salud_profesional'] ?? '') ?>">
       </div>
 
       <div class="col-md-4">
         <label class="form-label">Cargo</label>
-        <input name="Cargo_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Cargo_profesional']??'') ?>">
+        <input name="Cargo_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Cargo_profesional'] ?? '') ?>">
       </div>
       <div class="col-md-4">
         <label class="form-label">Horas</label>
-        <input type="number" name="Horas_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Horas_profesional']??'') ?>">
+        <input type="number" name="Horas_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Horas_profesional'] ?? '') ?>">
       </div>
       <div class="col-md-4">
         <label class="form-label">Fecha ingreso</label>
-        <input type="date" name="Fecha_ingreso" class="form-control" value="<?= htmlspecialchars($_POST['Fecha_ingreso']??'') ?>">
+        <input type="date" name="Fecha_ingreso" class="form-control" value="<?= htmlspecialchars($_POST['Fecha_ingreso'] ?? '') ?>">
       </div>
 
       <div class="col-md-6">
         <label class="form-label">Tipo profesional</label>
-        <input name="Tipo_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Tipo_profesional']??'') ?>">
+        <input name="Tipo_profesional" class="form-control" value="<?= htmlspecialchars($_POST['Tipo_profesional'] ?? '') ?>">
       </div>
       <div class="col-md-6">
         <label class="form-label">Escuela</label>
@@ -275,7 +249,7 @@ $escuelas = getEscuelas($conn);
     <div class="row">
       <div class="col-md-6">
         <label class="form-label">Nombre de usuario</label>
-        <input name="Nombre_usuario" required class="form-control" value="<?= htmlspecialchars($_POST['Nombre_usuario']??'') ?>">
+        <input name="Nombre_usuario" class="form-control" required value="<?= htmlspecialchars($_POST['Nombre_usuario'] ?? '') ?>">
       </div>
       <div class="col-md-6">
         <label class="form-label">Permisos</label>
@@ -292,14 +266,28 @@ $escuelas = getEscuelas($conn);
       <a class="btn btn-secondary" href="index.php?seccion=profesionales">Cancelar</a>
     </div>
   </form>
+
+  <!-- datalists (sólo referencia, no afectan estilos) -->
+  <datalist id="bancosCL">
+    <?php foreach($bancos as $b): ?><option value="<?= htmlspecialchars($b) ?>"></option><?php endforeach; ?>
+  </datalist>
+  <datalist id="tipocuenta">
+    <option value="Cuenta Corriente"></option>
+    <option value="Cuenta Vista"></option>
+    <option value="Cuenta RUT"></option>
+    <option value="Ahorro"></option>
+  </datalist>
+  <datalist id="afpCL">
+    <?php foreach($afps as $a): ?><option value="<?= htmlspecialchars($a) ?>"></option><?php endforeach; ?>
+  </datalist>
+
 </div>
 
 <script>
-function copy(id){
+function copiar(id){
   const el=document.getElementById(id);
   el.select(); el.setSelectionRange(0,99999);
   document.execCommand('copy');
-  const btn=event.target.closest('button'); if(btn){ const o=btn.textContent; btn.textContent='Copiado ✓'; setTimeout(()=>btn.textContent=o,1100); }
 }
 </script>
 </body>

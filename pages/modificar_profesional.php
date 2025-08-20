@@ -3,28 +3,26 @@
 declare(strict_types=1);
 session_start();
 require_once __DIR__ . '/../includes/db.php'; // $conn (PDO)
-$conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-// Seguridad
-if (!isset($_SESSION['usuario'])) { http_response_code(401); exit('No autenticado'); }
-$yo = $_SESSION['usuario'];
-$miRol = strtoupper($yo['permisos'] ?? 'PROFESIONAL');
+if (!isset($_SESSION['usuario'])) { http_response_code(401); exit('No autenticado.'); }
+$me = $_SESSION['usuario'];
+$miRol = strtoupper($me['permisos'] ?? 'PROFESIONAL');
 
-// Utilidades
-function toNull($v){ $v = trim((string)$v); return $v===''?null:$v; }
-function genPwd($len=10){
+try { $conn->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION); } catch (Throwable $e) {}
+
+function nvl($v){ $v = trim((string)$v); return $v === '' ? null : $v; }
+function genPwd($len=12){
   $c='ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz23456789@#$%';
   $s=''; for($i=0;$i<$len;$i++) $s.=$c[random_int(0,strlen($c)-1)];
   return $s;
 }
 function getEscuelas(PDO $db){
-  try {
+  try{
     $st=$db->query("SELECT Id_escuela, Nombre_escuela FROM dbo.escuelas ORDER BY Nombre_escuela");
     return $st->fetchAll(PDO::FETCH_ASSOC);
-  } catch(Throwable $e){ return []; }
+  }catch(Throwable $e){ return []; }
 }
 
-// catálogos
 $bancos = [
  'Banco de Chile','BancoEstado','Banco Santander Chile','Scotiabank Chile','Bci',
  'Itaú Chile','Banco Security','Banco Falabella','Banco Ripley','Banco Consorcio',
@@ -32,45 +30,43 @@ $bancos = [
 ];
 $afps = ['AFP Habitat','AFP Provida','AFP Capital','AFP Cuprum','AFP Modelo','AFP PlanVital','AFP Uno'];
 
-// Id profesional
 $id_prof = (int)($_GET['Id_profesional'] ?? 0);
-if ($id_prof<=0){ http_response_code(400); exit('Falta Id_profesional'); }
+if ($id_prof <= 0) { http_response_code(400); exit('Falta Id_profesional'); }
 
 // Cargar profesional + usuario
-$st=$conn->prepare("
-  SELECT p.*, u.Id_usuario, u.Nombre_usuario, u.Permisos, u.Estado_usuario
-    FROM dbo.profesionales p
-    LEFT JOIN dbo.usuarios u ON u.Id_profesional = p.Id_profesional
-   WHERE p.Id_profesional = ?");
+$st = $conn->prepare("
+SELECT p.*,
+       u.Id_usuario, u.Nombre_usuario, u.Permisos, u.Estado_usuario
+  FROM dbo.profesionales p
+  LEFT JOIN dbo.usuarios u ON u.Id_profesional = p.Id_profesional
+ WHERE p.Id_profesional = ?");
 $st->execute([$id_prof]);
 $prof = $st->fetch(PDO::FETCH_ASSOC);
-if (!$prof){ http_response_code(404); exit('Profesional no encontrado'); }
+if (!$prof) { http_response_code(404); exit('No encontrado'); }
 
-// Estado UI
-$exito=false; $msg=null; $copiable=['usuario'=>null,'pwd'=>null,'correo'=>null];
+$msg = null; $ok=false; $newPlain=null;
 
-// Guardar cambios
-if ($_SERVER['REQUEST_METHOD']==='POST'){
-  $Nombre_profesional     = toNull($_POST['Nombre_profesional'] ?? '');
-  $Apellido_profesional   = toNull($_POST['Apellido_profesional'] ?? '');
-  $Rut_profesional        = toNull($_POST['Rut_profesional'] ?? '');
-  $Nacimiento_profesional = toNull($_POST['Nacimiento_profesional'] ?? '');
-  $Domicilio_profesional  = toNull($_POST['Domicilio_profesional'] ?? '');
-  $Celular_profesional    = toNull($_POST['Celular_profesional'] ?? '');
-  $Correo_profesional     = toNull($_POST['Correo_profesional'] ?? '');
-  $Estado_civil_profesional = toNull($_POST['Estado_civil_profesional'] ?? '');
-  $Banco_profesional      = toNull($_POST['Banco_profesional'] ?? '');
-  $Tipo_cuenta_profesional= toNull($_POST['Tipo_cuenta_profesional'] ?? '');
-  $Cuenta_B_profesional   = toNull($_POST['Cuenta_B_profesional'] ?? '');
-  $AFP_profesional        = toNull($_POST['AFP_profesional'] ?? '');
-  $Salud_profesional      = toNull($_POST['Salud_profesional'] ?? '');
-  $Cargo_profesional      = toNull($_POST['Cargo_profesional'] ?? '');
-  $Horas_profesional      = toNull($_POST['Horas_profesional'] ?? '');
-  $Fecha_ingreso          = toNull($_POST['Fecha_ingreso'] ?? '');
-  $Tipo_profesional       = toNull($_POST['Tipo_profesional'] ?? '');
-  $Id_escuela_prof        = toNull($_POST['Id_escuela_prof'] ?? '');
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+  $Nombre_profesional      = nvl($_POST['Nombre_profesional'] ?? '');
+  $Apellido_profesional    = nvl($_POST['Apellido_profesional'] ?? '');
+  $Rut_profesional         = nvl($_POST['Rut_profesional'] ?? '');
+  $Nacimiento_profesional  = nvl($_POST['Nacimiento_profesional'] ?? '');
+  $Domicilio_profesional   = nvl($_POST['Domicilio_profesional'] ?? '');
+  $Celular_profesional     = nvl($_POST['Celular_profesional'] ?? '');
+  $Correo_profesional      = nvl($_POST['Correo_profesional'] ?? '');
+  $Estado_civil_profesional= nvl($_POST['Estado_civil_profesional'] ?? '');
+  $Banco_profesional       = nvl($_POST['Banco_profesional'] ?? '');
+  $Tipo_cuenta_profesional = nvl($_POST['Tipo_cuenta_profesional'] ?? '');
+  $Cuenta_B_profesional    = nvl($_POST['Cuenta_B_profesional'] ?? '');
+  $AFP_profesional         = nvl($_POST['AFP_profesional'] ?? '');
+  $Salud_profesional       = nvl($_POST['Salud_profesional'] ?? '');
+  $Cargo_profesional       = nvl($_POST['Cargo_profesional'] ?? '');
+  $Horas_profesional       = nvl($_POST['Horas_profesional'] ?? '');
+  $Fecha_ingreso           = nvl($_POST['Fecha_ingreso'] ?? '');
+  $Tipo_profesional        = nvl($_POST['Tipo_profesional'] ?? '');
+  $Id_escuela_prof         = nvl($_POST['Id_escuela_prof'] ?? '');
 
-  try{
+  try {
     $conn->beginTransaction();
 
     $sql="UPDATE dbo.profesionales SET
@@ -80,8 +76,8 @@ if ($_SERVER['REQUEST_METHOD']==='POST'){
       Salud_profesional=?, Cargo_profesional=?, Horas_profesional=?, Fecha_ingreso=?,
       Tipo_profesional=?, Id_escuela_prof=?
       WHERE Id_profesional=?";
-    $stU=$conn->prepare($sql);
-    $stU->execute([
+    $up=$conn->prepare($sql);
+    $up->execute([
       $Nombre_profesional,$Apellido_profesional,$Rut_profesional,$Nacimiento_profesional,
       $Domicilio_profesional,$Celular_profesional,$Correo_profesional,$Estado_civil_profesional,
       $Banco_profesional,$Tipo_cuenta_profesional,$Cuenta_B_profesional,$AFP_profesional,
@@ -89,30 +85,28 @@ if ($_SERVER['REQUEST_METHOD']==='POST'){
       $Tipo_profesional,$Id_escuela_prof,$id_prof
     ]);
 
-    // Reset de contraseña opcional (sólo ADMIN/DIRECTOR)
+    // Opción mínima para regenerar contraseña (solo ADMIN/DIRECTOR)
     if (!empty($_POST['reset_password']) && in_array($miRol, ['ADMIN','DIRECTOR'], true) && !empty($prof['Id_usuario'])) {
-      $pwd = genPwd(12);
-      $hash= password_hash($pwd, PASSWORD_DEFAULT);
-      $stP=$conn->prepare("UPDATE dbo.usuarios SET Contraseña=? WHERE Id_usuario=?");
-      $stP->execute([$hash, (int)$prof['Id_usuario']]);
-      $copiable['pwd'] = $pwd;
+      $newPlain = genPwd(12);
+      $hash = password_hash($newPlain, PASSWORD_DEFAULT);
+      $sp = $conn->prepare("UPDATE dbo.usuarios SET Contraseña=? WHERE Id_usuario=?");
+      $sp->execute([$hash, (int)$prof['Id_usuario']]);
     }
 
     $conn->commit();
-    $exito=true; $msg='Datos actualizados correctamente.';
-    // Para mostrar en copiable
-    $copiable['usuario'] = $prof['Nombre_usuario'];
-    $copiable['correo']  = $Correo_profesional ?? $prof['Correo_profesional'];
+    $ok = true;
+    $msg = 'Datos actualizados.';
     // refrescar
     $st->execute([$id_prof]); $prof = $st->fetch(PDO::FETCH_ASSOC);
-  }catch(Throwable $e){
+  } catch (Throwable $e) {
     if ($conn->inTransaction()) $conn->rollBack();
-    $msg='Error al guardar: '.$e->getMessage();
+    $msg = 'Error al guardar: ' . $e->getMessage();
   }
 }
 
-// Escuelas
 $escuelas = getEscuelas($conn);
+$usuarioSistema = $prof['Nombre_usuario'] ?? '';
+$correoProfesional = $prof['Correo_profesional'] ?? '';
 ?>
 <!doctype html>
 <html lang="es">
@@ -120,43 +114,41 @@ $escuelas = getEscuelas($conn);
 <meta charset="utf-8">
 <title>Modificar profesional</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-.copy-wrap{background:#111a2b;border:1px solid #1f2a44;border-radius:12px;padding:14px;margin-top:16px}
-.copy-row{display:flex;gap:8px;margin:.35rem 0}
-.copy-row input{flex:1} .copy-btn{white-space:nowrap}
-</style>
 </head>
 <body class="<?= ($_COOKIE['modo_oscuro'] ?? 'false') === 'true' ? 'dark-mode' : '' ?>">
 <div class="container">
-  <h2 class="mb-3">Modificar Profesional</h2>
+
+  <h2 class="mb-3">Editar Profesional</h2>
 
   <?php if ($msg): ?>
-    <div class="alert <?= $exito?'alert-success':'alert-danger' ?>"><?= htmlspecialchars($msg) ?></div>
+    <div class="alert <?= $ok ? 'alert-success':'alert-danger' ?>"><?= htmlspecialchars($msg) ?></div>
   <?php endif; ?>
 
-  <?php if ($exito && ($copiable['usuario'] || $copiable['pwd'] || $copiable['correo'])): ?>
-    <div class="copy-wrap">
-      <h5 class="mb-2">Datos para copiar</h5>
-      <?php if ($copiable['usuario']): ?>
-      <div class="copy-row">
-        <input class="form-control" id="m_user" value="<?= htmlspecialchars($copiable['usuario']) ?>" readonly>
-        <button class="btn btn-secondary copy-btn" onclick="copy('m_user')">Copiar usuario</button>
-      </div>
-      <?php endif; ?>
-      <?php if ($copiable['pwd']): ?>
-      <div class="copy-row">
-        <input class="form-control" id="m_pwd" value="<?= htmlspecialchars($copiable['pwd']) ?>" readonly>
-        <button class="btn btn-secondary copy-btn" onclick="copy('m_pwd')">Copiar contraseña</button>
-      </div>
-      <?php endif; ?>
-      <?php if ($copiable['correo']): ?>
-      <div class="copy-row">
-        <input class="form-control" id="m_mail" value="<?= htmlspecialchars($copiable['correo']) ?>" readonly>
-        <button class="btn btn-secondary copy-btn" onclick="copy('m_mail')">Copiar correo</button>
-      </div>
-      <?php endif; ?>
+  <!-- Panel muy simple para copiar usuario/correo y, si corresponde, la contraseña nueva -->
+  <?php if ($usuarioSistema || $correoProfesional || $newPlain): ?>
+  <div class="alert alert-info" style="max-width:720px;">
+    <?php if ($usuarioSistema): ?>
+    <div class="row g-2 align-items-center" style="margin-bottom:8px;">
+      <div class="col-auto"><label class="col-form-label">Usuario</label></div>
+      <div class="col"><input id="m-user" class="form-control" value="<?= htmlspecialchars($usuarioSistema) ?>" readonly></div>
+      <div class="col-auto"><button type="button" class="btn btn-secondary" onclick="copiar('m-user')">Copiar</button></div>
     </div>
-    <hr>
+    <?php endif; ?>
+    <?php if ($correoProfesional): ?>
+    <div class="row g-2 align-items-center" style="margin-bottom:8px;">
+      <div class="col-auto"><label class="col-form-label">Correo</label></div>
+      <div class="col"><input id="m-mail" class="form-control" value="<?= htmlspecialchars($correoProfesional) ?>" readonly></div>
+      <div class="col-auto"><button type="button" class="btn btn-secondary" onclick="copiar('m-mail')">Copiar</button></div>
+    </div>
+    <?php endif; ?>
+    <?php if ($newPlain): ?>
+    <div class="row g-2 align-items-center">
+      <div class="col-auto"><label class="col-form-label">Contraseña</label></div>
+      <div class="col"><input id="m-pass" class="form-control" value="<?= htmlspecialchars($newPlain) ?>" readonly></div>
+      <div class="col-auto"><button type="button" class="btn btn-secondary" onclick="copiar('m-pass')">Copiar</button></div>
+    </div>
+    <?php endif; ?>
+  </div>
   <?php endif; ?>
 
   <form method="post" autocomplete="off">
@@ -199,20 +191,11 @@ $escuelas = getEscuelas($conn);
 
       <div class="col-md-4">
         <label class="form-label">Banco</label>
-        <input list="bancosCL" name="Banco_profesional" class="form-control" value="<?= htmlspecialchars($prof['Banco_profesional'] ?? '') ?>">
-        <datalist id="bancosCL">
-          <?php foreach($bancos as $b): ?><option value="<?= htmlspecialchars($b) ?>"></option><?php endforeach; ?>
-        </datalist>
+        <input name="Banco_profesional" list="bancosCL" class="form-control" value="<?= htmlspecialchars($prof['Banco_profesional'] ?? '') ?>">
       </div>
       <div class="col-md-4">
         <label class="form-label">Tipo de cuenta</label>
-        <input list="tipocuenta" name="Tipo_cuenta_profesional" class="form-control" value="<?= htmlspecialchars($prof['Tipo_cuenta_profesional'] ?? '') ?>">
-        <datalist id="tipocuenta">
-          <option value="Cuenta Corriente"></option>
-          <option value="Cuenta Vista"></option>
-          <option value="Cuenta RUT"></option>
-          <option value="Ahorro"></option>
-        </datalist>
+        <input name="Tipo_cuenta_profesional" list="tipocuenta" class="form-control" value="<?= htmlspecialchars($prof['Tipo_cuenta_profesional'] ?? '') ?>">
       </div>
 
       <div class="col-md-4">
@@ -221,10 +204,7 @@ $escuelas = getEscuelas($conn);
       </div>
       <div class="col-md-4">
         <label class="form-label">AFP</label>
-        <input list="afpCL" name="AFP_profesional" class="form-control" value="<?= htmlspecialchars($prof['AFP_profesional'] ?? '') ?>">
-        <datalist id="afpCL">
-          <?php foreach($afps as $a): ?><option value="<?= htmlspecialchars($a) ?>"></option><?php endforeach; ?>
-        </datalist>
+        <input name="AFP_profesional" list="afpCL" class="form-control" value="<?= htmlspecialchars($prof['AFP_profesional'] ?? '') ?>">
       </div>
       <div class="col-md-4">
         <label class="form-label">Salud</label>
@@ -271,7 +251,7 @@ $escuelas = getEscuelas($conn);
       <div class="col-md-8">
         <div class="form-check">
           <input class="form-check-input" type="checkbox" id="reset_password" name="reset_password" value="1">
-          <label class="form-check-label" for="reset_password">Generar nueva contraseña (se actualizará el hash del usuario vinculado)</label>
+          <label class="form-check-label" for="reset_password">Generar nueva contraseña (actualiza hash del usuario vinculado)</label>
         </div>
       </div>
       <?php endif; ?>
@@ -281,14 +261,28 @@ $escuelas = getEscuelas($conn);
       <a class="btn btn-secondary" href="index.php?seccion=perfil&Id_profesional=<?= $id_prof ?>">Volver</a>
     </div>
   </form>
+
+  <!-- datalists -->
+  <datalist id="bancosCL">
+    <?php foreach($bancos as $b): ?><option value="<?= htmlspecialchars($b) ?>"></option><?php endforeach; ?>
+  </datalist>
+  <datalist id="tipocuenta">
+    <option value="Cuenta Corriente"></option>
+    <option value="Cuenta Vista"></option>
+    <option value="Cuenta RUT"></option>
+    <option value="Ahorro"></option>
+  </datalist>
+  <datalist id="afpCL">
+    <?php foreach($afps as $a): ?><option value="<?= htmlspecialchars($a) ?>"></option><?php endforeach; ?>
+  </datalist>
+
 </div>
 
 <script>
-function copy(id){
+function copiar(id){
   const el=document.getElementById(id);
   el.select(); el.setSelectionRange(0,99999);
   document.execCommand('copy');
-  const btn=event.target.closest('button'); if(btn){ const o=btn.textContent; btn.textContent='Copiado ✓'; setTimeout(()=>btn.textContent=o,1100); }
 }
 </script>
 </body>
