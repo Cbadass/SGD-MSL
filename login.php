@@ -1,8 +1,25 @@
 <?php
-session_start();
-require_once 'includes/db.php';
+// login.php
+declare(strict_types=1);
+if (session_status() === PHP_SESSION_NONE) {
+    session_start();
+}
 
-// Redirige si ya está logueado
+// ====== CONEXIÓN A BD ======
+// Debe definir $conn como PDO (SQL Server en Azure). Mantén tu includes/db.php actual.
+require_once __DIR__ . '/includes/db.php';
+
+// ====== ROLES: fuente única ======
+const ALLOWED_ROLES = ['PROFESIONAL','ADMIN','DIRECTOR'];
+
+function normalizaRol(?string $r): string {
+    return strtoupper(trim((string)$r));
+}
+function rolValido(string $r): bool {
+    return in_array($r, ALLOWED_ROLES, true);
+}
+
+// ====== Redirige si ya está logueado ======
 if (isset($_SESSION['usuario'])) {
     header("Location: index.php");
     exit;
@@ -24,10 +41,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $usuario = $stmt->fetch();
 
         if ($usuario && password_verify($contrasena, $usuario['Contraseña'])) {
+          session_regenerate_id(true); // evita fixation
           $_SESSION['usuario'] = [
-              'id' => $usuario['Id_usuario'],
-              'nombre' => $usuario['Nombre_usuario'],
-              'permisos' => $usuario['Permisos'] ?? 'user',
+              'id'             => $usuario['Id_usuario'],
+              'nombre'         => $usuario['Nombre_usuario'],
+              'permisos'       => strtoupper($usuario['Permisos']), // homogeneiza
               'id_profesional' => $usuario['Id_profesional'] ?? null
           ];
           header("Location: index.php");
@@ -139,12 +157,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
           <div class="mb-3">
             <label for="nombre_usuario" class="form-label">Nombre de usuario</label>
             <!-- ELIMINAR VALUE -->
-            <input type="text" name="nombre_usuario" id="nombre_usuario" class="form-control" required value="alejandro.castillo@correo.cl">
+            <input type="text" name="nombre_usuario" id="nombre_usuario" class="form-control" required>
           </div>
           <div class="mb-3">
             <label for="contrasena" class="form-label">Contraseña</label>
             <!-- ELIMINAR VALUE -->
-            <input type="password" name="contrasena" id="contrasena" class="form-control" required value="Password123!">
+            <input type="password" name="contrasena" id="contrasena" class="form-control" required>
           </div>
           <button type="submit" class="btn btn-primary w-100">Ingresar</button>
         </form>

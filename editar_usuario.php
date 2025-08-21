@@ -20,9 +20,7 @@ $Id_profesional = intval($_POST['Id_profesional'] ?? 0);
 
 // 3) Capturar campos
 $Nombre_usuario         = trim($_POST['Nombre_usuario']         ?? '');
-$Permisos               = in_array($_POST['Permisos'] ?? '', ['user','admin'])
-                             ? $_POST['Permisos']
-                             : 'user';
+$Permisos               = in_array($_POST['Permisos'] ?? '', ['PROFESIONAL','ADMIN','DIRECTOR'], true) ? $_POST['Permisos'] : 'PROFESIONAL';
 $Estado_usuario         = ($_POST['Estado_usuario'] ?? '1') === '1' ? 1 : 0;
 
 $Nombre_profesional     = trim($_POST['Nombre_profesional']     ?? '');
