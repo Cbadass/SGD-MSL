@@ -50,9 +50,20 @@ $cargos     = [
     'Asistentes de la educación','Especialistas','Docente',
     'Psicologa','Fonoaudiologo','Kinesiologo','Terapeuta Ocupacional'
 ];
-$bancos      = ['Banco Estado','Santander','Banco Falabella'];
-$tipos_cta   = ['Corriente','Vista','Ahorro'];
-$afps        = ['AFP Modelo','Habitat'];
+$AFPS = [
+  'AFP Habitat','AFP Provida','AFP Capital','AFP Cuprum',
+  'AFP Modelo','AFP PlanVital','AFP UNO'
+];
+
+$BANCOS = [
+  'Banco de Chile','BancoEstado','Banco Santander Chile','Scotiabank Chile',
+  'BCI','Itaú Chile','Banco Security','Banco Falabella','Banco Ripley',
+  'Banco Consorcio','Banco BICE','Banco Internacional','BTG Pactual Chile'
+];
+
+// Tipos de cuenta (si los usas)
+$TIPOS_CTA = ['Cuenta Corriente','Cuenta Vista','Cuenta RUT','Cuenta de Ahorro'];
+
 $saludes     = ['FONASA','ISAPRE'];
 $permisos    = ['user','admin'];
 $estados_civ = [

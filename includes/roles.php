@@ -17,3 +17,21 @@ function requireAnyRole(array $rolesPermitidos): void {
     exit('No autorizado');
   }
 }
+// includes/roles.php
+const ALLOWED_ROLES = ['PROFESIONAL','ADMIN','DIRECTOR'];
+
+function rolActual(): string {
+  return $_SESSION['usuario']['permisos'] ?? 'GUEST';
+}
+function esAdminODirector(): bool {
+  $r = rolActual();
+  return $r === 'ADMIN' || $r === 'DIRECTOR';
+}
+function esDuenioPerfil(int $idProfesional): bool {
+  return (int)($_SESSION['usuario']['id_profesional'] ?? 0) === $idProfesional;
+}
+function nullIfEmpty(?string $v) {
+  $v = isset($v) ? trim($v) : null;
+  return ($v === '' ? null : $v);
+}
+
