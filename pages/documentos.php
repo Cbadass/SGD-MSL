@@ -113,7 +113,7 @@ try {
     $stmt->execute($params);
     $documentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Para el select de tipos únicos
+    // Para el select de tipos únicos
     $stmtTipos = $conn->query("SELECT DISTINCT Tipo_documento FROM documentos");
     $tiposDb   = $stmtTipos->fetchAll(PDO::FETCH_COLUMN);
 
@@ -124,7 +124,6 @@ try {
 
 <style>
   /* pagination */
-
 .pagination {
     --bs-pagination-padding-x: 0.75rem;
     --bs-pagination-padding-y: 0.375rem;
@@ -150,81 +149,41 @@ try {
     padding-left: 0;
     list-style: none;
 }
-dl, ol, ul {
-    margin-top: 0;
-    margin-bottom: 1rem;
-}
-
-.justify-content-center {
-    justify-content: center !important;
-}
-
+dl, ol, ul { margin-top: 0; margin-bottom: 1rem; }
+.justify-content-center { justify-content: center !important; }
 .page-item:first-child .page-link {
     border-top-left-radius: var(--bs-pagination-border-radius);
     border-bottom-left-radius: var(--bs-pagination-border-radius);
 }
-@media (prefers-reduced-motion: reduce) {
-    .page-link {
-        transition: none;
-    }
-}
+@media (prefers-reduced-motion: reduce) { .page-link { transition: none; } }
 .page-link {
-    position: relative;
-    display: block;
+    position: relative; display: block;
     padding: var(--bs-pagination-padding-y) var(--bs-pagination-padding-x);
     font-size: var(--bs-pagination-font-size);
-    color: var(--bs-pagination-color);
-    text-decoration: none;
+    color: var(--bs-pagination-color); text-decoration: none;
     background-color: var(--bs-pagination-bg);
     border: var(--bs-pagination-border-width) solid var(--bs-pagination-border-color);
-    transition: color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out;
+    transition: color .15s ease-in-out, background-color .15s ease-in-out,
+                border-color .15s ease-in-out, box-shadow .15s ease-in-out;
 }
-a {
-    color: rgba(var(--bs-link-color-rgb), var(--bs-link-opacity, 1));
-    text-decoration: underline;
-}
-*, ::after, ::before {
-    box-sizing: border-box;
-}
+a { color: rgba(var(--bs-link-color-rgb), var(--bs-link-opacity, 1)); text-decoration: underline; }
+*, ::after, ::before { box-sizing: border-box; }
 
-.page-item:not(:first-child) .page-link {
-    margin-left: calc(var(--bs-border-width) * -1);
+/* Estilos del botón 4 estados */
+.doc-filter { display:flex; align-items:center; gap:.75rem; margin:.5rem 0 1rem; }
+.filter-btn{
+  border:1px solid #ddd; border-radius:999px; padding:.6rem 1rem;
+  background:#fff; cursor:pointer; box-shadow:0 1px 3px rgba(0,0,0,.06);
+  display:flex; flex-direction:column; align-items:flex-start; min-width:260px;
+  transition:transform .06s ease, box-shadow .12s ease;
 }
-.active>.page-link, .page-link.active {
-    z-index: 3;
-    color: var(--bs-pagination-active-color);
-    background-color: var(--bs-pagination-active-bg);
-    border-color: var(--bs-pagination-active-border-color);
-}
-@media (prefers-reduced-motion: reduce) {
-    .page-link {
-        transition: none;
-    }
-}
-.page-link {
-    position: relative;
-    display: block;
-    padding: var(--bs-pagination-padding-y) var(--bs-pagination-padding-x);
-    font-size: var(--bs-pagination-font-size);
-    color: var(--bs-pagination-color);
-    text-decoration: none;
-    background-color: var(--bs-pagination-bg);
-    border: var(--bs-pagination-border-width) solid var(--bs-pagination-border-color);
-    transition: color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out;
-}
-a {
-    color: rgba(var(--bs-link-color-rgb), var(--bs-link-opacity, 1));
-    text-decoration: underline;
-}
-*, ::after, ::before {
-    box-sizing: border-box;
-}
-user agent stylesheet
-a:-webkit-any-link {
-    color: -webkit-link;
-    cursor: pointer;
-    text-decoration: underline;
-}
+.filter-btn:active{ transform:scale(.99) }
+.filter-title{ font-weight:700; line-height:1.1 }
+.filter-desc{ opacity:.8; line-height:1.1 }
+.filter-btn.state-0{ box-shadow:0 2px 8px rgba(0,128,255,.15); }     /* Todos */
+.filter-btn.state-1{ box-shadow:0 2px 8px rgba(0,200,150,.15); }     /* Solo profesionales */
+.filter-btn.state-2{ box-shadow:0 2px 8px rgba(255,165,0,.20); }     /* Solo estudiantes */
+.filter-btn.state-3{ box-shadow:0 2px 8px rgba(120,120,120,.18); opacity:.95; } /* Ninguno */
 </style>
 
 <h2 class="mb-4">
@@ -268,15 +227,14 @@ a:-webkit-any-link {
       </select>
     </div>
 
-    <div style="display:flex; gap:1rem; align-items:center;">
-      <label>
-        <input type="checkbox" id="toggle_est" <?= $sin_estud ? 'checked' : '' ?>>
-        Documentos Especificos de profesionales
-      </label>
-      <label>
-        <input type="checkbox" id="toggle_prof" <?= $sin_profes ? 'checked' : '' ?>>
-        Documentos Especificos de Estudiantes
-      </label>
+    <!-- Botón de 4 estados (reemplaza los 2 checkboxes) -->
+    <div id="docFilter" class="doc-filter">
+      <button id="filterToggle" type="button" class="filter-btn" aria-live="polite"
+              data-init-sin-est="<?= $sin_estud ? 1 : 0 ?>"
+              data-init-sin-prof="<?= $sin_profes ? 1 : 0 ?>">
+        <span class="filter-title">Todos</span>
+        <small class="filter-desc">“Muestra todo el surtido, sin timidez.”</small>
+      </button>
     </div>
 
     <!-- Buscador Estudiante -->
@@ -374,8 +332,9 @@ a:-webkit-any-link {
       </tbody>
     </table>
   </div>
-    <!-- ------------- NUEVO BLOQUE DE PAGINACIÓN ------------- -->
-    <nav style="margin-top:1.5rem">
+
+  <!-- ------------- NUEVO BLOQUE DE PAGINACIÓN ------------- -->
+  <nav style="margin-top:1.5rem">
     <ul class="pagination justify-content-center">
     <?php
       $baseURL = 'index.php?seccion=documentos&';
@@ -415,15 +374,94 @@ a:-webkit-any-link {
 <?php endif; ?>
 
 <script>
-// alterna visibilidad de bloques y actualiza hidden inputs
-function toggleBlock(checkbox, blockId, hiddenName) {
-  const block  = document.getElementById(blockId);
-  const hidden = document.getElementById(hiddenName);
-  block.style.display = checkbox.checked ? 'none' : '';
-  hidden.value        = checkbox.checked ? '1' : '0';
-}
+// ===============================
+// Botón de filtro de 4 estados
+// ===============================
+(function(){
+  // Estados y descripciones
+  // Mapeo a tus flags:
+  // - estado 0 (Todos):            sin_est=0, sin_prof=0  -> se ven ambos bloques
+  // - estado 1 (Solo profesionales): sin_est=1, sin_prof=0 -> oculta bloque estudiante
+  // - estado 2 (Solo estudiantes):   sin_est=0, sin_prof=1 -> oculta bloque profesional
+  // - estado 3 (Ninguno):            sin_est=1, sin_prof=1 -> oculta ambos bloques
+  const STATES = [
+    {title:'Todos', desc:'“Muestra todo el surtido, sin timidez.”', sin_est:0, sin_prof:0},
+    {title:'Solo profesionales', desc:'“Modo experto: documentos pro al frente.”', sin_est:1, sin_prof:0},
+    {title:'Solo estudiantes', desc:'“Modo aula: solo material estudiantil.”', sin_est:0, sin_prof:1},
+    {title:'Zen (ninguno)', desc:'“Silencio documental… respira.”', sin_est:1, sin_prof:1},
+  ];
 
-// genérico de autocomplete
+  const key = 'docFilterStateV2';
+  const btn  = document.getElementById('filterToggle');
+  if (!btn) return;
+
+  const titleEl  = btn.querySelector('.filter-title');
+  const descEl   = btn.querySelector('.filter-desc');
+  const sinEstIn = document.getElementById('sin_estudiante');
+  const sinProIn = document.getElementById('sin_profesional');
+  const blockEst = document.getElementById('block_est');
+  const blockPro = document.getElementById('block_prof');
+
+  // Estado inicial desde GET (inyectado como data-*), o desde localStorage si no hay GET explícito
+  const initSinEst  = Number(btn.getAttribute('data-init-sin-est')  || 0);
+  const initSinProf = Number(btn.getAttribute('data-init-sin-prof') || 0);
+
+  function stateFromFlags(se, sp){
+    for (let i=0;i<STATES.length;i++){
+      if (STATES[i].sin_est===se && STATES[i].sin_prof===sp) return i;
+    }
+    return 0;
+  }
+
+  // Si alguno de los flags viene en la URL, respétalo; si no, recuerda preferencia previa
+  let state = null;
+  const urlTieneFlags = (btn.getAttribute('data-init-sin-est') !== null) || (btn.getAttribute('data-init-sin-prof') !== null);
+  if (urlTieneFlags) {
+    state = stateFromFlags(initSinEst, initSinProf);
+  } else {
+    state = Number(localStorage.getItem(key) ?? 0);
+  }
+
+  function applyState(){
+    const s = STATES[state];
+    titleEl.textContent = s.title;
+    descEl.textContent  = s.desc;
+
+    btn.classList.remove('state-0','state-1','state-2','state-3');
+    btn.classList.add('state-' + state);
+
+    // Actualiza hidden inputs (para que el backend los lea si envías el form)
+    sinEstIn.value = String(s.sin_est);
+    sinProIn.value = String(s.sin_prof);
+
+    // Muestra/oculta bloques de búsqueda
+    if (blockEst) blockEst.style.display = s.sin_est ? 'none' : '';
+    if (blockPro) blockPro.style.display = s.sin_prof ? 'none' : '';
+
+    // Notifica (por si quieres escuchar esto en otra parte)
+    document.dispatchEvent(new CustomEvent('docfilter:change', {
+      detail: {
+        state,
+        sin_estudiante: !!s.sin_est,
+        sin_profesional: !!s.sin_prof
+      }
+    }));
+
+    // Persiste preferencia si no vino forzada por URL
+    if (!urlTieneFlags) localStorage.setItem(key, String(state));
+  }
+
+  btn.addEventListener('click', function(){
+    state = (state + 1) % STATES.length;
+    applyState();
+  });
+
+  applyState();
+})();
+
+// ===============================
+// Autocomplete genérico
+// ===============================
 function buscar(endpoint, query, cont, idInput) {
   if (query.length < 3) { cont.innerHTML = ''; return; }
   fetch(endpoint + '?q=' + encodeURIComponent(query))
@@ -444,34 +482,30 @@ function buscar(endpoint, query, cont, idInput) {
         };
         cont.appendChild(div);
       });
-    });
+    }).catch(()=>{ cont.innerHTML = '<div class="p-2 text-muted">Error de búsqueda</div>'; });
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  // toggles
-  const chkEst  = document.getElementById('toggle_est');
-  const chkProf = document.getElementById('toggle_prof');
-  chkEst .addEventListener('change', () => toggleBlock(chkEst,  'block_est',  'sin_estudiante'));
-  chkProf.addEventListener('change', () => toggleBlock(chkProf, 'block_prof', 'sin_profesional'));
-  toggleBlock(chkEst,  'block_est',  'sin_estudiante');
-  toggleBlock(chkProf, 'block_prof', 'sin_profesional');
-
   // autocomplete estudiante
-  document.getElementById('buscar_estudiante')
-    .addEventListener('input', e => {
+  const estInput = document.getElementById('buscar_estudiante');
+  if (estInput){
+    estInput.addEventListener('input', e => {
       buscar('buscar_estudiantes.php',
              e.target.value.trim(),
              document.getElementById('resultados_estudiante'),
              'id_estudiante');
     });
+  }
 
   // autocomplete profesional
-  document.getElementById('buscar_profesional')
-    .addEventListener('input', e => {
+  const profInput = document.getElementById('buscar_profesional');
+  if (profInput){
+    profInput.addEventListener('input', e => {
       buscar('buscar_profesionales.php',
              e.target.value.trim(),
              document.getElementById('resultados_profesional'),
              'id_prof');
     });
+  }
 });
 </script>
