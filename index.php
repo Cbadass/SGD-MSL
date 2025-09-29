@@ -1,10 +1,6 @@
 <?php
-session_start();
-if (!isset($_SESSION['usuario'])) {
-  header("Location: login.php");
-  exit;
-}
-
+require_once __DIR__ . '/includes/session.php';
+require_login(); // redirige a /login.php si no hay sesión
 $modo_oscuro = $_COOKIE['modo_oscuro'] ?? 'false';
 $rolActual   = strtoupper($_SESSION['usuario']['permisos'] ?? 'GUEST');
 
