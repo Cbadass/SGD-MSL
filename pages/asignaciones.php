@@ -2,13 +2,18 @@
 // pages/asignaciones.php
 declare(strict_types=1);
 
-// --- Sesión mínima (tu patrón) ---
+// --- Sesión (por si entran directo) ---
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
-if (empty($_SESSION['usuario'])) {
-  header('Location: ../login.php'); exit;
-}
+if (empty($_SESSION['usuario'])) { header('Location: ../login.php'); exit; }
 
-// --- CSRF local (manteniendo tu enfoque original) ---
+// --- Includes de tu proyecto ---
+require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/roles.php';
+require_once __DIR__ . '/../includes/auditoria.php';
+
+// -----------------------------
+// CSRF local (manteniendo tu práctica)
+// -----------------------------
 if (empty($_SESSION['csrf_token'])) {
   $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
@@ -30,317 +35,337 @@ if (!function_exists('csrf_field')) {
   }
 }
 
-// --- Includes reales de tu proyecto ---
-require_once __DIR__ . '/../includes/db.php';
-require_once __DIR__ . '/../includes/roles.php';
-require_once __DIR__ . '/../includes/auditoria.php';
+// -----------------------------
+// AUTORIZACIÓN (ADMIN o DIRECTOR)
+// -----------------------------
+requireAnyRole(['ADMIN','DIRECTOR']);
 
-// --- Guard por rol ---
-$rolActual = strtoupper($_SESSION['usuario']['permisos'] ?? 'GUEST');
-if (!in_array($rolActual, ['ADMIN','DIRECTOR'], true)) {
-  http_response_code(403);
-  echo '<div class="card p-3"><h3>403 – Acceso denegado</h3></div>'; exit;
-}
+$usuarioId         = (int)($_SESSION['usuario']['id'] ?? 0);
+$rolActual         = strtoupper((string)($_SESSION['usuario']['permisos'] ?? ''));
+$idProfesionalUser = isset($_SESSION['usuario']['id_profesional']) ? (int)$_SESSION['usuario']['id_profesional'] : null;
 
-// --- Helpers alcance DIRECTOR ---
+// -----------------------------
+// ALCANCE POR ESCUELA (DIRECTOR)
+// -----------------------------
 function getDirectorEscuelaId(PDO $conn, int $idProfesional): ?int {
-  $st = $conn->prepare("SELECT Id_escuela_prof FROM dbo.profesionales WHERE Id_profesional = ?");
+  $st = $conn->prepare("SELECT Id_escuela_prof FROM profesionales WHERE Id_profesional = ?");
   $st->execute([$idProfesional]);
   $row = $st->fetch(PDO::FETCH_ASSOC);
   return $row && $row['Id_escuela_prof'] ? (int)$row['Id_escuela_prof'] : null;
 }
-
-$usuarioId         = (int)($_SESSION['usuario']['id'] ?? 0);
-$idProfesionalUser = isset($_SESSION['usuario']['id_profesional']) ? (int)$_SESSION['usuario']['id_profesional'] : null;
-$escuelaDirectorId = ($rolActual === 'DIRECTOR' && $idProfesionalUser) ? getDirectorEscuelaId($conn, $idProfesionalUser) : null;
-
-// --- Diagnóstico opcional en UI ---
-$DIAG = (isset($_GET['diag']) && $_GET['diag'] == '1');
-$diag_msgs = [];
-
-// Verificar existencia de tabla Asignaciones (evita pantalla en blanco)
-$tableExists = false;
-try {
-  $chk = $conn->query("SELECT OBJECT_ID('dbo.Asignaciones') AS oid");
-  $tableExists = (bool)$chk->fetchColumn();
-} catch (Throwable $e) {
-  $diag_msgs[] = 'Error consultando OBJECT_ID: '.$e->getMessage();
+$escuelaDirectorId = null;
+if ($rolActual === 'DIRECTOR' && $idProfesionalUser) {
+  $escuelaDirectorId = getDirectorEscuelaId($conn, $idProfesionalUser);
 }
 
+// -----------------------------
+// DATOS PARA FORMULARIO (filtrados si DIRECTOR)
+// -----------------------------
+
+// Profesionales destino (normalmente rol PROFESIONAL)
+$params = [];
+$sqlProfesionales = "
+  SELECT
+    p.Id_profesional,
+    p.Nombre_profesional,
+    p.Apellido_profesional,
+    e.Nombre_escuela AS escuela
+  FROM profesionales p
+  LEFT JOIN escuelas e ON e.Id_escuela = p.Id_escuela_prof
+  INNER JOIN usuarios u ON u.Id_profesional = p.Id_profesional
+  WHERE u.Permisos = 'PROFESIONAL'
+";
+if ($escuelaDirectorId) {
+  $sqlProfesionales .= " AND p.Id_escuela_prof = ? ";
+  $params[] = $escuelaDirectorId;
+}
+$sqlProfesionales .= " ORDER BY p.Apellido_profesional, p.Nombre_profesional";
+
+$st = $conn->prepare($sqlProfesionales);
+$st->execute($params);
+$profesionales = $st->fetchAll(PDO::FETCH_ASSOC);
+
+// Cursos
+$params = [];
+$sqlCursos = "
+  SELECT
+    c.Id_curso,
+    c.Tipo_curso, c.Grado_curso, c.seccion_curso,
+    e.Nombre_escuela AS escuela, c.Id_escuela
+  FROM cursos c
+  INNER JOIN escuelas e ON e.Id_escuela = c.Id_escuela
+";
+if ($escuelaDirectorId) {
+  $sqlCursos .= " WHERE c.Id_escuela = ? ";
+  $params[] = $escuelaDirectorId;
+}
+$sqlCursos .= " ORDER BY e.Nombre_escuela, c.Tipo_curso, c.Grado_curso, c.seccion_curso";
+
+$st = $conn->prepare($sqlCursos);
+$st->execute($params);
+$cursos = $st->fetchAll(PDO::FETCH_ASSOC);
+
+// Estudiantes
+$params = [];
+$sqlEst = "
+  SELECT
+    s.Id_estudiante,
+    s.Nombre_estudiante, s.Apellido_estudiante,
+    e.Nombre_escuela AS escuela, c.Id_escuela
+  FROM estudiantes s
+  INNER JOIN cursos c ON c.Id_curso = s.Id_curso
+  INNER JOIN escuelas e ON e.Id_escuela = c.Id_escuela
+";
+if ($escuelaDirectorId) {
+  $sqlEst .= " WHERE c.Id_escuela = ? ";
+  $params[] = $escuelaDirectorId;
+}
+$sqlEst .= " ORDER BY e.Nombre_escuela, s.Apellido_estudiante, s.Nombre_estudiante";
+
+$st = $conn->prepare($sqlEst);
+$st->execute($params);
+$estudiantes = $st->fetchAll(PDO::FETCH_ASSOC);
+
+// -----------------------------
+// ACCIONES (CREAR / ELIMINAR)
+// -----------------------------
 $flash = null;
 
-// =====================
-// Cargar combos (siempre deben renderizar, no usan Asignaciones)
-// =====================
-try {
-  // Profesionales (solo PROFESIONAL como destino)
-  $sql = "
-    SELECT p.Id_profesional,
-           CONCAT(p.Nombre_prof, ' ', p.Apellido_prof) AS nombre,
-           e.Nombre_escuela AS escuela
-    FROM dbo.profesionales p
-    LEFT JOIN dbo.escuelas e ON e.Id_escuela = p.Id_escuela_prof
-    INNER JOIN dbo.usuarios u ON u.Id_profesional = p.Id_profesional
-    WHERE u.Permisos = 'PROFESIONAL'
-  ";
-  $params = [];
-  if ($escuelaDirectorId) { $sql .= " AND p.Id_escuela_prof = ? "; $params[] = $escuelaDirectorId; }
-  $sql .= " ORDER BY nombre";
-  $st = $conn->prepare($sql); $st->execute($params);
-  $profesionales = $st->fetchAll(PDO::FETCH_ASSOC);
-
-  // Cursos
-  $sql = "
-    SELECT c.Id_curso,
-           CONCAT(c.Tipo_curso, ' ', c.Grado_curso, COALESCE(CONCAT(' - ', c.seccion_curso), '')) AS curso,
-           e.Nombre_escuela AS escuela
-    FROM dbo.cursos c
-    INNER JOIN dbo.escuelas e ON e.Id_escuela = c.Id_escuela
-  ";
-  $params = [];
-  if ($escuelaDirectorId) { $sql .= " WHERE c.Id_escuela = ? "; $params[] = $escuelaDirectorId; }
-  $sql .= " ORDER BY e.Nombre_escuela, curso";
-  $st = $conn->prepare($sql); $st->execute($params);
-  $cursos = $st->fetchAll(PDO::FETCH_ASSOC);
-
-  // Estudiantes
-  $sql = "
-    SELECT s.Id_estudiante,
-           CONCAT(s.Nombre_estudiante, ' ', s.Apellido_estudiante) AS nombre,
-           e.Nombre_escuela AS escuela
-    FROM dbo.estudiantes s
-    INNER JOIN dbo.cursos c ON c.Id_curso = s.Id_curso
-    INNER JOIN dbo.escuelas e ON e.Id_escuela = c.Id_escuela
-  ";
-  $params = [];
-  if ($escuelaDirectorId) { $sql .= " WHERE e.Id_escuela = ? "; $params[] = $escuelaDirectorId; }
-  $sql .= " ORDER BY e.Nombre_escuela, nombre";
-  $st = $conn->prepare($sql); $st->execute($params);
-  $estudiantes = $st->fetchAll(PDO::FETCH_ASSOC);
-
-} catch (Throwable $e) {
-  $flash = ['tipo'=>'error','msg'=>'Error cargando listas: '.htmlspecialchars($e->getMessage())];
-  $profesionales = $cursos = $estudiantes = [];
-}
-
-// =====================
-// Acciones POST (requieren tabla Asignaciones)
-// =====================
-if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+// Crear asignación
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['accion'] ?? '') === 'crear') {
   check_csrf();
-  if (!$tableExists) {
-    $flash = ['tipo'=>'error','msg'=>'La tabla dbo.Asignaciones no existe. Crea la tabla antes de asignar.'];
+
+  $idProfesional = (int)($_POST['Id_profesional'] ?? 0);
+  $tipo          = (string)($_POST['tipo'] ?? '');   // 'ESTUDIANTE' | 'CURSO'
+  $idEstudiante  = isset($_POST['Id_estudiante']) ? (int)$_POST['Id_estudiante'] : null;
+  $idCurso       = isset($_POST['Id_curso']) ? (int)$_POST['Id_curso'] : null;
+
+  if ($idProfesional <= 0 || !in_array($tipo, ['ESTUDIANTE','CURSO'], true)) {
+    $flash = ['tipo' => 'error', 'msg' => 'Datos inválidos.'];
   } else {
-    $accion = $_POST['accion'] ?? '';
-    if ($accion === 'crear') {
-      $idProfesional = (int)($_POST['Id_profesional'] ?? 0);
-      $tipo          = (string)($_POST['tipo'] ?? '');
-      $idEstudiante  = isset($_POST['Id_estudiante']) ? (int)$_POST['Id_estudiante'] : null;
-      $idCurso       = isset($_POST['Id_curso']) ? (int)$_POST['Id_curso'] : null;
+    try {
+      // Validación de alcance para DIRECTOR
+      if ($escuelaDirectorId) {
+        // Profesional destino
+        $q = $conn->prepare("SELECT COUNT(1) FROM profesionales WHERE Id_profesional = ? AND Id_escuela_prof = ?");
+        $q->execute([$idProfesional, $escuelaDirectorId]);
+        if (!$q->fetchColumn()) { throw new RuntimeException('No puedes asignar profesionales fuera de tu escuela.'); }
 
-      if ($idProfesional <= 0 || !in_array($tipo, ['ESTUDIANTE','CURSO'], true)) {
-        $flash = ['tipo'=>'error','msg'=>'Datos inválidos.'];
-      } else {
-        try {
-          // Alcance del DIRECTOR
-          if ($escuelaDirectorId) {
-            $q = $conn->prepare("SELECT COUNT(1) FROM dbo.profesionales WHERE Id_profesional = ? AND Id_escuela_prof = ?");
-            $q->execute([$idProfesional, $escuelaDirectorId]);
-            if (!$q->fetchColumn()) { throw new RuntimeException('No puedes asignar profesionales fuera de tu escuela.'); }
-
-            if ($tipo === 'ESTUDIANTE') {
-              $q = $conn->prepare("
-                SELECT COUNT(1)
-                FROM dbo.estudiantes s
-                INNER JOIN dbo.cursos c ON c.Id_curso = s.Id_curso
-                WHERE s.Id_estudiante = ? AND c.Id_escuela = ?
-              ");
-              $q->execute([$idEstudiante, $escuelaDirectorId]);
-              if (!$q->fetchColumn()) { throw new RuntimeException('El estudiante no pertenece a tu escuela.'); }
-            } else {
-              $q = $conn->prepare("SELECT COUNT(1) FROM dbo.cursos WHERE Id_curso = ? AND Id_escuela = ?");
-              $q->execute([$idCurso, $escuelaDirectorId]);
-              if (!$q->fetchColumn()) { throw new RuntimeException('El curso no pertenece a tu escuela.'); }
-            }
-          }
-
-          $conn->beginTransaction();
-
-          if ($tipo === 'ESTUDIANTE') {
-            $ins = $conn->prepare("INSERT INTO dbo.Asignaciones (Id_profesional, Id_estudiante) VALUES (?, ?)");
-            try {
-              $ins->execute([$idProfesional, $idEstudiante]);
-              registrarAuditoria($conn, $usuarioId, 'Asignaciones', null, 'INSERT', null,
-                ['Id_profesional'=>$idProfesional,'Id_estudiante'=>$idEstudiante]);
-            } catch (PDOException $e) {
-              $code = (int)($e->errorInfo[1] ?? 0);
-              if ($code !== 2627) throw $e; // unique
-            }
-            $conn->commit();
-            $flash = ['tipo'=>'ok','msg'=>'Asignación creada (estudiante).'];
-
-          } else { // CURSO
-            $insC = $conn->prepare("INSERT INTO dbo.Asignaciones (Id_profesional, Id_curso) VALUES (?, ?)");
-            try {
-              $insC->execute([$idProfesional, $idCurso]);
-              registrarAuditoria($conn, $usuarioId, 'Asignaciones', null, 'INSERT', null,
-                ['Id_profesional'=>$idProfesional,'Id_curso'=>$idCurso]);
-            } catch (PDOException $e) {
-              $code = (int)($e->errorInfo[1] ?? 0);
-              if ($code !== 2627) throw $e;
-            }
-
-            $q = $conn->prepare("SELECT Id_estudiante FROM dbo.estudiantes WHERE Id_curso = ?");
-            $q->execute([$idCurso]);
-            $alumnos = $q->fetchAll(PDO::FETCH_COLUMN);
-
-            $insE = $conn->prepare("INSERT INTO dbo.Asignaciones (Id_profesional, Id_estudiante) VALUES (?, ?)");
-            $creados = 0;
-            foreach ($alumnos as $idEst) {
-              try {
-                $insE->execute([$idProfesional, (int)$idEst]);
-                $creados++;
-              } catch (PDOException $e) {
-                $code = (int)($e->errorInfo[1] ?? 0);
-                if ($code !== 2627) throw $e;
-              }
-            }
-            $conn->commit();
-            $flash = ['tipo'=>'ok','msg'=>"Asignación por curso completada. Alumnos asignados: {$creados}."];
-          }
-
-        } catch (Throwable $ex) {
-          if ($conn->inTransaction()) $conn->rollBack();
-          $flash = ['tipo'=>'error','msg'=>'No se pudo crear la asignación: '.htmlspecialchars($ex->getMessage())];
+        if ($tipo === 'ESTUDIANTE') {
+          $q = $conn->prepare("
+            SELECT COUNT(1)
+            FROM estudiantes s
+            INNER JOIN cursos c ON c.Id_curso = s.Id_curso
+            WHERE s.Id_estudiante = ? AND c.Id_escuela = ?
+          ");
+          $q->execute([$idEstudiante, $escuelaDirectorId]);
+          if (!$q->fetchColumn()) { throw new RuntimeException('El estudiante no pertenece a tu escuela.'); }
+        } else { // CURSO
+          $q = $conn->prepare("SELECT COUNT(1) FROM cursos WHERE Id_curso = ? AND Id_escuela = ?");
+          $q->execute([$idCurso, $escuelaDirectorId]);
+          if (!$q->fetchColumn()) { throw new RuntimeException('El curso no pertenece a tu escuela.'); }
         }
       }
-    }
 
-    if ($accion === 'eliminar') {
-      $idAsignacion = (int)($_POST['Id_asignacion'] ?? 0);
-      if ($idAsignacion > 0) {
+      $conn->beginTransaction();
+
+      if ($tipo === 'ESTUDIANTE') {
+        // Asignación individual (única por UNIQUE)
+        $ins = $conn->prepare("INSERT INTO Asignaciones (Id_profesional, Id_estudiante) VALUES (?, ?)");
         try {
-          if ($escuelaDirectorId) {
-            $st = $conn->prepare("
-              SELECT TOP 1 a.Id_asignacion
-              FROM dbo.Asignaciones a
-              LEFT JOIN dbo.profesionales p ON p.Id_profesional = a.Id_profesional
-              LEFT JOIN dbo.estudiantes s ON s.Id_estudiante = a.Id_estudiante
-              LEFT JOIN dbo.cursos c ON c.Id_curso = COALESCE(s.Id_curso, a.Id_curso)
-              WHERE a.Id_asignacion = ? AND (p.Id_escuela_prof = ? OR c.Id_escuela = ?)
-            ");
-            $st->execute([$idAsignacion, $escuelaDirectorId, $escuelaDirectorId]);
-            if (!$st->fetchColumn()) { throw new RuntimeException('No puedes eliminar asignaciones fuera de tu escuela.'); }
-          }
-
-          $st = $conn->prepare("SELECT * FROM dbo.Asignaciones WHERE Id_asignacion = ?");
-          $st->execute([$idAsignacion]);
-          $antes = $st->fetch(PDO::FETCH_ASSOC);
-
-          $del = $conn->prepare("DELETE FROM dbo.Asignaciones WHERE Id_asignacion = ?");
-          $del->execute([$idAsignacion]);
-
-          registrarAuditoria($conn, $usuarioId, 'Asignaciones', $idAsignacion, 'DELETE', $antes ?: null, null);
-
-          $flash = ['tipo'=>'ok','msg'=>'Asignación eliminada.'];
-        } catch (Throwable $ex) {
-          $flash = ['tipo'=>'error','msg'=>'No se pudo eliminar: '.htmlspecialchars($ex->getMessage())];
+          $ins->execute([$idProfesional, $idEstudiante]);
+          registrarAuditoria($conn, $usuarioId, 'Asignaciones', null, 'INSERT', null, [
+            'Id_profesional' => $idProfesional,
+            'Id_estudiante'  => $idEstudiante
+          ]);
+        } catch (PDOException $e) {
+          $code = (int)($e->errorInfo[1] ?? 0);
+          if ($code !== 2627) { throw $e; } // 2627 = UNIQUE
         }
+        $conn->commit();
+        $flash = ['tipo' => 'ok', 'msg' => 'Asignación creada (estudiante).'];
+
+      } else { // CURSO
+        // 1) Asignación del curso (trazabilidad)
+        $insC = $conn->prepare("INSERT INTO Asignaciones (Id_profesional, Id_curso) VALUES (?, ?)");
+        try {
+          $insC->execute([$idProfesional, $idCurso]);
+          registrarAuditoria($conn, $usuarioId, 'Asignaciones', null, 'INSERT', null, [
+            'Id_profesional' => $idProfesional,
+            'Id_curso'       => $idCurso
+          ]);
+        } catch (PDOException $e) {
+          $code = (int)($e->errorInfo[1] ?? 0);
+          if ($code !== 2627) { throw $e; }
+        }
+
+        // 2) Traer estudiantes del curso
+        $q = $conn->prepare("SELECT Id_estudiante FROM estudiantes WHERE Id_curso = ?");
+        $q->execute([$idCurso]);
+        $alumnos = $q->fetchAll(PDO::FETCH_COLUMN);
+
+        // 3) Inserciones individuales evitando duplicados
+        $insE = $conn->prepare("INSERT INTO Asignaciones (Id_profesional, Id_estudiante) VALUES (?, ?)");
+        $creados = 0;
+        foreach ($alumnos as $idEst) {
+          try {
+            $insE->execute([$idProfesional, (int)$idEst]);
+            $creados++;
+          } catch (PDOException $e) {
+            $code = (int)($e->errorInfo[1] ?? 0);
+            if ($code !== 2627) { throw $e; }
+          }
+        }
+
+        $conn->commit();
+        $flash = ['tipo' => 'ok', 'msg' => "Asignación por curso completada. Alumnos asignados: {$creados}."];
       }
+
+    } catch (Throwable $ex) {
+      if ($conn->inTransaction()) $conn->rollBack();
+      $flash = ['tipo' => 'error', 'msg' => 'No se pudo crear la asignación: ' . htmlspecialchars($ex->getMessage())];
     }
   }
 }
 
-// =====================
-// Listado (si la tabla existe) con manejo de errores visible
-// =====================
+// Eliminar asignación
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['accion'] ?? '') === 'eliminar') {
+  check_csrf();
+  $idAsignacion = (int)($_POST['Id_asignacion'] ?? 0);
+
+  if ($idAsignacion > 0) {
+    try {
+      // Validación alcance DIRECTOR
+      if ($escuelaDirectorId) {
+        $st = $conn->prepare("
+          SELECT TOP 1 a.Id_asignacion
+          FROM Asignaciones a
+          LEFT JOIN profesionales p ON p.Id_profesional = a.Id_profesional
+          LEFT JOIN estudiantes s    ON s.Id_estudiante = a.Id_estudiante
+          LEFT JOIN cursos c         ON c.Id_curso = COALESCE(s.Id_curso, a.Id_curso)
+          WHERE a.Id_asignacion = ?
+            AND (p.Id_escuela_prof = ? OR c.Id_escuela = ?)
+        ");
+        $st->execute([$idAsignacion, $escuelaDirectorId, $escuelaDirectorId]);
+        if (!$st->fetchColumn()) { throw new RuntimeException('No puedes eliminar asignaciones fuera de tu escuela.'); }
+      }
+
+      // Snapshot previo
+      $st = $conn->prepare("SELECT * FROM Asignaciones WHERE Id_asignacion = ?");
+      $st->execute([$idAsignacion]);
+      $antes = $st->fetch(PDO::FETCH_ASSOC);
+
+      $del = $conn->prepare("DELETE FROM Asignaciones WHERE Id_asignacion = ?");
+      $del->execute([$idAsignacion]);
+
+      registrarAuditoria($conn, $usuarioId, 'Asignaciones', $idAsignacion, 'DELETE', $antes ?: null, null);
+
+      $flash = ['tipo' => 'ok', 'msg' => 'Asignación eliminada.'];
+
+    } catch (Throwable $ex) {
+      $flash = ['tipo' => 'error', 'msg' => 'No se pudo eliminar: ' . htmlspecialchars($ex->getMessage())];
+    }
+  }
+}
+
+// -----------------------------
+// LISTADO + FILTROS
+// -----------------------------
+$filtroTipo = (string)($_GET['tipo'] ?? 'TODOS'); // TODOS | ESTUDIANTE | CURSO
+$where      = "1=1";
+$params     = [];
+
+if ($filtroTipo === 'ESTUDIANTE') {
+  $where .= " AND a.Id_estudiante IS NOT NULL ";
+} elseif ($filtroTipo === 'CURSO') {
+  $where .= " AND a.Id_curso IS NOT NULL ";
+}
+
+// Alcance por escuela si DIRECTOR
+if ($escuelaDirectorId) {
+  $where .= " AND (
+    p.Id_escuela_prof = ?
+    OR EXISTS (
+      SELECT 1
+      FROM cursos cx
+      WHERE cx.Id_curso = COALESCE(s.Id_curso, a.Id_curso)
+        AND cx.Id_escuela = ?
+    )
+  )";
+  $params[] = $escuelaDirectorId;
+  $params[] = $escuelaDirectorId;
+}
+
+// Seleccionamos columnas crudas y armamos nombres en PHP (evita errores por nombres)
+$sqlListado = "
+  SELECT
+    a.Id_asignacion, a.Fecha_asignacion,
+    a.Id_estudiante, a.Id_curso,
+
+    p.Id_profesional,
+    p.Nombre_profesional    AS pNombre,
+    p.Apellido_profesional  AS pApellido,
+    eprof.Nombre_escuela    AS escuela_prof,
+
+    se.Id_estudiante        AS eId,
+    se.Nombre_estudiante    AS eNombre,
+    se.Apellido_estudiante  AS eApellido,
+
+    c.Id_curso              AS cId,
+    c.Tipo_curso, c.Grado_curso, c.seccion_curso,
+
+    sc.Nombre_escuela       AS escuela_destino
+  FROM Asignaciones a
+  INNER JOIN profesionales p ON p.Id_profesional = a.Id_profesional
+  LEFT  JOIN escuelas eprof   ON eprof.Id_escuela = p.Id_escuela_prof
+  LEFT  JOIN estudiantes se   ON se.Id_estudiante = a.Id_estudiante
+  LEFT  JOIN cursos c         ON c.Id_curso = a.Id_curso
+  LEFT  JOIN cursos cse       ON cse.Id_curso = se.Id_curso
+  LEFT  JOIN escuelas sc      ON sc.Id_escuela = COALESCE(c.Id_escuela, cse.Id_escuela)
+  WHERE {$where}
+  ORDER BY a.Fecha_asignacion DESC, a.Id_asignacion DESC
+";
+
 $asignaciones = [];
 $errListado = null;
-
-$filtroTipo = $_GET['tipo'] ?? 'TODOS';
-$where = "1=1";
-$params = [];
-
-if ($filtroTipo === 'ESTUDIANTE') { $where .= " AND a.Id_estudiante IS NOT NULL "; }
-elseif ($filtroTipo === 'CURSO')  { $where .= " AND a.Id_curso IS NOT NULL "; }
-
-if ($escuelaDirectorId) {
-  $where .= " AND ( p.Id_escuela_prof = ? OR EXISTS (
-              SELECT 1 FROM dbo.cursos cx
-              WHERE cx.Id_curso = COALESCE(s.Id_curso, a.Id_curso)
-                AND cx.Id_escuela = ? ) )";
-  $params[] = $escuelaDirectorId;
-  $params[] = $escuelaDirectorId;
-}
-
-if ($tableExists) {
-  try {
-    $sqlListado = "
-      SELECT
-        a.Id_asignacion, a.Fecha_asignacion,
-        a.Id_estudiante, a.Id_curso,
-        CONCAT(p.Nombre_prof, ' ', p.Apellido_prof) AS profesional,
-        eprof.Nombre_escuela AS escuela_prof,
-        CASE WHEN a.Id_estudiante IS NOT NULL
-          THEN CONCAT(se.Nombre_estudiante, ' ', se.Apellido_estudiante)
-          ELSE NULL END AS estudiante,
-        sc.Nombre_escuela AS escuela_est,
-        CASE WHEN a.Id_curso IS NOT NULL
-          THEN CONCAT(c.Tipo_curso, ' ', c.Grado_curso, COALESCE(CONCAT(' - ', c.seccion_curso), ''))
-          ELSE NULL END AS curso
-      FROM dbo.Asignaciones a
-      INNER JOIN dbo.profesionales p ON p.Id_profesional = a.Id_profesional
-      LEFT JOIN dbo.escuelas eprof    ON eprof.Id_escuela = p.Id_escuela_prof
-      LEFT JOIN dbo.estudiantes se    ON se.Id_estudiante = a.Id_estudiante
-      LEFT JOIN dbo.cursos c          ON c.Id_curso = a.Id_curso
-      LEFT JOIN dbo.cursos cse        ON cse.Id_curso = se.Id_curso
-      LEFT JOIN dbo.escuelas sc       ON sc.Id_escuela = COALESCE(c.Id_escuela, cse.Id_escuela)
-      WHERE {$where}
-      ORDER BY a.Fecha_asignacion DESC, a.Id_asignacion DESC
-    ";
-    $st = $conn->prepare($sqlListado);
-    $st->execute($params);
-    $asignaciones = $st->fetchAll(PDO::FETCH_ASSOC);
-  } catch (PDOException $e) {
-    $code = (int)($e->errorInfo[1] ?? 0);
-    if ($code === 208) { // Invalid object name
-      $errListado = 'La tabla <b>dbo.Asignaciones</b> no existe. Ejecuta el script de creación en Azure SQL.';
-    } else {
-      $errListado = 'No se pudo cargar el listado: '.htmlspecialchars($e->getMessage());
-    }
+try {
+  $st = $conn->prepare($sqlListado);
+  $st->execute($params);
+  $asignaciones = $st->fetchAll(PDO::FETCH_ASSOC);
+} catch (PDOException $e) {
+  $code = (int)($e->errorInfo[1] ?? 0);
+  if ($code === 208) { // Invalid object name (tabla no existe)
+    $errListado = 'La tabla "Asignaciones" no existe. Ejecuta el script de creación en Azure SQL.';
+  } else {
+    $errListado = 'No se pudo cargar el listado: ' . htmlspecialchars($e->getMessage());
   }
-} else {
-  $errListado = 'La tabla <b>dbo.Asignaciones</b> no existe (OBJECT_ID devuelve NULL).';
 }
 
-// =====================
-// Render
-// =====================
+// Helpers de presentación
+function nombreProf(array $r): string {
+  return trim(($r['pNombre'] ?? '').' '.($r['pApellido'] ?? ''));
+}
+function nombreEst(array $r): string {
+  return trim(($r['eNombre'] ?? '').' '.($r['eApellido'] ?? ''));
+}
+function textoCurso(array $r): string {
+  $sec = isset($r['seccion_curso']) && $r['seccion_curso'] !== null && $r['seccion_curso'] !== ''
+    ? ' - '.$r['seccion_curso'] : '';
+  return trim(($r['Tipo_curso'] ?? '').' '.($r['Grado_curso'] ?? '').$sec);
+}
+
 ?>
 <div class="content">
   <h2>Asignaciones</h2>
 
-  <?php if ($DIAG): ?>
-    <div class="card p-3" style="border:1px dashed #c33; background:#fff6f6; color:#900">
-      <b>DIAGNÓSTICO</b><br>
-      Rol: <?= htmlspecialchars($rolActual) ?><br>
-      Escuela (si Director): <?= $escuelaDirectorId ? (int)$escuelaDirectorId : 'N/A' ?><br>
-      Tabla dbo.Asignaciones: <?= $tableExists ? 'OK' : 'NO EXISTE' ?><br>
-      <?php if ($diag_msgs) { echo 'Notas: <ul>'; foreach ($diag_msgs as $m) echo '<li>'.htmlspecialchars($m).'</li>'; echo '</ul>'; } ?>
-      <small>Quita <code>&diag=1</code> de la URL para ocultar este bloque.</small>
-    </div>
-  <?php endif; ?>
-
   <?php if ($flash): ?>
     <div class="alert alert-<?= $flash['tipo'] === 'ok' ? 'success' : 'danger' ?>">
-      <?= $flash['msg'] ?>
+      <?= htmlspecialchars($flash['msg']) ?>
     </div>
   <?php endif; ?>
 
-  <?php if (!$tableExists): ?>
-    <div class="alert alert-danger">
-      La tabla <b>dbo.Asignaciones</b> no existe. Crea la tabla antes de usar esta sección.
-    </div>
+  <?php if ($errListado): ?>
+    <div class="alert alert-danger"><?= $errListado ?></div>
   <?php endif; ?>
 
   <div class="card p-3 mb-3">
@@ -354,8 +379,9 @@ if ($tableExists) {
         <select name="Id_profesional" required>
           <option value="">-- Selecciona --</option>
           <?php foreach ($profesionales as $p): ?>
+            <?php $nombre = trim(($p['Nombre_profesional'] ?? '').' '.($p['Apellido_profesional'] ?? '')); ?>
             <option value="<?= (int)$p['Id_profesional'] ?>">
-              <?= htmlspecialchars($p['nombre']) ?> (<?= htmlspecialchars($p['escuela'] ?? 's/escuela') ?>)
+              <?= htmlspecialchars($nombre) ?> (<?= htmlspecialchars($p['escuela'] ?? 's/escuela') ?>)
             </option>
           <?php endforeach; ?>
         </select>
@@ -366,8 +392,8 @@ if ($tableExists) {
         <select name="tipo" id="tipo" required
           onchange="
             const v=this.value;
-            document.getElementById('blk-est').style.display = v==='ESTUDIANTE' ? 'block':'none';
-            document.getElementById('blk-curso').style.display = v==='CURSO' ? 'block':'none';
+            document.getElementById('blk-est').style.display   = v==='ESTUDIANTE' ? 'block':'none';
+            document.getElementById('blk-curso').style.display = v==='CURSO'      ? 'block':'none';
           ">
           <option value="ESTUDIANTE">Estudiante</option>
           <option value="CURSO">Curso (asigna todos sus alumnos)</option>
@@ -379,8 +405,9 @@ if ($tableExists) {
         <select name="Id_estudiante">
           <option value="">-- Selecciona --</option>
           <?php foreach ($estudiantes as $s): ?>
+            <?php $n = trim(($s['Nombre_estudiante'] ?? '').' '.($s['Apellido_estudiante'] ?? '')); ?>
             <option value="<?= (int)$s['Id_estudiante'] ?>">
-              <?= htmlspecialchars($s['nombre']) ?> (<?= htmlspecialchars($s['escuela'] ?? 's/escuela') ?>)
+              <?= htmlspecialchars($n) ?> (<?= htmlspecialchars($s['escuela'] ?? 's/escuela') ?>)
             </option>
           <?php endforeach; ?>
         </select>
@@ -391,15 +418,16 @@ if ($tableExists) {
         <select name="Id_curso">
           <option value="">-- Selecciona --</option>
           <?php foreach ($cursos as $c): ?>
+            <?php $tc = trim(($c['Tipo_curso'] ?? '').' '.($c['Grado_curso'] ?? '').(($c['seccion_curso'] ?? '') ? ' - '.$c['seccion_curso'] : '')); ?>
             <option value="<?= (int)$c['Id_curso'] ?>">
-              <?= htmlspecialchars($c['curso']) ?> (<?= htmlspecialchars($c['escuela'] ?? 's/escuela') ?>)
+              <?= htmlspecialchars($tc) ?> (<?= htmlspecialchars($c['escuela'] ?? 's/escuela') ?>)
             </option>
           <?php endforeach; ?>
         </select>
       </div>
 
       <div style="align-self:end">
-        <button class="btn btn-primary" <?= !$tableExists ? 'disabled title="Crea la tabla dbo.Asignaciones primero"' : '' ?>>Asignar</button>
+        <button class="btn btn-primary">Asignar</button>
       </div>
     </form>
     <small class="text-muted">Si eliges “Curso”, se crearán asignaciones para todos sus estudiantes (evitando duplicados).</small>
@@ -413,12 +441,7 @@ if ($tableExists) {
         <option value="ESTUDIANTE"<?= $filtroTipo==='ESTUDIANTE'?'selected':'' ?>>Solo Estudiantes</option>
         <option value="CURSO"     <?= $filtroTipo==='CURSO'?'selected':'' ?>>Solo Cursos</option>
       </select>
-      <?php if ($DIAG): ?><input type="hidden" name="diag" value="1"><?php endif; ?>
     </form>
-
-    <?php if ($errListado): ?>
-      <div class="alert alert-danger"><?= $errListado ?></div>
-    <?php endif; ?>
 
     <div class="table-responsive">
       <table class="table">
@@ -436,15 +459,19 @@ if ($tableExists) {
         </thead>
         <tbody>
           <?php foreach ($asignaciones as $a): ?>
-            <?php $tipo = $a['Id_estudiante'] ? 'ESTUDIANTE' : 'CURSO';
-                  $dest = $a['Id_estudiante'] ? $a['estudiante'] : $a['curso']; ?>
+            <?php
+              $esEst = !empty($a['Id_estudiante']);
+              $tipo  = $esEst ? 'ESTUDIANTE' : 'CURSO';
+              $dest  = $esEst ? nombreEst($a) : textoCurso($a);
+              $profN = nombreProf($a);
+            ?>
             <tr>
               <td><?= (int)$a['Id_asignacion'] ?></td>
-              <td><?= htmlspecialchars($a['profesional'] ?? '') ?></td>
+              <td><?= htmlspecialchars($profN) ?></td>
               <td><?= htmlspecialchars($a['escuela_prof'] ?? '') ?></td>
               <td><span class="badge"><?= htmlspecialchars($tipo) ?></span></td>
               <td><?= htmlspecialchars($dest ?? '') ?></td>
-              <td><?= htmlspecialchars($a['escuela_est'] ?? '') ?></td>
+              <td><?= htmlspecialchars($a['escuela_destino'] ?? '') ?></td>
               <td><?= htmlspecialchars((string)$a['Fecha_asignacion']) ?></td>
               <td>
                 <form method="post" onsubmit="return confirm('¿Eliminar asignación?')">
@@ -456,7 +483,7 @@ if ($tableExists) {
               </td>
             </tr>
           <?php endforeach; ?>
-          <?php if (empty($asignaciones) && $tableExists && !$errListado): ?>
+          <?php if (empty($asignaciones)): ?>
             <tr><td colspan="8" class="text-center text-muted">Sin asignaciones.</td></tr>
           <?php endif; ?>
         </tbody>
@@ -464,8 +491,3 @@ if ($tableExists) {
     </div>
   </div>
 </div>
-
-<style>
-.badge { display:inline-block; padding:.25rem .5rem; border-radius:999px; font-size:.75rem; background:#ecebfd; }
-.dark-mode .badge { background:#2f2a4a; }
-</style>
