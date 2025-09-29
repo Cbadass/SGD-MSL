@@ -65,7 +65,7 @@ $BANCOS = [
 $TIPOS_CTA = ['Cuenta Corriente','Cuenta Vista','Cuenta RUT','Cuenta de Ahorro'];
 
 $saludes     = ['FONASA','ISAPRE'];
-$permisos    = ['user','admin'];
+$permisos    = ['USER','ADMIN'];
 $estados_civ = [
     'Soltero/a'                =>'Persona que no ha contraído matrimonio.',
     'Casado/a'                 =>'Vínculo matrimonial legalmente reconocido.',

@@ -148,7 +148,7 @@ if ($usuarios) {
                 <td>".htmlspecialchars($row['Apellido_profesional']?? '-')."</td>
                 <td>".htmlspecialchars($row['Cargo_profesional']  ?? '-')."</td>
                 <td>".htmlspecialchars($row['Nombre_escuela']     ?? 'Otra')."</td>
-                <td>".htmlspecialchars($row['Permisos']           ?? 'user')."</td>
+                <td>".htmlspecialchars($row['Permisos']           ?? 'USER')."</td>
                 <td>".($row['Estado_usuario']==1 ? 'Activo':'Inactivo')."</td>
                 <td style='text-align:center;'>
                     <a href='index.php?seccion=modificar_profesional&Id_profesional=" . htmlspecialchars($row['Id_profesional']) . "' class='btn btn-sm btn-warning me-1 link-text'>Editar</a>

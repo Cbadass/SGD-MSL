@@ -42,7 +42,7 @@ $bancos      = ['Banco Estado','Santander','Banco Falabella'];
 $tipos_cta   = ['Corriente','Vista','Ahorro'];
 $afps        = ['AFP Modelo','Habitat'];
 $saludes     = ['FONASA','ISAPRE'];
-$permisos    = ['user'=>'Usuario','admin'=>'Administrador'];
+$permisos    = ['USER'=>'Usuario','ADMIN'=>'Administrador'];
 $estados_usr = ['1'=>'Activo','0'=>'Inactivo'];
 ?>
 

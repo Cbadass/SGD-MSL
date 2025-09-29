@@ -8,8 +8,8 @@ if (!isset($_SESSION['usuario'])) {
   echo json_encode(['ok'=>false,'msg'=>'No autenticado']); exit;
 }
 
-$mi_permiso = strtolower($_SESSION['usuario']['permisos'] ?? 'user');
-if (!in_array($mi_permiso, ['admin','director'], true)) {
+$mi_permiso = strtolower($_SESSION['usuario']['permisos'] ?? 'USER');
+if (!in_array($mi_permiso, ['ADMIN','DIRECTOR'], true)) {
   echo json_encode(['ok'=>false,'msg'=>'Sin permiso']); exit;
 }
 

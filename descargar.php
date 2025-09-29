@@ -30,7 +30,7 @@ if (!$documento) {
 
 // Verificar permisos
 if (
-    $usuario['permisos'] !== 'admin' && 
+    $usuario['permisos'] !== 'ADMIN' && 
     $documento['Id_prof_doc'] != $usuario['id_profesional']
 ) {
     http_response_code(403);
