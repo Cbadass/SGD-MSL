@@ -28,7 +28,7 @@ try {
 
     // Helper para LIKE
     function agregarFiltro(&$where, &$params, $campo, $valor) {
-        if ($valor !== '') {
+        if ($valor !== '' && $valor !== null) {
             $where   .= " AND $campo LIKE ?";
             $params[] = "%{$valor}%";
         }
@@ -189,15 +189,15 @@ a { color: rgba(var(--bs-link-color-rgb), var(--bs-link-opacity, 1)); text-decor
 <h2 class="mb-4">
   <?php
     if ($id_prof > 0) {
-      echo "Documentos del Profesional #{$id_prof}"
+      echo "Documentos del Profesional #".htmlspecialchars((string)$id_prof)
          . ($sin_estud ? " (sin estudiante)" : "");
     } elseif ($id_est > 0) {
-      echo "Documentos del Estudiante #{$id_est}"
+      echo "Documentos del Estudiante #".htmlspecialchars((string)$id_est)
          . ($sin_profes ? " (sin profesional)" : "");
     } else {
       echo "Lista de Documentos";
     }
-    echo " ({$total} encontrados)";
+    echo " (".htmlspecialchars((string)$total)." encontrados)";
   ?>
 </h2>
 
@@ -205,10 +205,10 @@ a { color: rgba(var(--bs-link-color-rgb), var(--bs-link-opacity, 1)); text-decor
 <div class="card profile">
   <form method="GET" class="form-grid">
     <input type="hidden" name="seccion" value="documentos">
-    <input type="hidden" name="pagina"      value="<?= $pagina ?>">
-    <input type="hidden" name="id_prof"      id="id_prof"      value="<?= htmlspecialchars($id_prof) ?>">
+    <input type="hidden" name="pagina"      value="<?= htmlspecialchars((string)$pagina) ?>">
+    <input type="hidden" name="id_prof"      id="id_prof"      value="<?= htmlspecialchars((string)$id_prof) ?>">
     <input type="hidden" name="sin_estudiante" id="sin_estudiante" value="<?= $sin_estud ? 1 : 0 ?>">
-    <input type="hidden" name="id_estudiante" id="id_estudiante" value="<?= htmlspecialchars($id_est) ?>">
+    <input type="hidden" name="id_estudiante" id="id_estudiante" value="<?= htmlspecialchars((string)$id_est) ?>">
     <input type="hidden" name="sin_profesional" id="sin_profesional" value="<?= $sin_profes ? 1 : 0 ?>">
 
     <div>
@@ -220,7 +220,7 @@ a { color: rgba(var(--bs-link-color-rgb), var(--bs-link-opacity, 1)); text-decor
       <select name="tipo_documento" class="form-select">
         <option value="">Todos</option>
         <?php foreach ($tiposDb as $t): 
-          $sel = ($_GET['tipo_documento'] ?? '') === $t ? 'selected' : '';
+          $sel = (($_GET['tipo_documento'] ?? '') === $t) ? 'selected' : '';
         ?>
           <option value="<?= htmlspecialchars($t) ?>" <?= $sel ?>><?= htmlspecialchars($t) ?></option>
         <?php endforeach; ?>
@@ -263,7 +263,7 @@ a { color: rgba(var(--bs-link-color-rgb), var(--bs-link-opacity, 1)); text-decor
       <label>Ordenar por</label>
       <select name="orden" class="form-select">
         <?php foreach ($ordenOpciones as $key => $o): ?>
-          <option value="<?= $key ?>" <?= ($_GET['orden'] ?? '') === $key ? 'selected' : '' ?>>
+          <option value="<?= htmlspecialchars($key) ?>" <?= (($_GET['orden'] ?? '') === $key) ? 'selected' : '' ?>>
             <?= ucwords(str_replace(['_','desc','asc'], [' ',' más reciente primero',' más antiguo primero'], $key)) ?>
           </option>
         <?php endforeach; ?>
@@ -271,8 +271,8 @@ a { color: rgba(var(--bs-link-color-rgb), var(--bs-link-opacity, 1)); text-decor
     </div>
     <div class="mt-1" style="display:flex; gap:10px; align-items:end;">
       <button type="submit" class="btn btn-primary btn-height">Buscar</button>
-      <button class="btn btn-secondary btn-height">
-        <a href="?seccion=documentos" class="link-text">Limpiar filtros</a>
+      <button class="btn btn-secondary btn-height" type="button" onclick="location.href='?seccion=documentos'">
+        Limpiar filtros
       </button>
     </div>
   </form>
@@ -311,10 +311,10 @@ a { color: rgba(var(--bs-link-color-rgb), var(--bs-link-opacity, 1)); text-decor
         <tr>
           <td><?= htmlspecialchars($d['Nombre_documento']) ?></td>
           <td><?= htmlspecialchars($d['Tipo_documento']) ?></td>
-          <td><?= $fs->format('d-m-Y') ?><br><small>Hace <?= $t ?></small></td>
+          <td><?= $fs->format('d-m-Y') ?><br><small>Hace <?= htmlspecialchars($t) ?></small></td>
           <td>
             <?= !empty($d['Fecha_modificacion'])
-               ? (new DateTime($d['Fecha_modificacion']))->format('d-m-Y')
+               ? htmlspecialchars((new DateTime($d['Fecha_modificacion']))->format('d-m-Y'))
                : 'No Modificado' ?>
           </td>
           <td><?= htmlspecialchars($d['Descripcion']) ?></td>
@@ -322,9 +322,9 @@ a { color: rgba(var(--bs-link-color-rgb), var(--bs-link-opacity, 1)); text-decor
           <td><?= htmlspecialchars($d['Nombre_profesional'] ?: '-') ?></td>
           <td><?= htmlspecialchars($d['Usuario_subio']) ?></td>
           <td style="text-align:center;">
-            <a href="index.php?seccion=modificar_documento&id_documento=<?= $d['Id_documento'] ?>"
+            <a href="index.php?seccion=modificar_documento&id_documento=<?= urlencode((string)$d['Id_documento']) ?>"
                class="btn btn-warning btn-sm link-text">Modificar</a>
-            <a href="descargar.php?id_documento=<?= $d['Id_documento'] ?>"
+            <a href="descargar.php?id_documento=<?= urlencode((string)$d['Id_documento']) ?>"
                class="btn btn-primary btn-sm link-text">Descargar</a>
           </td>
         </tr>
@@ -345,10 +345,10 @@ a { color: rgba(var(--bs-link-color-rgb), var(--bs-link-opacity, 1)); text-decor
       // primera / anterior
       if ($pagina > 1) {
           $params['pagina'] = 1;
-          echo '<li class="page-item"><a class="page-link" href="'.$baseURL.http_build_query($params).'">« Primera</a></li>';
+          echo '<li class="page-item"><a class="page-link" href="'.$baseURL.htmlspecialchars(http_build_query($params)).'">« Primera</a></li>';
 
           $params['pagina'] = $pagina - 1;
-          echo '<li class="page-item"><a class="page-link" href="'.$baseURL.http_build_query($params).'">‹ Anterior</a></li>';
+          echo '<li class="page-item"><a class="page-link" href="'.$baseURL.htmlspecialchars(http_build_query($params)).'">‹ Anterior</a></li>';
       }
 
       // rango de números
@@ -357,16 +357,16 @@ a { color: rgba(var(--bs-link-color-rgb), var(--bs-link-opacity, 1)); text-decor
       for ($p = $inicio; $p <= $fin; $p++) {
           $params['pagina'] = $p;
           $act = $p == $pagina ? ' active' : '';
-          echo '<li class="page-item'.$act.'"><a class="page-link" href="'.$baseURL.http_build_query($params).'">'.$p.'</a></li>';
+          echo '<li class="page-item'.$act.'"><a class="page-link" href="'.$baseURL.htmlspecialchars(http_build_query($params)).'">'.$p.'</a></li>';
       }
 
       // siguiente / última
       if ($pagina < $totalPag) {
           $params['pagina'] = $pagina + 1;
-          echo '<li class="page-item"><a class="page-link" href="'.$baseURL.http_build_query($params).'">Siguiente ›</a></li>';
+          echo '<li class="page-item"><a class="page-link" href="'.$baseURL.htmlspecialchars(http_build_query($params)).'">Siguiente ›</a></li>';
 
           $params['pagina'] = $totalPag;
-          echo '<li class="page-item"><a class="page-link" href="'.$baseURL.http_build_query($params).'">Última »</a></li>';
+          echo '<li class="page-item"><a class="page-link" href="'.$baseURL.htmlspecialchars(http_build_query($params)).'">Última »</a></li>';
       }
     ?>
     </ul>
@@ -380,10 +380,10 @@ a { color: rgba(var(--bs-link-color-rgb), var(--bs-link-opacity, 1)); text-decor
 (function(){
   // Estados y descripciones
   // Mapeo a tus flags:
-  // - estado 0 (Todos):            sin_est=0, sin_prof=0  -> se ven ambos bloques
-  // - estado 1 (Solo profesionales): sin_est=1, sin_prof=0 -> oculta bloque estudiante
-  // - estado 2 (Solo estudiantes):   sin_est=0, sin_prof=1 -> oculta bloque profesional
-  // - estado 3 (Ninguno):            sin_est=1, sin_prof=1 -> oculta ambos bloques
+  // - estado 0 (Todos):              sin_est=0, sin_prof=0  -> se ven ambos bloques
+  // - estado 1 (Solo profesionales): sin_est=1, sin_prof=0  -> oculta bloque estudiante
+  // - estado 2 (Solo estudiantes):   sin_est=0, sin_prof=1  -> oculta bloque profesional
+  // - estado 3 (Ninguno):            sin_est=1, sin_prof=1  -> oculta ambos bloques
   const STATES = [
     {title:'Todos', desc:'“Muestra todo el surtido, sin timidez.”', sin_est:0, sin_prof:0},
     {title:'Solo profesionales', desc:'“Modo experto: documentos pro al frente.”', sin_est:1, sin_prof:0},
@@ -431,8 +431,8 @@ a { color: rgba(var(--bs-link-color-rgb), var(--bs-link-opacity, 1)); text-decor
     btn.classList.add('state-' + state);
 
     // Actualiza hidden inputs (para que el backend los lea si envías el form)
-    sinEstIn.value = String(s.sin_est);
-    sinProIn.value = String(s.sin_prof);
+    if (sinEstIn) sinEstIn.value = String(s.sin_est);
+    if (sinProIn) sinProIn.value = String(s.sin_prof);
 
     // Muestra/oculta bloques de búsqueda
     if (blockEst) blockEst.style.display = s.sin_est ? 'none' : '';
