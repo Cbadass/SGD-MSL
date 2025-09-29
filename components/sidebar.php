@@ -1,13 +1,10 @@
 <?php
 // components/sidebar.php
-if (session_status() === PHP_SESSION_NONE) {
-  session_start();
-}
+// La sesión ya está abierta por includes/session.php desde index.php
 
-// Rol actual (ADMIN / DIRECTOR / PROFESIONAL)
 $rol = strtoupper($_SESSION['usuario']['permisos'] ?? 'GUEST');
 
-// Asegurar $seccion (fallback por rol)
+// Asegura $seccion (fallback por rol)
 if (!isset($seccion)) {
   $seccion = $_GET['seccion'] ?? null;
 }
@@ -42,7 +39,7 @@ $grp_mi_trabajo    = ['cursos','estudiantes','apoderados','documentos'];
 ?>
 <aside class="sidebar">
   <nav>
-    <!-- (Opcional) mini-tweak visual; puedes quitarlo si ya tienes estos estilos en tu CSS -->
+    <!-- (Opcional) mini estilos -->
     <style>
       .sidebar details { margin: 8px 0; }
       .sidebar summary {
@@ -60,7 +57,7 @@ $grp_mi_trabajo    = ['cursos','estudiantes','apoderados','documentos'];
       .sidebar h3 { display:none; }
     </style>
 
-    <!-- INICIO (visible para todos) -->
+    <!-- INICIO -->
     <details<?= details_open($grp_inicio, $seccion) ?>>
       <summary>Inicio</summary>
       <div class="group-links">

@@ -1,25 +1,23 @@
 <?php
 // includes/session.php
+// ⚠️ No pongas BOM ni espacios antes de esta línea
 
-// Detección de HTTPS detrás de Azure App Service (reverse proxy)
-$isHttps = (!empty($_SERVER['HTTPS']) && $_SERVER['HTTPS'] !== 'off')
-          || (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https');
+// Unificar nombre y flags de la cookie de sesión
+session_name('SGDMSLSESSID');
 
-// Endurece cookies de sesión
-if (PHP_SESSION_NONE === session_status()) {
-  session_name('SGDMSLSESSID');
+if (session_status() === PHP_SESSION_NONE) {
   session_set_cookie_params([
-    'lifetime' => 0,        // hasta cerrar el navegador
+    'lifetime' => 0,
     'path'     => '/',
-    'domain'   => '',       // por defecto
-    'secure'   => $isHttps, // TRUE en HTTPS
+    'domain'   => '',
+    'secure'   => true,   // el sitio corre en HTTPS en Azure
     'httponly' => true,
     'samesite' => 'Lax',
   ]);
   session_start();
 }
 
-// CSRF por defecto (un token por sesión)
+// CSRF por sesión (si lo usas en formularios POST)
 if (empty($_SESSION['csrf_token'])) {
   $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
 }
@@ -32,12 +30,10 @@ function require_login(): void {
   }
 }
 
-/** Devuelve el token CSRF actual */
+// Helpers útiles
 function csrf_token(): string {
   return (string)($_SESSION['csrf_token'] ?? '');
 }
-
-/** Valida CSRF en peticiones POST (lanza 400 si no corresponde) */
 function check_csrf_post(): void {
   if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $token = $_POST['csrf_token'] ?? '';
@@ -47,8 +43,6 @@ function check_csrf_post(): void {
     }
   }
 }
-
-// Atajos de acceso a usuario/rol (opcionales, útiles)
 function current_user(): ?array { return $_SESSION['usuario'] ?? null; }
 function user_id(): ?int { return isset($_SESSION['usuario']['id']) ? (int)$_SESSION['usuario']['id'] : null; }
 function user_role(): ?string { return isset($_SESSION['usuario']['permisos']) ? strtoupper((string)$_SESSION['usuario']['permisos']) : null; }

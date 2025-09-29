@@ -1,10 +1,11 @@
 <?php
 require_once __DIR__ . '/includes/session.php';
 require_login(); // redirige a /login.php si no hay sesión
+
 $modo_oscuro = $_COOKIE['modo_oscuro'] ?? 'false';
 $rolActual   = strtoupper($_SESSION['usuario']['permisos'] ?? 'GUEST');
 
-// --- Lista blanca de secciones (asegura que solo cargues páginas conocidas)
+// --- Lista blanca de secciones
 $ALLOWED = [
   'perfil',
 
@@ -20,7 +21,7 @@ $ALLOWED = [
   'administrar_contraseña',
 ];
 
-// --- Mapa de secciones -> roles permitidos (403 si no coincide)
+// --- Mapa secciones -> roles permitidos (403 si no coincide)
 $SECTION_ROLES = [
   'perfil'                   => ['ADMIN','DIRECTOR','PROFESIONAL'],
 
@@ -44,23 +45,23 @@ $SECTION_ROLES = [
   'subir_documento'          => ['ADMIN','DIRECTOR','PROFESIONAL'],
   'modificar_documento'      => ['ADMIN','DIRECTOR'],
 
-  'asignaciones'             => ['ADMIN','DIRECTOR'],       // <-- clave para tu caso
+  'asignaciones'             => ['ADMIN','DIRECTOR'],
   'actividad'                => ['ADMIN','DIRECTOR'],
   'administrar_contraseña'   => ['ADMIN','DIRECTOR','PROFESIONAL'],
 ];
 
-// --- Resolver sección (default distinto por rol ayuda a UX)
+// --- Resolver sección (default por rol)
 $seccion = $_GET['seccion'] ?? (
   in_array($rolActual, ['ADMIN','DIRECTOR'], true) ? 'usuarios'
   : ($rolActual === 'PROFESIONAL' ? 'cursos' : 'perfil')
 );
 
-// Sanitizar: quedarse con basename por seguridad (evita ../)
+// Sanitizar: basename para evitar ../
 $seccion = basename($seccion);
 
 // Validar lista blanca
 if (!in_array($seccion, $ALLOWED, true)) {
-  $seccion = 'perfil'; // o carga un 404
+  $seccion = 'perfil';
 }
 
 // Validar rol
@@ -72,7 +73,7 @@ if (!in_array($rolActual, $rolesPermitidos, true)) {
   $file = __DIR__ . "/pages/{$seccion}.php";
 }
 
-// Si no existe el archivo, 404 controlado
+// Comprobar archivo
 if (!file_exists($file)) {
   http_response_code(404);
   $file = __DIR__ . "/pages/error404.php";
@@ -98,7 +99,7 @@ if (!file_exists($file)) {
 
   <div class="container">
     <?php
-      // IMPORTANTE: pasar $seccion al sidebar para que marque activo
+      // pasa $seccion al sidebar para activo
       include __DIR__ . '/components/sidebar.php';
     ?>
 
