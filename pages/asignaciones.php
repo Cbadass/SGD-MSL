@@ -12,7 +12,7 @@ require_once __DIR__ . '/../includes/roles.php';
 require_once __DIR__ . '/../includes/auditoria.php';
 
 // -----------------------------
-// CSRF local (manteniendo tu práctica)
+// CSRF local (tu práctica)
 // -----------------------------
 if (empty($_SESSION['csrf_token'])) {
   $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -47,7 +47,7 @@ $idProfesionalUser = isset($_SESSION['usuario']['id_profesional']) ? (int)$_SESS
 // -----------------------------
 // ALCANCE POR ESCUELA (DIRECTOR)
 // -----------------------------
-function getDirectorEscuelaId(PDO $conn, int $idProfesional): ?int {
+function asig_getDirectorEscuelaId(PDO $conn, int $idProfesional): ?int {
   $st = $conn->prepare("SELECT Id_escuela_prof FROM profesionales WHERE Id_profesional = ?");
   $st->execute([$idProfesional]);
   $row = $st->fetch(PDO::FETCH_ASSOC);
@@ -55,76 +55,8 @@ function getDirectorEscuelaId(PDO $conn, int $idProfesional): ?int {
 }
 $escuelaDirectorId = null;
 if ($rolActual === 'DIRECTOR' && $idProfesionalUser) {
-  $escuelaDirectorId = getDirectorEscuelaId($conn, $idProfesionalUser);
+  $escuelaDirectorId = asig_getDirectorEscuelaId($conn, $idProfesionalUser);
 }
-
-// -----------------------------
-// DATOS PARA FORMULARIO (filtrados si DIRECTOR)
-// -----------------------------
-
-// Profesionales destino (normalmente rol PROFESIONAL)
-$params = [];
-$sqlProfesionales = "
-  SELECT
-    p.Id_profesional,
-    p.Nombre_profesional,
-    p.Apellido_profesional,
-    e.Nombre_escuela AS escuela
-  FROM profesionales p
-  LEFT JOIN escuelas e ON e.Id_escuela = p.Id_escuela_prof
-  INNER JOIN usuarios u ON u.Id_profesional = p.Id_profesional
-  WHERE u.Permisos = 'PROFESIONAL'
-";
-if ($escuelaDirectorId) {
-  $sqlProfesionales .= " AND p.Id_escuela_prof = ? ";
-  $params[] = $escuelaDirectorId;
-}
-$sqlProfesionales .= " ORDER BY p.Apellido_profesional, p.Nombre_profesional";
-
-$st = $conn->prepare($sqlProfesionales);
-$st->execute($params);
-$profesionales = $st->fetchAll(PDO::FETCH_ASSOC);
-
-// Cursos
-$params = [];
-$sqlCursos = "
-  SELECT
-    c.Id_curso,
-    c.Tipo_curso, c.Grado_curso, c.seccion_curso,
-    e.Nombre_escuela AS escuela, c.Id_escuela
-  FROM cursos c
-  INNER JOIN escuelas e ON e.Id_escuela = c.Id_escuela
-";
-if ($escuelaDirectorId) {
-  $sqlCursos .= " WHERE c.Id_escuela = ? ";
-  $params[] = $escuelaDirectorId;
-}
-$sqlCursos .= " ORDER BY e.Nombre_escuela, c.Tipo_curso, c.Grado_curso, c.seccion_curso";
-
-$st = $conn->prepare($sqlCursos);
-$st->execute($params);
-$cursos = $st->fetchAll(PDO::FETCH_ASSOC);
-
-// Estudiantes
-$params = [];
-$sqlEst = "
-  SELECT
-    s.Id_estudiante,
-    s.Nombre_estudiante, s.Apellido_estudiante,
-    e.Nombre_escuela AS escuela, c.Id_escuela
-  FROM estudiantes s
-  INNER JOIN cursos c ON c.Id_curso = s.Id_curso
-  INNER JOIN escuelas e ON e.Id_escuela = c.Id_escuela
-";
-if ($escuelaDirectorId) {
-  $sqlEst .= " WHERE c.Id_escuela = ? ";
-  $params[] = $escuelaDirectorId;
-}
-$sqlEst .= " ORDER BY e.Nombre_escuela, s.Apellido_estudiante, s.Nombre_estudiante";
-
-$st = $conn->prepare($sqlEst);
-$st->execute($params);
-$estudiantes = $st->fetchAll(PDO::FETCH_ASSOC);
 
 // -----------------------------
 // ACCIONES (CREAR / ELIMINAR)
@@ -141,7 +73,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['accion'] ?? '') === 'crear
   $idCurso       = isset($_POST['Id_curso']) ? (int)$_POST['Id_curso'] : null;
 
   if ($idProfesional <= 0 || !in_array($tipo, ['ESTUDIANTE','CURSO'], true)) {
-    $flash = ['tipo' => 'error', 'msg' => 'Datos inválidos.'];
+    $flash = ['tipo' => 'error', 'msg' => 'Completa profesional y tipo de asignación.'];
   } else {
     try {
       // Validación de alcance para DIRECTOR
@@ -170,7 +102,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['accion'] ?? '') === 'crear
       $conn->beginTransaction();
 
       if ($tipo === 'ESTUDIANTE') {
-        // Asignación individual (única por UNIQUE)
+        // Asignación individual (única por UNIQUE si existe)
         $ins = $conn->prepare("INSERT INTO Asignaciones (Id_profesional, Id_estudiante) VALUES (?, ?)");
         try {
           $ins->execute([$idProfesional, $idEstudiante]);
@@ -180,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['accion'] ?? '') === 'crear
           ]);
         } catch (PDOException $e) {
           $code = (int)($e->errorInfo[1] ?? 0);
-          if ($code !== 2627) { throw $e; } // 2627 = UNIQUE
+          if ($code !== 2627) { throw $e; } // 2627 = UNIQUE en SQL Server
         }
         $conn->commit();
         $flash = ['tipo' => 'ok', 'msg' => 'Asignación creada (estudiante).'];
@@ -281,7 +213,6 @@ if ($filtroTipo === 'ESTUDIANTE') {
   $where .= " AND a.Id_curso IS NOT NULL ";
 }
 
-// Alcance por escuela si DIRECTOR
 if ($escuelaDirectorId) {
   $where .= " AND (
     p.Id_escuela_prof = ?
@@ -296,22 +227,18 @@ if ($escuelaDirectorId) {
   $params[] = $escuelaDirectorId;
 }
 
-// Seleccionamos columnas crudas y armamos nombres en PHP (evita errores por nombres)
 $sqlListado = "
   SELECT
     a.Id_asignacion, a.Fecha_asignacion,
     a.Id_estudiante, a.Id_curso,
 
-    p.Id_profesional,
     p.Nombre_profesional    AS pNombre,
     p.Apellido_profesional  AS pApellido,
     eprof.Nombre_escuela    AS escuela_prof,
 
-    se.Id_estudiante        AS eId,
     se.Nombre_estudiante    AS eNombre,
     se.Apellido_estudiante  AS eApellido,
 
-    c.Id_curso              AS cId,
     c.Tipo_curso, c.Grado_curso, c.seccion_curso,
 
     sc.Nombre_escuela       AS escuela_destino
@@ -334,14 +261,10 @@ try {
   $asignaciones = $st->fetchAll(PDO::FETCH_ASSOC);
 } catch (PDOException $e) {
   $code = (int)($e->errorInfo[1] ?? 0);
-  if ($code === 208) { // Invalid object name (tabla no existe)
-    $errListado = 'La tabla "Asignaciones" no existe. Ejecuta el script de creación en Azure SQL.';
-  } else {
-    $errListado = 'No se pudo cargar el listado: ' . htmlspecialchars($e->getMessage());
-  }
+  if ($code === 208) { $errListado = 'La tabla "Asignaciones" no existe.'; }
+  else { $errListado = 'No se pudo cargar el listado: ' . htmlspecialchars($e->getMessage()); }
 }
 
-// Helpers de presentación
 function nombreProf(array $r): string {
   return trim(($r['pNombre'] ?? '').' '.($r['pApellido'] ?? ''));
 }
@@ -349,11 +272,9 @@ function nombreEst(array $r): string {
   return trim(($r['eNombre'] ?? '').' '.($r['eApellido'] ?? ''));
 }
 function textoCurso(array $r): string {
-  $sec = isset($r['seccion_curso']) && $r['seccion_curso'] !== null && $r['seccion_curso'] !== ''
-    ? ' - '.$r['seccion_curso'] : '';
+  $sec = isset($r['seccion_curso']) && $r['seccion_curso'] !== null && $r['seccion_curso'] !== '' ? ' - '.$r['seccion_curso'] : '';
   return trim(($r['Tipo_curso'] ?? '').' '.($r['Grado_curso'] ?? '').$sec);
 }
-
 ?>
 <div class="content">
   <h2>Asignaciones</h2>
@@ -370,23 +291,19 @@ function textoCurso(array $r): string {
 
   <div class="card p-3 mb-3">
     <h3 class="mb-2">Nueva asignación</h3>
-    <form method="post" class="form-grid">
+    <form method="post" class="form-grid" id="form-asignacion" onsubmit="return validarAsignacion()">
       <?= csrf_field() ?>
       <input type="hidden" name="accion" value="crear">
 
+      <!-- PROFESIONAL destino (buscador) -->
       <div>
         <label>Profesional destino</label>
-        <select name="Id_profesional" required>
-          <option value="">-- Selecciona --</option>
-          <?php foreach ($profesionales as $p): ?>
-            <?php $nombre = trim(($p['Nombre_profesional'] ?? '').' '.($p['Apellido_profesional'] ?? '')); ?>
-            <option value="<?= (int)$p['Id_profesional'] ?>">
-              <?= htmlspecialchars($nombre) ?> (<?= htmlspecialchars($p['escuela'] ?? 's/escuela') ?>)
-            </option>
-          <?php endforeach; ?>
-        </select>
+        <input type="text" id="busca-prof" class="form-control" placeholder="Nombre o RUT..." autocomplete="off">
+        <input type="hidden" name="Id_profesional" id="Id_profesional" required>
+        <div class="typeahead" id="lista-prof"></div>
       </div>
 
+      <!-- Tipo -->
       <div>
         <label>Tipo de asignación</label>
         <select name="tipo" id="tipo" required
@@ -400,30 +317,20 @@ function textoCurso(array $r): string {
         </select>
       </div>
 
+      <!-- ESTUDIANTE (buscador) -->
       <div id="blk-est">
         <label>Estudiante</label>
-        <select name="Id_estudiante">
-          <option value="">-- Selecciona --</option>
-          <?php foreach ($estudiantes as $s): ?>
-            <?php $n = trim(($s['Nombre_estudiante'] ?? '').' '.($s['Apellido_estudiante'] ?? '')); ?>
-            <option value="<?= (int)$s['Id_estudiante'] ?>">
-              <?= htmlspecialchars($n) ?> (<?= htmlspecialchars($s['escuela'] ?? 's/escuela') ?>)
-            </option>
-          <?php endforeach; ?>
-        </select>
+        <input type="text" id="busca-est" class="form-control" placeholder="Nombre o RUT..." autocomplete="off">
+        <input type="hidden" name="Id_estudiante" id="Id_estudiante">
+        <div class="typeahead" id="lista-est"></div>
       </div>
 
+      <!-- CURSO (buscador) -->
       <div id="blk-curso" style="display:none">
         <label>Curso</label>
-        <select name="Id_curso">
-          <option value="">-- Selecciona --</option>
-          <?php foreach ($cursos as $c): ?>
-            <?php $tc = trim(($c['Tipo_curso'] ?? '').' '.($c['Grado_curso'] ?? '').(($c['seccion_curso'] ?? '') ? ' - '.$c['seccion_curso'] : '')); ?>
-            <option value="<?= (int)$c['Id_curso'] ?>">
-              <?= htmlspecialchars($tc) ?> (<?= htmlspecialchars($c['escuela'] ?? 's/escuela') ?>)
-            </option>
-          <?php endforeach; ?>
-        </select>
+        <input type="text" id="busca-curso" class="form-control" placeholder="Tipo, grado o sección..." autocomplete="off">
+        <input type="hidden" name="Id_curso" id="Id_curso">
+        <div class="typeahead" id="lista-curso"></div>
       </div>
 
       <div style="align-self:end">
@@ -463,11 +370,10 @@ function textoCurso(array $r): string {
               $esEst = !empty($a['Id_estudiante']);
               $tipo  = $esEst ? 'ESTUDIANTE' : 'CURSO';
               $dest  = $esEst ? nombreEst($a) : textoCurso($a);
-              $profN = nombreProf($a);
             ?>
             <tr>
               <td><?= (int)$a['Id_asignacion'] ?></td>
-              <td><?= htmlspecialchars($profN) ?></td>
+              <td><?= htmlspecialchars(nombreProf($a)) ?></td>
               <td><?= htmlspecialchars($a['escuela_prof'] ?? '') ?></td>
               <td><span class="badge"><?= htmlspecialchars($tipo) ?></span></td>
               <td><?= htmlspecialchars($dest ?? '') ?></td>
@@ -491,3 +397,95 @@ function textoCurso(array $r): string {
     </div>
   </div>
 </div>
+
+<style>
+/* Typeahead simple */
+.typeahead { position: relative; }
+.typeahead ul {
+  position: absolute; z-index: 10; left: 0; right: 0;
+  margin: 2px 0 0; padding: 0; list-style: none;
+  background: #fff; border: 1px solid #ddd; border-radius: 6px; max-height: 260px; overflow:auto;
+}
+.typeahead li { padding: 8px 10px; cursor: pointer; }
+.typeahead li:hover, .typeahead li.active { background: #ecebfd; }
+.dark-mode .typeahead ul { background:#1f1b2e; border-color:#2f2a4a; }
+.dark-mode .typeahead li:hover, .dark-mode .typeahead li.active { background:#2f2a4a; }
+</style>
+
+<script>
+function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; }
+
+function setupSearcher({inputId, hiddenId, listId, url, formatItem}) {
+  const $inp = document.getElementById(inputId);
+  const $hid = document.getElementById(hiddenId);
+  const $box = document.getElementById(listId);
+
+  const render = (items) => {
+    if (!items || !items.length) { $box.innerHTML=''; return; }
+    const ul = document.createElement('ul');
+    items.forEach((it)=>{
+      const li = document.createElement('li');
+      li.innerHTML = formatItem(it);
+      li.addEventListener('click', ()=>{
+        $inp.value = it.text;
+        $hid.value = it.id;
+        $box.innerHTML = '';
+      });
+      ul.appendChild(li);
+    });
+    $box.innerHTML = '';
+    $box.appendChild(ul);
+  };
+
+  const search = debounce(async ()=>{
+    const q = $inp.value.trim();
+    $hid.value = ''; // limpiar selección si cambia texto
+    if (q.length < 2) { $box.innerHTML=''; return; }
+    try {
+      const res = await fetch(url + encodeURIComponent(q), { credentials:'same-origin' });
+      const data = await res.json();
+      render(data.results || []);
+    } catch (e) {
+      console.error(e);
+    }
+  }, 250);
+
+  $inp.addEventListener('input', search);
+  $inp.addEventListener('blur', ()=> setTimeout(()=> $box.innerHTML='', 150));
+}
+
+function validarAsignacion() {
+  const tipo = document.getElementById('tipo').value;
+  const idProf = document.getElementById('Id_profesional').value;
+  if (!idProf) { alert('Selecciona un profesional.'); return false; }
+  if (tipo === 'ESTUDIANTE') {
+    if (!document.getElementById('Id_estudiante').value) { alert('Selecciona un estudiante.'); return false; }
+  } else {
+    if (!document.getElementById('Id_curso').value) { alert('Selecciona un curso.'); return false; }
+  }
+  return true;
+}
+
+// Endpoints AJAX PROPIOS para no romper otras páginas:
+setupSearcher({
+  inputId:'busca-prof',
+  hiddenId:'Id_profesional',
+  listId:'lista-prof',
+  url:'ajax/asig_buscar_profesionales.php?q=',
+  formatItem:(it)=> `<strong>${it.text}</strong><br><small>${it.meta||''}</small>`
+});
+setupSearcher({
+  inputId:'busca-est',
+  hiddenId:'Id_estudiante',
+  listId:'lista-est',
+  url:'ajax/asig_buscar_estudiantes.php?q=',
+  formatItem:(it)=> `<strong>${it.text}</strong><br><small>${it.meta||''}</small>`
+});
+setupSearcher({
+  inputId:'busca-curso',
+  hiddenId:'Id_curso',
+  listId:'lista-curso',
+  url:'ajax/asig_buscar_cursos.php?q=',
+  formatItem:(it)=> `<strong>${it.text}</strong><br><small>${it.meta||''}</small>`
+});
+</script>
