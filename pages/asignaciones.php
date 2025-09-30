@@ -6,13 +6,13 @@ declare(strict_types=1);
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 if (empty($_SESSION['usuario'])) { header('Location: ../login.php'); exit; }
 
-// --- Includes de tu proyecto ---
+// --- Includes del proyecto ---
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/roles.php';
 require_once __DIR__ . '/../includes/auditoria.php';
 
 // -----------------------------
-// CSRF local (tu práctica)
+// CSRF local (como en tu proyecto)
 // -----------------------------
 if (empty($_SESSION['csrf_token'])) {
   $_SESSION['csrf_token'] = bin2hex(random_bytes(32));
@@ -74,6 +74,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['accion'] ?? '') === 'crear
 
   if ($idProfesional <= 0 || !in_array($tipo, ['ESTUDIANTE','CURSO'], true)) {
     $flash = ['tipo' => 'error', 'msg' => 'Completa profesional y tipo de asignación.'];
+  } elseif ($tipo === 'ESTUDIANTE' && !$idEstudiante) {
+    $flash = ['tipo' => 'error', 'msg' => 'Debes seleccionar un estudiante.'];
+  } elseif ($tipo === 'CURSO' && !$idCurso) {
+    $flash = ['tipo' => 'error', 'msg' => 'Debes seleccionar un curso.'];
   } else {
     try {
       // Validación de alcance para DIRECTOR
@@ -213,6 +217,7 @@ if ($filtroTipo === 'ESTUDIANTE') {
   $where .= " AND a.Id_curso IS NOT NULL ";
 }
 
+// Alcance por escuela si DIRECTOR
 if ($escuelaDirectorId) {
   $where .= " AND (
     p.Id_escuela_prof = ?
@@ -227,6 +232,7 @@ if ($escuelaDirectorId) {
   $params[] = $escuelaDirectorId;
 }
 
+// Consulta
 $sqlListado = "
   SELECT
     a.Id_asignacion, a.Fecha_asignacion,
@@ -295,7 +301,7 @@ function textoCurso(array $r): string {
       <?= csrf_field() ?>
       <input type="hidden" name="accion" value="crear">
 
-      <!-- PROFESIONAL destino (buscador) -->
+      <!-- PROFESIONAL destino (buscador por nombre o RUT) -->
       <div>
         <label>Profesional destino</label>
         <input type="text" id="busca-prof" class="form-control" placeholder="Nombre o RUT..." autocomplete="off">
@@ -317,7 +323,7 @@ function textoCurso(array $r): string {
         </select>
       </div>
 
-      <!-- ESTUDIANTE (buscador) -->
+      <!-- ESTUDIANTE (buscador por nombre o RUT) -->
       <div id="blk-est">
         <label>Estudiante</label>
         <input type="text" id="busca-est" class="form-control" placeholder="Nombre o RUT..." autocomplete="off">
@@ -325,7 +331,7 @@ function textoCurso(array $r): string {
         <div class="typeahead" id="lista-est"></div>
       </div>
 
-      <!-- CURSO (buscador) -->
+      <!-- CURSO (buscador por tipo/grado/sección) -->
       <div id="blk-curso" style="display:none">
         <label>Curso</label>
         <input type="text" id="busca-curso" class="form-control" placeholder="Tipo, grado o sección..." autocomplete="off">
@@ -399,7 +405,7 @@ function textoCurso(array $r): string {
 </div>
 
 <style>
-/* Typeahead simple */
+/* Typeahead simple (igual estilo que usas) */
 .typeahead { position: relative; }
 .typeahead ul {
   position: absolute; z-index: 10; left: 0; right: 0;
@@ -415,7 +421,7 @@ function textoCurso(array $r): string {
 <script>
 function debounce(fn, ms){ let t; return (...a)=>{ clearTimeout(t); t=setTimeout(()=>fn(...a),ms); }; }
 
-function setupSearcher({inputId, hiddenId, listId, url, formatItem}) {
+function setupSearcher({inputId, hiddenId, listId, url, toView}) {
   const $inp = document.getElementById(inputId);
   const $hid = document.getElementById(hiddenId);
   const $box = document.getElementById(listId);
@@ -425,26 +431,32 @@ function setupSearcher({inputId, hiddenId, listId, url, formatItem}) {
     const ul = document.createElement('ul');
     items.forEach((it)=>{
       const li = document.createElement('li');
-      li.innerHTML = formatItem(it);
-      li.addEventListener('click', ()=>{
-        $inp.value = it.text;
+      li.innerHTML = toView(it); // it = {id, rut, nombre, apellido, ...}
+      li.onclick = ()=>{
+        // Setea texto visible e id oculto
+        if (it.nombre || it.apellido) {
+          $inp.value = (it.nombre||'') + ' ' + (it.apellido||'');
+        } else if (it.Tipo_curso) {
+          $inp.value = (it.Tipo_curso||'') + ' ' + (it.Grado_curso||'') + (it.seccion_curso?(' - '+it.seccion_curso):'');
+        } else {
+          $inp.value = it.id;
+        }
         $hid.value = it.id;
         $box.innerHTML = '';
-      });
+      };
       ul.appendChild(li);
     });
-    $box.innerHTML = '';
-    $box.appendChild(ul);
+    $box.innerHTML = ''; $box.appendChild(ul);
   };
 
   const search = debounce(async ()=>{
     const q = $inp.value.trim();
-    $hid.value = ''; // limpiar selección si cambia texto
-    if (q.length < 2) { $box.innerHTML=''; return; }
+    $hid.value = '';
+    if (q.length < 3) { $box.innerHTML=''; return; }
     try {
-      const res = await fetch(url + encodeURIComponent(q), { credentials:'same-origin' });
-      const data = await res.json();
-      render(data.results || []);
+      const res  = await fetch(url + encodeURIComponent(q), {credentials:'same-origin'});
+      const data = await res.json(); // ARRAY plano (igual que Documentos)
+      render(Array.isArray(data) ? data : []);
     } catch (e) {
       console.error(e);
     }
@@ -453,6 +465,23 @@ function setupSearcher({inputId, hiddenId, listId, url, formatItem}) {
   $inp.addEventListener('input', search);
   $inp.addEventListener('blur', ()=> setTimeout(()=> $box.innerHTML='', 150));
 }
+
+// Endpoints AJAX PROPIOS para no interferir con Documentos:
+setupSearcher({
+  inputId:'busca-prof', hiddenId:'Id_profesional', listId:'lista-prof',
+  url:'ajax/asig_buscar_profesionales.php?q=',
+  toView:(r)=> `<strong>${(r.nombre||'')} ${(r.apellido||'')}</strong><br><small>${(r.rut||'')} · ${(r.Nombre_escuela||'')}</small>`
+});
+setupSearcher({
+  inputId:'busca-est', hiddenId:'Id_estudiante', listId:'lista-est',
+  url:'ajax/asig_buscar_estudiantes.php?q=',
+  toView:(r)=> `<strong>${(r.nombre||'')} ${(r.apellido||'')}</strong><br><small>${(r.rut||'')} · ${(r.Nombre_escuela||'')}</small>`
+});
+setupSearcher({
+  inputId:'busca-curso', hiddenId:'Id_curso', listId:'lista-curso',
+  url:'ajax/asig_buscar_cursos.php?q=',
+  toView:(r)=> `<strong>${(r.Tipo_curso||'')} ${(r.Grado_curso||'')}${r.seccion_curso?(' - '+r.seccion_curso):''}</strong><br><small>${(r.Nombre_escuela||'')}</small>`
+});
 
 function validarAsignacion() {
   const tipo = document.getElementById('tipo').value;
@@ -465,27 +494,4 @@ function validarAsignacion() {
   }
   return true;
 }
-
-// Endpoints AJAX PROPIOS para no romper otras páginas:
-setupSearcher({
-  inputId:'busca-prof',
-  hiddenId:'Id_profesional',
-  listId:'lista-prof',
-  url:'ajax/asig_profesionales.php?q=',
-  formatItem:(it)=> `<strong>${it.text}</strong><br><small>${it.meta||''}</small>`
-});
-setupSearcher({
-  inputId:'busca-est',
-  hiddenId:'Id_estudiante',
-  listId:'lista-est',
-  url:'ajax/asig_estudiantes.php?q=',
-  formatItem:(it)=> `<strong>${it.text}</strong><br><small>${it.meta||''}</small>`
-});
-setupSearcher({
-  inputId:'busca-curso',
-  hiddenId:'Id_curso',
-  listId:'lista-curso',
-  url:'ajax/asig_cursos.php?q=',
-  formatItem:(it)=> `<strong>${it.text}</strong><br><small>${it.meta||''}</small>`
-});
 </script>
