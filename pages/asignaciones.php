@@ -471,21 +471,21 @@ setupSearcher({
   inputId:'busca-prof',
   hiddenId:'Id_profesional',
   listId:'lista-prof',
-  url:'ajax/asig_buscar_profesionales.php?q=',
+  url:'ajax/asig_profesionales.php?q=',
   formatItem:(it)=> `<strong>${it.text}</strong><br><small>${it.meta||''}</small>`
 });
 setupSearcher({
   inputId:'busca-est',
   hiddenId:'Id_estudiante',
   listId:'lista-est',
-  url:'ajax/asig_buscar_estudiantes.php?q=',
+  url:'ajax/asig_estudiantes.php?q=',
   formatItem:(it)=> `<strong>${it.text}</strong><br><small>${it.meta||''}</small>`
 });
 setupSearcher({
   inputId:'busca-curso',
   hiddenId:'Id_curso',
   listId:'lista-curso',
-  url:'ajax/asig_buscar_cursos.php?q=',
+  url:'ajax/asig_cursos.php?q=',
   formatItem:(it)=> `<strong>${it.text}</strong><br><small>${it.meta||''}</small>`
 });
 </script>
