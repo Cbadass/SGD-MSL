@@ -32,12 +32,11 @@ function rolDesdeCargo(string $cargo): string {
   return 'PROFESIONAL';
 }
 
-/** NUEVO: Genera username base a partir del correo, eliminando el carácter '@' */
+/** Username base desde correo: SOLO la parte antes del @ */
 function generarUsuarioBaseDesdeCorreo(string $correo): string {
-  // ejemplo: "ana.perez@colegio.cl" -> "ana.perezcolegio.cl"
   $correo = trim($correo);
-  $correo = str_replace('@', '', $correo);
-  return norm_slug($correo);
+  $local = preg_split('/@/', $correo, 2)[0] ?? '';
+  return norm_slug($local);
 }
 
 /** Asegura unicidad en usuarios.Nombre_usuario agregando sufijo numérico si hace falta */
@@ -49,7 +48,7 @@ function generarUsuarioUnico(PDO $conn, string $base): string {
     $stmt->execute([$user]);
     if (!$stmt->fetchColumn()) return $user;
     $i++;
-    $user = $base . $i; // ej: ana.perezcolegio.cl2, ...3, ...
+    $user = $base . $i; // ana.perez2, ana.perez3, ...
   }
 }
 
@@ -92,7 +91,7 @@ if ($rolActual === 'ADMIN') {
 $err = null; $ok = null;
 
 // =========================
-/* POST: crear profesional + usuario */
+// POST: crear profesional + usuario
 // =========================
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   try {
@@ -113,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       throw new RuntimeException('Completa todos los campos obligatorios (*).');
     }
 
-    // ===== Adicionales (“rojos”) =====
+    // ===== Adicionales (los “rojos”) =====
     $nacimiento  = $_POST['Nacimiento_profesional']     ?? null; // date
     $domicilio   = trim($_POST['Domicilio_profesional'] ?? '') ?: null;
     $celular     = trim($_POST['Celular_profesional']   ?? '') ?: null;
@@ -131,7 +130,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       throw new RuntimeException('Ya existe un profesional con ese correo.');
     }
 
-    // ===== Username desde correo (sin @) y único =====
+    // ===== Username desde correo (solo parte antes de @) y único =====
     $baseUser = generarUsuarioBaseDesdeCorreo($correo);
     if ($baseUser === '' || $baseUser === '.') {
       throw new RuntimeException('No fue posible construir el usuario desde el correo.');
@@ -213,7 +212,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <div class="form-grid">
       <div class="form-group">
         <label>Usuario (se genera automáticamente desde el correo)</label>
-        <input type="text" value="Se generará desde el correo (sin @)" disabled>
+        <input type="text" value="Se generará con la parte antes del @ del correo" disabled>
       </div>
       <div class="form-group">
         <label>Contraseña inicial</label>
