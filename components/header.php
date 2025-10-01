@@ -51,9 +51,7 @@ $usuario = $_SESSION['usuario'] ?? null;
     if (!confirm(msg)) e.preventDefault();
   }, true);
 })();
-</script>
 
-<script>
 document.addEventListener('click', function(e){
   const el = e.target.closest('[data-action="logout"], .btn-logout');
   if (!el) return;
@@ -64,3 +62,4 @@ document.addEventListener('click', function(e){
   window.location.href = 'logout.php';
 });
 </script>
+
