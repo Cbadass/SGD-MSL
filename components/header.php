@@ -52,3 +52,15 @@ $usuario = $_SESSION['usuario'] ?? null;
   }, true);
 })();
 </script>
+
+<script>
+document.addEventListener('click', function(e){
+  const el = e.target.closest('[data-action="logout"], .btn-logout');
+  if (!el) return;
+  // si es <a>, dejamos que navegue; si no, redirigimos
+  if (el.tagName !== 'A') e.preventDefault();
+  const ok = confirm('¿Cerrar sesión?');
+  if (!ok) return;
+  window.location.href = 'logout.php';
+});
+</script>
