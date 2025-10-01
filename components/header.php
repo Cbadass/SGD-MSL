@@ -12,9 +12,11 @@ $usuario = $_SESSION['usuario'] ?? null;
         (<?= htmlspecialchars($usuario['permisos'] ?? '') ?>)
       </span>
       <button id="modoToggle" class="btn btn-sm btn-light toggle-darkmode mr-1">🌙</button>
-      <button class="btn btn-sm btn-outline-light">
-        <a class="link-text" href="logout.php">Cerrar sesión</a>
-      </button>
+
+      <!-- Corrección mínima: usar un <a> con estilo de botón (no <a> dentro de <button>) -->
+      <a href="logout.php" class="btn btn-sm btn-outline-light btn-logout link-text" data-action="logout">
+        Cerrar sesión
+      </a>
     <?php else: ?>
       <a class="btn btn-sm btn-primary" href="login.php">Iniciar sesión</a>
     <?php endif; ?>
@@ -52,14 +54,18 @@ $usuario = $_SESSION['usuario'] ?? null;
   }, true);
 })();
 
+// Handler de logout (respeta tu estructura y añade confirmación)
 document.addEventListener('click', function(e){
   const el = e.target.closest('[data-action="logout"], .btn-logout');
   if (!el) return;
   // si es <a>, dejamos que navegue; si no, redirigimos
   if (el.tagName !== 'A') e.preventDefault();
   const ok = confirm('¿Cerrar sesión?');
-  if (!ok) return;
+  if (!ok) {
+    e.preventDefault();
+    return;
+  }
+  // Navegación hacia logout.php (el href ya lo hace; esto asegura compatibilidad si es botón sin href)
   window.location.href = 'logout.php';
 });
 </script>
-

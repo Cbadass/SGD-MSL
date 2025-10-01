@@ -23,7 +23,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   } else {
     $stmt = $conn->prepare("SELECT * FROM usuarios WHERE Nombre_usuario = :nombre AND Estado_usuario = 1");
     $stmt->execute([':nombre' => $nombreUsuario]);
-    $usuario = $stmt->fetch();
+    $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if ($usuario && password_verify($contrasena, $usuario['Contraseña'])) {
       $rol = strtoupper((string)$usuario['Permisos']);
@@ -75,10 +75,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <?php if ($error): ?>
           <div class="error-msg"><?= htmlspecialchars($error) ?></div>
         <?php endif; ?>
-        <form method="POST">
+        <form method="POST" autocomplete="off">
           <div class="mb-3">
             <label for="nombre_usuario" class="form-label">Nombre de usuario</label>
-            <input type="text" name="nombre_usuario" id="nombre_usuario" class="form-control" required>
+            <input type="text" name="nombre_usuario" id="nombre_usuario" class="form-control" required autofocus>
           </div>
           <div class="mb-3">
             <label for="contrasena" class="form-label">Contraseña</label>
