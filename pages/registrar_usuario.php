@@ -8,17 +8,14 @@ if (!isset($_SESSION['usuario'])) { header("Location: ../login.php"); exit; }
 $rolActual = strtoupper($_SESSION['usuario']['permisos'] ?? 'GUEST');
 if (!in_array($rolActual, ['ADMIN','DIRECTOR'], true)) { http_response_code(403); exit('No autorizado'); }
 
-// =========================
-// Utilidades
-// =========================
+/** ========================
+ *  Utilidades
+ *  ====================== */
 
 /** Normaliza: minúsculas, sin acentos/espacios/ñ; permite [a-z0-9 .] */
 function norm_slug($s) {
   $s = mb_strtolower(trim($s), 'UTF-8');
-  $map = [
-    'á'=>'a','é'=>'e','í'=>'i','ó'=>'o','ú'=>'u','ü'=>'u','ñ'=>'n',
-    'Á'=>'a','É'=>'e','Í'=>'i','Ó'=>'o','Ú'=>'u','Ü'=>'u','Ñ'=>'n'
-  ];
+  $map = ['á'=>'a','é'=>'e','í'=>'i','ó'=>'o','ú'=>'u','ü'=>'u','ñ'=>'n','Á'=>'a','É'=>'e','Í'=>'i','Ó'=>'o','Ú'=>'u','Ü'=>'u','Ñ'=>'n'];
   $s = strtr($s, $map);
   $s = preg_replace('/[^a-z0-9\.]/u', '', $s);
   return $s;
@@ -65,12 +62,21 @@ function escuelaDeUsuario(PDO $conn, int $idUsuario): ?int {
   return $id ? (int)$id : null;
 }
 
-// =========================
-// Catálogos
-// =========================
+/** ========================
+ *  Catálogos
+ *  ====================== */
 $cargos = $conn->query("SELECT Nombre FROM cargos WHERE Activo=1 ORDER BY Nombre")->fetchAll(PDO::FETCH_COLUMN);
 $afps   = $conn->query("SELECT Nombre FROM afps   WHERE Activo=1 ORDER BY Nombre")->fetchAll(PDO::FETCH_COLUMN);
 $bancos = $conn->query("SELECT Nombre FROM bancos WHERE Activo=1 ORDER BY Nombre")->fetchAll(PDO::FETCH_COLUMN);
+
+// Tipos de profesional PERMITIDOS (solo estos 5)
+$tiposPermitidos = [
+  'Administradora',
+  'Directora',
+  'Profesor',
+  'Asistentes de la educación Especialistas',
+  'Otro',
+];
 
 // Escuelas: ADMIN todas; DIRECTOR solo la suya
 $escuelas = [];
@@ -90,9 +96,9 @@ if ($rolActual === 'ADMIN') {
 
 $err = null; $ok = null;
 
-// =========================
-// POST: crear profesional + usuario (SIEMPRE contraseña temporal)
-// =========================
+/** ========================
+ *  POST: crear profesional + usuario (SIEMPRE contraseña temporal)
+ *  ====================== */
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   try {
     // ===== Obligatorios (según BD) =====
@@ -110,6 +116,11 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     if ($nombres===''||$apellidos===''||$rut===''||$correo===''||$cargo===''||$tipoProf===''||$banco===''||$afpSel===''||$escuelaId<=0) {
       throw new RuntimeException('Completa todos los campos obligatorios (*).');
+    }
+
+    // Validar tipo_profesional contra la lista de permitidos
+    if (!in_array($tipoProf, $tiposPermitidos, true)) {
+      throw new RuntimeException('Tipo de profesional inválido.');
     }
 
     // ===== Adicionales =====
@@ -166,7 +177,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     registrarAuditoria($conn, (int)$idUsuarioSesion, 'profesionales', $idProf, 'INSERT', null, [
       'Nombre_profesional'=>$nombres, 'Apellido_profesional'=>$apellidos, 'Rut_profesional'=>$rut,
-      'Correo_profesional'=>$correo, 'Cargo_profesional'=>$cargo, 'Id_escuela_prof'=>$escuelaId
+      'Correo_profesional'=>$correo, 'Cargo_profesional'=>$cargo, 'Id_escuela_prof'=>$escuelaId,
+      'Tipo_profesional'=>$tipoProf
     ]);
 
     // Insert usuario (Estado 1=activo)
@@ -188,7 +200,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     $conn->commit();
 
-    // ===== Mensaje de credenciales mejorado + botón copiar =====
+    // ===== Mensaje de credenciales + botón copiar =====
     $u = htmlspecialchars($usuarioLogin, ENT_QUOTES, 'UTF-8');
     $p = htmlspecialchars($tempPwd, ENT_QUOTES, 'UTF-8');
     $r = htmlspecialchars($permiso, ENT_QUOTES, 'UTF-8');
@@ -204,25 +216,17 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <button type="button" class="btn btn-sm" id="copyCredsBtn"
         data-user="'.$u.'" data-pass="'.$p.'"
         style="margin-top:8px;">Copiar credenciales</button>
-      <small style="display:block;margin-top:6px;opacity:.8;">Pídele al usuario que cambie su contraseña en el primer inicio de sesión.</small>
+      <small style="display:block;margin-top:6px;opacity:.8;">Solicita el cambio de contraseña en el primer inicio de sesión.</small>
     </div>';
   } catch (Throwable $e) {
     if ($conn->inTransaction()) $conn->rollBack();
     $err = 'Error al registrar: ' . htmlspecialchars($e->getMessage());
   }
 }
-
-// =========================
-// Vista
-// =========================
 ?>
 <h2>Registrar Profesional (Usuario)</h2>
-<?php if ($ok): ?>
-  <div><?= $ok ?></div>
-<?php endif; ?>
-<?php if ($err): ?>
-  <div class="alert alert-danger"><?= $err ?></div>
-<?php endif; ?>
+<?php if ($ok): ?><div><?= $ok ?></div><?php endif; ?>
+<?php if ($err): ?><div class="alert alert-danger"><?= $err ?></div><?php endif; ?>
 
 <form method="post" data-requires-confirm autocomplete="off">
   <!-- ================= CUENTA ================= -->
@@ -233,7 +237,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         <label>Usuario</label>
         <input type="text" value="Se genera desde el correo (parte antes de @)" disabled>
       </div>
-      <!-- Contraseña removida del form: siempre se genera temporal -->
+      <!-- Contraseña: siempre temporal (no se pide) -->
     </div>
   </fieldset>
 
@@ -299,7 +303,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
       <div class="form-group">
         <label>Tipo de profesional <span class="text-danger">*</span></label>
-        <input type="text" name="Tipo_profesional" required>
+        <select name="Tipo_profesional" required>
+          <option value="">-- Selecciona --</option>
+          <?php foreach ($tiposPermitidos as $t): ?>
+            <option value="<?= htmlspecialchars($t) ?>"><?= htmlspecialchars($t) ?></option>
+          <?php endforeach; ?>
+        </select>
       </div>
 
       <div class="form-group">
