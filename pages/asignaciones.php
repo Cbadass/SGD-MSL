@@ -80,8 +80,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['accion'] ?? '') === 'crear
     $flash = ['tipo' => 'error', 'msg' => 'Debes seleccionar un curso.'];
   } else {
     try {
-      // Validación de alcance para DIRECTOR
-      if ($escuelaDirectorId) {
+      // Validación de alcance SOLO para DIRECTOR
+      if ($rolActual === 'DIRECTOR' && $escuelaDirectorId) {
         // Profesional destino
         $q = $conn->prepare("SELECT COUNT(1) FROM profesionales WHERE Id_profesional = ? AND Id_escuela_prof = ?");
         $q->execute([$idProfesional, $escuelaDirectorId]);
@@ -171,8 +171,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && ($_POST['accion'] ?? '') === 'elimi
 
   if ($idAsignacion > 0) {
     try {
-      // Validación alcance DIRECTOR
-      if ($escuelaDirectorId) {
+      // Validación alcance SOLO para DIRECTOR
+      if ($rolActual === 'DIRECTOR' && $escuelaDirectorId) {
         $st = $conn->prepare("
           SELECT TOP 1 a.Id_asignacion
           FROM Asignaciones a
@@ -217,8 +217,8 @@ if ($filtroTipo === 'ESTUDIANTE') {
   $where .= " AND a.Id_curso IS NOT NULL ";
 }
 
-// Alcance por escuela si DIRECTOR
-if ($escuelaDirectorId) {
+// Alcance por escuela SOLO si es DIRECTOR
+if ($rolActual === 'DIRECTOR' && $escuelaDirectorId) {
   $where .= " AND (
     p.Id_escuela_prof = ?
     OR EXISTS (
@@ -268,7 +268,7 @@ try {
 } catch (PDOException $e) {
   $code = (int)($e->errorInfo[1] ?? 0);
   if ($code === 208) { $errListado = 'La tabla "Asignaciones" no existe.'; }
-  else { $errListado = 'No se pudo cargar el listado: ' . htmlspecialchars($e->getMessage()); }
+  else { $errListado = 'No se pudo cargar el listado: ' . htmlspecialchars($e->getMessage());}
 }
 
 function nombreProf(array $r): string {
@@ -466,7 +466,7 @@ function setupSearcher({inputId, hiddenId, listId, url, toView}) {
   $inp.addEventListener('blur', ()=> setTimeout(()=> $box.innerHTML='', 150));
 }
 
-// Endpoints AJAX PROPIOS para no interferir con Documentos:
+// Endpoints AJAX PROPIOS para no interferir con otras páginas:
 setupSearcher({
   inputId:'busca-prof', hiddenId:'Id_profesional', listId:'lista-prof',
   url:'ajax/asig_buscar_profesionales.php?q=',
