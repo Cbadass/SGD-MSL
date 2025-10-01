@@ -19,6 +19,9 @@ $ALLOWED = [
   'asignaciones',
   'actividad',
   'administrar_contraseña',
+
+  // ======== AGREGADOS (Catálogos) ========
+  'tipos_documento','cargos','afps','bancos',
 ];
 
 // --- Mapa secciones -> roles permitidos (403 si no coincide)
@@ -48,6 +51,12 @@ $SECTION_ROLES = [
   'asignaciones'             => ['ADMIN','DIRECTOR'],
   'actividad'                => ['ADMIN','DIRECTOR'],
   'administrar_contraseña'   => ['ADMIN','DIRECTOR','PROFESIONAL'],
+
+  // ======== AGREGADOS (Catálogos) ========
+  'tipos_documento'          => ['ADMIN','DIRECTOR'],
+  'cargos'                   => ['ADMIN','DIRECTOR'],
+  'afps'                     => ['ADMIN','DIRECTOR'],
+  'bancos'                   => ['ADMIN','DIRECTOR'],
 ];
 
 // --- Resolver sección (default por rol)
