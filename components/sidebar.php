@@ -54,6 +54,22 @@ $canSeeCatalogos    = $showAdmin || $showDirector;
 ?>
 <aside class="sidebar">
   <nav class="sidebar-nav">
+    <style>
+      .sidebar details { margin: 8px 0; }
+      .sidebar summary {
+        list-style: none; cursor: pointer; padding: 10px 16px; margin: 0 12px 6px 12px;
+        border-radius: 10px; background: #fff; color: #333; font-weight: 600;
+        user-select: none; outline: none; border-left: 5px solid #6e62f4;
+      }
+      .dark-mode .sidebar summary { background: #1f1b2e; color:#e7e5ff; border-left-color:#8b80ff; }
+      .sidebar summary::-webkit-details-marker { display: none; }
+      .sidebar details[open] > summary { background:#b2b0eb; }
+      .dark-mode .sidebar details[open] > summary { background:#2f2a4a; }
+      .sidebar .group-links { padding: 0 0 8px 0; }
+      .sidebar .group-links a { display:block; margin: 2px 12px; }
+      .sidebar .group-links a.active { font-weight:700; text-decoration:underline; }
+      .sidebar h3 { display:none; }
+    </style>
     <!-- PERFIL -->
     <details<?= details_open($grupoPerfil, $seccion) ?>>
       <summary>Mi Perfil</summary>
