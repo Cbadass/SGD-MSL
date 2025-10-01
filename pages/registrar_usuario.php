@@ -27,8 +27,8 @@ function norm_slug($s) {
 /** Deriva rol desde cargo */
 function rolDesdeCargo(string $cargo): string {
   $c = mb_strtolower(trim($cargo));
-  if ($c === 'administradora' || $c === 'administrador') return 'ADMIN';
-  if ($c === 'directora' || $c === 'director') return 'DIRECTOR';
+  if ($c === 'administradora' || $c === 'administrador' || $c === 'administrador(a)') return 'ADMIN';
+  if ($c === 'directora' || $c === 'director' || $c === 'director(a)') return 'DIRECTOR';
   return 'PROFESIONAL';
 }
 
@@ -91,7 +91,7 @@ if ($rolActual === 'ADMIN') {
 $err = null; $ok = null;
 
 // =========================
-// POST: crear profesional + usuario
+// POST: crear profesional + usuario (SIEMPRE contraseña temporal)
 // =========================
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   try {
@@ -112,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       throw new RuntimeException('Completa todos los campos obligatorios (*).');
     }
 
-    // ===== Adicionales (los “rojos”) =====
+    // ===== Adicionales =====
     $nacimiento  = $_POST['Nacimiento_profesional']     ?? null; // date
     $domicilio   = trim($_POST['Domicilio_profesional'] ?? '') ?: null;
     $celular     = trim($_POST['Celular_profesional']   ?? '') ?: null;
@@ -137,11 +137,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     }
     $usuarioLogin = generarUsuarioUnico($conn, $baseUser);
 
-    // ===== Contraseña inicial (opcional) =====
-    $pwd = trim($_POST['Contrasena'] ?? '');
-    if ($pwd === '') {
-      $pwd = substr(bin2hex(random_bytes(8)), 0, 8); // temporal simple
-    }
+    // ===== Contraseña temporal (siempre) =====
+    $tempPwd = substr(bin2hex(random_bytes(10)), 0, 10); // 10 caracteres hex
+    $hash = password_hash($tempPwd, PASSWORD_DEFAULT);
 
     // ===== Rol desde cargo =====
     $permiso = rolDesdeCargo($cargo);
@@ -172,7 +170,6 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ]);
 
     // Insert usuario (Estado 1=activo)
-    $hash = password_hash($pwd, PASSWORD_DEFAULT);
     $sqlU = "INSERT INTO usuarios (Nombre_usuario, Contraseña, Estado_usuario, Id_profesional, Permisos)
              VALUES (?,?,?,?,?)";
     $stmtU = $conn->prepare($sqlU);
@@ -190,7 +187,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     ]);
 
     $conn->commit();
-    $ok = 'Profesional y usuario creados. Usuario: <strong>'.$usuarioLogin.'</strong> (rol '.$permiso.').';
+
+    // ===== Mensaje de credenciales mejorado + botón copiar =====
+    $u = htmlspecialchars($usuarioLogin, ENT_QUOTES, 'UTF-8');
+    $p = htmlspecialchars($tempPwd, ENT_QUOTES, 'UTF-8');
+    $r = htmlspecialchars($permiso, ENT_QUOTES, 'UTF-8');
+
+    $ok = '
+    <div class="alert alert-success" role="alert">
+      <div style="font-weight:600; margin-bottom:6px;">✅ Registro exitoso</div>
+      <div class="cred-block" style="font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size:14px; line-height:1.4; padding:10px; border:1px solid rgba(0,0,0,0.1); border-radius:8px; background:rgba(0,0,0,0.03);">
+        Usuario: <span class="cred-user">'.$u.'</span><br>
+        Contraseña temporal: <span class="cred-pass">'.$p.'</span><br>
+        Rol asignado: <span class="cred-role">'.$r.'</span>
+      </div>
+      <button type="button" class="btn btn-sm" id="copyCredsBtn"
+        data-user="'.$u.'" data-pass="'.$p.'"
+        style="margin-top:8px;">Copiar credenciales</button>
+      <small style="display:block;margin-top:6px;opacity:.8;">Pídele al usuario que cambie su contraseña en el primer inicio de sesión.</small>
+    </div>';
   } catch (Throwable $e) {
     if ($conn->inTransaction()) $conn->rollBack();
     $err = 'Error al registrar: ' . htmlspecialchars($e->getMessage());
@@ -202,8 +217,12 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // =========================
 ?>
 <h2>Registrar Profesional (Usuario)</h2>
-<?php if ($ok): ?><div class="alert alert-success"><?= $ok ?></div><?php endif; ?>
-<?php if ($err): ?><div class="alert alert-danger"><?= $err ?></div><?php endif; ?>
+<?php if ($ok): ?>
+  <div><?= $ok ?></div>
+<?php endif; ?>
+<?php if ($err): ?>
+  <div class="alert alert-danger"><?= $err ?></div>
+<?php endif; ?>
 
 <form method="post" data-requires-confirm autocomplete="off">
   <!-- ================= CUENTA ================= -->
@@ -211,13 +230,10 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <legend>Cuenta</legend>
     <div class="form-grid">
       <div class="form-group">
-        <label>Usuario (se genera automáticamente desde el correo)</label>
-        <input type="text" value="Se generará con la parte antes del @ del correo" disabled>
+        <label>Usuario</label>
+        <input type="text" value="Se genera desde el correo (parte antes de @)" disabled>
       </div>
-      <div class="form-group">
-        <label>Contraseña inicial</label>
-        <input type="password" name="Contrasena" minlength="8" placeholder="(opcional, si se omite se genera una temporal)">
-      </div>
+      <!-- Contraseña removida del form: siempre se genera temporal -->
     </div>
   </fieldset>
 
@@ -359,3 +375,21 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     <button class="btn btn-primary" type="submit">Registrar</button>
   </div>
 </form>
+
+<script>
+  // Copiar credenciales al portapapeles
+  document.addEventListener('click', function (e) {
+    const btn = e.target.closest('#copyCredsBtn');
+    if (!btn) return;
+    const user = btn.getAttribute('data-user') || '';
+    const pass = btn.getAttribute('data-pass') || '';
+    const text = `Usuario: ${user}\nContraseña temporal: ${pass}`;
+    navigator.clipboard.writeText(text).then(() => {
+      const original = btn.textContent;
+      btn.textContent = '¡Copiado!';
+      setTimeout(() => { btn.textContent = original; }, 1500);
+    }).catch(() => {
+      alert('No se pudieron copiar las credenciales. Copia manualmente.');
+    });
+  });
+</script>

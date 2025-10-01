@@ -209,7 +209,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       <div>
         <label for="Rut_estudiante">RUT</label>
         <input id="Rut_estudiante" name="Rut_estudiante" type="text" required
-               placeholder="18.321.323-1"
+               placeholder="00.000.000-0"
                value="<?= htmlspecialchars($data['Rut_estudiante']) ?>">
       </div>
       <div>
