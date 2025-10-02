@@ -22,7 +22,7 @@ if (!function_exists('details_open')) {
 }
 
 $grupoPerfil = ['perfil'];
-$grupoUsuarios = ['usuarios', 'registrar_usuario', 'modificar_profesional']; // dejamos modificar_profesional
+$grupoUsuarios = ['usuarios', 'registrar_usuario']; // removido modificar_profesional
 $grupoCursos = ['cursos', 'registrar_curso']; // removido 'modificar_curso'
 $grupoEstudiantes = ['estudiantes', 'registrar_estudiante']; // removido 'modificar_estudiante'
 $grupoApoderados = ['apoderados', 'registrar_apoderado']; // removido 'modificar_apoderado'
@@ -114,11 +114,9 @@ $canSeeCatalogos = $showAdmin || $showDirector;
         <details<?= details_open($grupoUsuarios, $seccion) ?>>
           <summary>Usuarios / Profesionales</summary>
           <div class="group-links">
-            <a href="index.php?seccion=usuarios" class="<?= is_active('usuarios', $seccion) ?>">Visualizar Usuarios</a>
+            <a href="index.php?seccion=usuarios" class="<?= is_active('usuarios', $seccion) ?>">Visualizar Profesionales</a>
             <a href="index.php?seccion=registrar_usuario"
-              class="<?= is_active('registrar_usuario', $seccion) ?>">Registrar Usuario</a>
-            <a href="index.php?seccion=modificar_profesional"
-              class="<?= is_active('modificar_profesional', $seccion) ?>">Modificar Profesional</a>
+              class="<?= is_active('registrar_usuario', $seccion) ?>">Registrar Profesional</a>
           </div>
           </details>
         <?php endif; ?>
