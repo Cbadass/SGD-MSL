@@ -9,14 +9,10 @@ require_once __DIR__ . '/../includes/roles.php';
 
 if (!isset($_SESSION['usuario'])) { http_response_code(401); exit('No autorizado'); }
 
-$rolActual = strtoupper($_SESSION['usuario']['permisos'] ?? 'GUEST');
-$idUsuarioSesion = (int)($_SESSION['usuario']['id'] ?? $_SESSION['usuario']['Id_usuario'] ?? 0);
+$rolActual        = strtoupper($_SESSION['usuario']['permisos'] ?? 'GUEST');
+$idUsuarioSesion  = (int)($_SESSION['usuario']['id'] ?? $_SESSION['usuario']['Id_usuario'] ?? 0);
 
-$isAdmin      = ($rolActual === 'ADMIN');
-$isDirector   = ($rolActual === 'DIRECTOR');
-$isProfesional= ($rolActual === 'PROFESIONAL');
-
-// === Helpers ===
+// --- Helpers de alcance
 function escuelaDeUsuario(PDO $conn, int $idUsuario): ?int {
   $stmt = $conn->prepare("
     SELECT p.Id_escuela_prof
@@ -28,7 +24,6 @@ function escuelaDeUsuario(PDO $conn, int $idUsuario): ?int {
   $id = $stmt->fetchColumn();
   return $id ? (int)$id : null;
 }
-
 function profesionalDeUsuario(PDO $conn, int $idUsuario): ?int {
   $stmt = $conn->prepare("SELECT Id_profesional FROM usuarios WHERE Id_usuario = ?");
   $stmt->execute([$idUsuario]);
@@ -36,72 +31,76 @@ function profesionalDeUsuario(PDO $conn, int $idUsuario): ?int {
   return $id ? (int)$id : null;
 }
 
-$escuelaDirectorId = $isDirector ? escuelaDeUsuario($conn, $idUsuarioSesion) : null;
-$miProfesionalId   = profesionalDeUsuario($conn, $idUsuarioSesion);
-
-// === Cargar catálogos ===
+// --- Catálogos
 $cargos = $conn->query("SELECT Nombre FROM cargos WHERE Activo=1 ORDER BY Nombre")->fetchAll(PDO::FETCH_COLUMN);
 $afps   = $conn->query("SELECT Nombre FROM afps   WHERE Activo=1 ORDER BY Nombre")->fetchAll(PDO::FETCH_COLUMN);
 $bancos = $conn->query("SELECT Nombre FROM bancos WHERE Activo=1 ORDER BY Nombre")->fetchAll(PDO::FETCH_COLUMN);
 $escuelasAll = $conn->query("SELECT Id_escuela, Nombre_escuela FROM escuelas ORDER BY Nombre_escuela")->fetchAll(PDO::FETCH_ASSOC);
 
-// === Ámbito de selección (listado) ===
-$where = '1=1';
-$params = [];
-if ($isDirector) { $where = 'p.Id_escuela_prof = ?'; $params[] = (int)$escuelaDirectorId; }
-if ($isProfesional) { $where = 'p.Id_profesional = ?'; $params[] = (int)$miProfesionalId; }
+// Tipos de profesional permitidos (como en RegistrarUsuario)
+$tiposPermitidos = [
+  'Administradora',
+  'Directora',
+  'Profesor',
+  'Asistentes de la educación Especialistas',
+  'Otro',
+];
 
-$lista = $conn->prepare("
-  SELECT p.Id_profesional, p.Nombre_profesional, p.Apellido_profesional, p.Correo_profesional, e.Nombre_escuela
-  FROM profesionales p
-  LEFT JOIN escuelas e ON e.Id_escuela = p.Id_escuela_prof
-  WHERE $where
-  ORDER BY p.Apellido_profesional, p.Nombre_profesional
-");
-$lista->execute($params);
-$profesionales = $lista->fetchAll(PDO::FETCH_ASSOC);
-
-// === Target a editar ===
-$idProf = isset($_GET['id']) ? (int)$_GET['id'] : null;
-
-// seguridad: solo puede abrir lo permitido en su scope
-if ($idProf !== null) {
-  $chk = $conn->prepare("
-    SELECT p.*, u.Id_usuario AS U_Id_usuario, u.Permisos AS U_Permisos
-    FROM profesionales p
-    LEFT JOIN usuarios u ON u.Id_profesional = p.Id_profesional
-    WHERE p.Id_profesional = ?
-  ");
-  $chk->execute([$idProf]);
-  $row = $chk->fetch(PDO::FETCH_ASSOC);
-
-  if (!$row) { http_response_code(404); exit('Profesional no encontrado'); }
-
-  $okScope = $isAdmin
-    || ($isDirector && (int)$row['Id_escuela_prof'] === (int)$escuelaDirectorId)
-    || ($isProfesional && (int)$row['Id_profesional'] === (int)$miProfesionalId);
-
-  if (!$okScope) { http_response_code(403); exit('Sin permisos para editar este perfil'); }
+// --- Obtener el objetivo a editar (RESPETA TU ENLACE ANTIGUO)
+$idProf = (int)($_GET['Id_profesional'] ?? $_POST['Id_profesional'] ?? 0);
+if ($idProf <= 0) {
+  http_response_code(400);
+  echo '<div class="alert alert-warning">Falta el parámetro <code>Id_profesional</code> en la URL.</div>';
+  exit;
 }
+
+// --- Cargar el profesional
+$stmt = $conn->prepare("
+  SELECT p.*, u.Id_usuario AS U_Id_usuario, u.Permisos AS U_Permisos
+  FROM profesionales p
+  LEFT JOIN usuarios u ON u.Id_profesional = p.Id_profesional
+  WHERE p.Id_profesional = ?
+");
+$stmt->execute([$idProf]);
+$row = $stmt->fetch(PDO::FETCH_ASSOC);
+if (!$row) { http_response_code(404); exit('Profesional no encontrado'); }
+
+// --- Alcance por rol
+$actorEscuelaId  = escuelaDeUsuario($conn, $idUsuarioSesion);
+$actorProfId     = profesionalDeUsuario($conn, $idUsuarioSesion);
+$targetEscuelaId = (int)($row['Id_escuela_prof'] ?? 0);
+$targetUserId    = (int)($row['U_Id_usuario'] ?? 0);
+
+$puedeEditarPerfil = canEditProfile(
+  $rolActual,
+  $idUsuarioSesion,            // actorUserId
+  $targetUserId ?: null,       // targetUserId
+  $actorEscuelaId,             // actorSchoolId
+  $targetEscuelaId ?: null     // targetSchoolId
+);
+
+if (!$puedeEditarPerfil) { http_response_code(403); exit('Sin permisos para editar este perfil'); }
+
+$soloAdminLabor = !canEditLabor($rolActual); // si no es admin, bloquea campos laborales
 
 $err = null; $ok = null;
 
-// Campos laborales: solo ADMIN puede cambiarlos
+// Campos laborales (solo ADMIN puede cambiarlos)
 $laborFields = [
   'Cargo_profesional','Tipo_profesional','Id_escuela_prof',
-  'Horas_profesional','Fecha_ingreso'
+  'Horas_profesional','Fecha_ingreso',
+  // Previsión/Banco los tratamos como laborales también:
+  'AFP_profesional','Banco_profesional','Tipo_cuenta_profesional','Cuenta_B_profesional',
 ];
-// Puedes decidir si Previsión/Banco son laborales. Aquí los tratamos como laborales también:
-$laborFieldsExtra = ['AFP_profesional','Banco_profesional','Tipo_cuenta_profesional','Cuenta_B_profesional'];
 
-// POST actualizar
-if ($_SERVER['REQUEST_METHOD'] === 'POST' && $idProf !== null) {
+// --- POST: actualizar
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   try {
-    // Cargar estado anterior para auditoría
+    // estado anterior para auditoría
     $stmtOld = $conn->prepare("SELECT * FROM profesionales WHERE Id_profesional = ?");
     $stmtOld->execute([$idProf]);
     $old = $stmtOld->fetch(PDO::FETCH_ASSOC);
-    if (!$old) { throw new RuntimeException('Profesional no encontrado'); }
+    if (!$old) throw new RuntimeException('Profesional no encontrado.');
 
     // Inputs
     $input = [
@@ -113,7 +112,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $idProf !== null) {
       'Celular_profesional'     => trim($_POST['Celular_profesional'] ?? ''),
       'Correo_profesional'      => trim($_POST['Correo_profesional'] ?? ''),
       'Estado_civil_profesional'=> trim($_POST['Estado_civil_profesional'] ?? ''),
-      // laborales (se validan según rol)
+      // laborales (serán filtrados si no es admin)
       'Cargo_profesional'       => trim($_POST['Cargo_profesional'] ?? ''),
       'Tipo_profesional'        => trim($_POST['Tipo_profesional'] ?? ''),
       'Id_escuela_prof'         => isset($_POST['Id_escuela_prof']) ? (int)$_POST['Id_escuela_prof'] : null,
@@ -126,43 +125,36 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $idProf !== null) {
       'Salud_profesional'       => trim($_POST['Salud_profesional'] ?? ''),
     ];
 
-    // Validaciones mínimas (obligatorios) – coherentes con registrar
-    $oblig = ['Nombre_profesional','Apellido_profesional','Rut_profesional','Correo_profesional'];
-    foreach ($oblig as $k) { if ($input[$k] === '' || $input[$k] === null) throw new RuntimeException("Campo obligatorio: $k"); }
+    // Obligatorios básicos
+    foreach (['Nombre_profesional','Apellido_profesional','Rut_profesional','Correo_profesional'] as $k) {
+      if ($input[$k] === '' || $input[$k] === null) throw new RuntimeException("Campo obligatorio: $k");
+    }
 
-    // Filtrar campos según rol
-    $updates = $input;
-
-    if (!$isAdmin) {
-      // Quitar campos laborales si no es admin (no se actualizan)
-      foreach (array_merge($laborFields, $laborFieldsExtra) as $lf) {
-        unset($updates[$lf]);
-      }
+    // Si no es admin → eliminar de la actualización los campos laborales
+    if ($soloAdminLabor) {
+      foreach ($laborFields as $lf) unset($input[$lf]);
     } else {
-      // ADMIN: si cambia Id_escuela_prof y es null o 0, error
-      if (isset($updates['Id_escuela_prof']) && (int)$updates['Id_escuela_prof'] <= 0) {
+      // ADMIN: validaciones mínimas
+      if (isset($input['Id_escuela_prof']) && (int)$input['Id_escuela_prof'] <= 0) {
         throw new RuntimeException('Escuela inválida.');
       }
-    }
-
-    // Si Director: forzar que no cambie de escuela (por seguridad)
-    if ($isDirector) {
-      // aunque venga el campo, lo ignoramos y lo pisamos por la suya
-      // (pero arriba ya lo removimos del $updates)
-      // Solo validar alcance de edición
-      if ((int)$old['Id_escuela_prof'] !== (int)$escuelaDirectorId) {
-        throw new RuntimeException('No puede mover este profesional de escuela.');
+      // Tipo_profesional debe estar en la lista
+      if ($input['Tipo_profesional'] !== '' && !in_array($input['Tipo_profesional'], $tiposPermitidos, true)) {
+        throw new RuntimeException('Tipo de profesional inválido.');
       }
     }
 
-    // Construir UPDATE dinámico
-    $set = [];
-    $vals = [];
-    foreach ($updates as $campo => $val) {
-      if (!array_key_exists($campo, $old)) continue; // por seguridad
-      if ($val === $old[$campo]) continue;           // sin cambios
-      $set[] = "$campo = ?";
-      $vals[] = $val === '' ? null : $val; // normaliza vacíos a NULL
+    // Construir SET dinámico solo con cambios
+    $set = []; $vals = [];
+    foreach ($input as $campo => $val) {
+      if (!array_key_exists($campo, $old)) continue;
+      // normaliza '' a NULL
+      $valNorm = ($val === '') ? null : $val;
+      // compara con anterior
+      if (($old[$campo] ?? null) != $valNorm) {
+        $set[]  = "$campo = ?";
+        $vals[] = $valNorm;
+      }
     }
 
     if (!empty($set)) {
@@ -173,24 +165,41 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $idProf !== null) {
       $upd = $conn->prepare($sqlUpd);
       $upd->execute($vals);
 
-      // Si ADMIN cambió el cargo -> recalcular Permisos
-      if ($isAdmin && isset($input['Cargo_profesional']) && $input['Cargo_profesional'] !== '' && $input['Cargo_profesional'] !== $old['Cargo_profesional']) {
-        $nuevoRol = rolDesdeCargo($input['Cargo_profesional']);
+      // === FIX AUDITORÍA: tomar permiso anterior ANTES del UPDATE a usuarios
+      // Si ADMIN cambió el cargo -> recalcular Permisos del usuario vinculado
+      if (!$soloAdminLabor && isset($_POST['Cargo_profesional']) && $_POST['Cargo_profesional'] !== '' && $_POST['Cargo_profesional'] !== $old['Cargo_profesional']) {
+        $nuevoRol   = rolDesdeCargo($_POST['Cargo_profesional']);
+        if (!rolValido($nuevoRol)) { $nuevoRol = 'PROFESIONAL'; }
+
+        // Tomar el permiso ANTERIOR y el Id_usuario ANTES de actualizar
+        $oldPerm    = $row['U_Permisos'] ?? null;
+        $targetUid  = (int)($row['U_Id_usuario'] ?? 0);
+
+        // Actualizar rol en usuarios
         $conn->prepare("UPDATE usuarios SET Permisos = ? WHERE Id_profesional = ?")->execute([$nuevoRol, $idProf]);
 
-        // auditoría rol
-        registrarAuditoria($conn, $idUsuarioSesion, 'usuarios', (int)$row['U_Id_usuario'], 'UPDATE',
-          ['Permisos' => $row['U_Permisos']], ['Permisos' => $nuevoRol]);
+        // Auditoría correcta: old -> new
+        if ($targetUid > 0) {
+          registrarAuditoria(
+            $conn,
+            $idUsuarioSesion,
+            'usuarios',
+            $targetUid,
+            'UPDATE',
+            ['Permisos' => $oldPerm],
+            ['Permisos' => $nuevoRol]
+          );
+        }
       }
 
-      // Auditoría de profesionales (solo campos cambiados)
-      $newNow = $conn->prepare("SELECT * FROM profesionales WHERE Id_profesional = ?");
-      $newNow->execute([$idProf]);
-      $new = $newNow->fetch(PDO::FETCH_ASSOC);
+      // Auditoría de profesionales (antes / después)
+      $stmtNew = $conn->prepare("SELECT * FROM profesionales WHERE Id_profesional = ?");
+      $stmtNew->execute([$idProf]);
+      $new = $stmtNew->fetch(PDO::FETCH_ASSOC);
 
-      // Construir arrays old/new reducidos a cambios
+      // Solo registrar diferencias
       $oldDiff = []; $newDiff = [];
-      foreach ($updates as $k => $_) {
+      foreach ($input as $k => $_) {
         if (($old[$k] ?? null) != ($new[$k] ?? null)) {
           $oldDiff[$k] = $old[$k] ?? null;
           $newDiff[$k] = $new[$k] ?? null;
@@ -200,8 +209,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $idProf !== null) {
 
       $conn->commit();
       $ok = 'Perfil actualizado correctamente.';
-      // refrescar $row
-      $row = $new;
+      $row = $new; // refrescar
     } else {
       $ok = 'No hubo cambios para guardar.';
     }
@@ -217,205 +225,172 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST' && $idProf !== null) {
 <?php if ($err): ?><div class="alert alert-danger"><?= $err ?></div><?php endif; ?>
 <?php if ($ok):  ?><div class="alert alert-success"><?= $ok ?></div><?php endif; ?>
 
-<?php if ($idProf === null): ?>
-  <form class="mb-2">
-    <label>Selecciona un profesional</label>
-    <select name="id" class="form-select" onchange="this.form.submit()">
-      <option value="">-- elegir --</option>
-      <?php foreach ($profesionales as $p): ?>
-        <option value="<?= (int)$p['Id_profesional'] ?>">
-          <?= htmlspecialchars($p['Apellido_profesional'].' '.$p['Nombre_profesional'].' — '.$p['Correo_profesional'].' — '.($p['Nombre_escuela']??'')) ?>
-        </option>
-      <?php endforeach; ?>
-    </select>
-  </form>
-  <?php if (empty($profesionales)): ?>
-    <div class="alert alert-info">No hay profesionales en tu alcance.</div>
-  <?php endif; ?>
-<?php else: ?>
-  <?php
-    // Mostrar formulario del profesional seleccionado
-    // $row cargado arriba
-    $canEditLabor = $isAdmin; // solo admin
-  ?>
-  <form method="post" data-requires-confirm autocomplete="off">
-    <!-- DATOS PERSONALES -->
-    <fieldset>
-      <legend>Datos personales</legend>
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Nombres <span class="text-danger">*</span></label>
-          <input type="text" name="Nombre_profesional" value="<?= htmlspecialchars($row['Nombre_profesional'] ?? '') ?>" required>
-        </div>
-        <div class="form-group">
-          <label>Apellidos <span class="text-danger">*</span></label>
-          <input type="text" name="Apellido_profesional" value="<?= htmlspecialchars($row['Apellido_profesional'] ?? '') ?>" required>
-        </div>
-        <div class="form-group">
-          <label>RUT <span class="text-danger">*</span></label>
-          <input type="text" name="Rut_profesional" value="<?= htmlspecialchars($row['Rut_profesional'] ?? '') ?>" required>
-        </div>
-        <div class="form-group">
-          <label>Fecha de nacimiento</label>
-          <input type="date" name="Nacimiento_profesional" value="<?= htmlspecialchars($row['Nacimiento_profesional'] ?? '') ?>">
-        </div>
-        <div class="form-group">
-          <label>Estado civil</label>
-          <input type="text" name="Estado_civil_profesional" value="<?= htmlspecialchars($row['Estado_civil_profesional'] ?? '') ?>">
-        </div>
+<form method="post" data-requires-confirm autocomplete="off">
+  <input type="hidden" name="Id_profesional" value="<?= (int)$idProf ?>">
+
+  <!-- DATOS PERSONALES -->
+  <fieldset>
+    <legend>Datos personales</legend>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Nombres <span class="text-danger">*</span></label>
+        <input type="text" name="Nombre_profesional" value="<?= htmlspecialchars($row['Nombre_profesional'] ?? '') ?>" required>
       </div>
-    </fieldset>
-
-    <!-- CONTACTO -->
-    <fieldset>
-      <legend>Contacto</legend>
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Domicilio</label>
-          <input type="text" name="Domicilio_profesional" value="<?= htmlspecialchars($row['Domicilio_profesional'] ?? '') ?>">
-        </div>
-        <div class="form-group">
-          <label>Celular</label>
-          <input type="text" name="Celular_profesional" value="<?= htmlspecialchars($row['Celular_profesional'] ?? '') ?>">
-        </div>
-        <div class="form-group">
-          <label>Correo electrónico <span class="text-danger">*</span></label>
-          <input type="email" name="Correo_profesional" value="<?= htmlspecialchars($row['Correo_profesional'] ?? '') ?>" required>
-        </div>
+      <div class="form-group">
+        <label>Apellidos <span class="text-danger">*</span></label>
+        <input type="text" name="Apellido_profesional" value="<?= htmlspecialchars($row['Apellido_profesional'] ?? '') ?>" required>
       </div>
-    </fieldset>
-
-    <!-- DATOS LABORALES (solo ADMIN editable) -->
-    <fieldset>
-      <legend>Datos laborales</legend>
-      <div class="form-grid">
-        <div class="form-group">
-          <label>Cargo <?= $canEditLabor?'<span class="text-danger">*</span>':'' ?></label>
-          <select name="Cargo_profesional" <?= $canEditLabor?'':'disabled' ?> <?= $canEditLabor?'required':'' ?>>
-            <?php if (!$canEditLabor): ?>
-              <option><?= htmlspecialchars($row['Cargo_profesional'] ?? '') ?></option>
-            <?php else: ?>
-              <option value="">-- Selecciona --</option>
-              <?php foreach ($cargos as $c): ?>
-                <option value="<?= htmlspecialchars($c) ?>" <?= ($row['Cargo_profesional']??'')===$c?'selected':'' ?>>
-                  <?= htmlspecialchars($c) ?>
-                </option>
-              <?php endforeach; ?>
-            <?php endif; ?>
-          </select>
-        </div>
-
-        <div class="form-group">
-          <label>Tipo de profesional <?= $canEditLabor?'<span class="text-danger">*</span>':'' ?></label>
-          <?php
-            // Si tienes la misma lista fija que en registrar, podrías reutilizarla
-            $tiposPermitidos = [
-              'Administradora','Directora','Profesor','Asistentes de la educación Especialistas','Otro'
-            ];
-          ?>
-          <?php if ($canEditLabor): ?>
-            <select name="Tipo_profesional" required>
-              <option value="">-- Selecciona --</option>
-              <?php foreach ($tiposPermitidos as $t): ?>
-                <option value="<?= htmlspecialchars($t) ?>" <?= ($row['Tipo_profesional']??'')===$t?'selected':'' ?>>
-                  <?= htmlspecialchars($t) ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
-          <?php else: ?>
-            <input type="text" value="<?= htmlspecialchars($row['Tipo_profesional'] ?? '') ?>" disabled>
-          <?php endif; ?>
-        </div>
-
-        <div class="form-group">
-          <label>Horas (semanales)</label>
-          <input type="number" name="Horas_profesional" min="0" step="1"
-                 value="<?= htmlspecialchars($row['Horas_profesional'] ?? '') ?>" <?= $canEditLabor?'':'disabled' ?>>
-        </div>
-
-        <div class="form-group">
-          <label>Fecha de ingreso</label>
-          <input type="date" name="Fecha_ingreso"
-                 value="<?= htmlspecialchars($row['Fecha_ingreso'] ?? '') ?>" <?= $canEditLabor?'':'disabled' ?>>
-        </div>
-
-        <div class="form-group">
-          <label>Escuela <?= $canEditLabor?'<span class="text-danger">*</span>':'' ?></label>
-          <?php if ($canEditLabor): ?>
-            <select name="Id_escuela_prof" required>
-              <option value="">-- Selecciona --</option>
-              <?php foreach ($escuelasAll as $e): ?>
-                <option value="<?= (int)$e['Id_escuela'] ?>" <?= ((int)($row['Id_escuela_prof']??0) === (int)$e['Id_escuela'])?'selected':'' ?>>
-                  <?= htmlspecialchars($e['Nombre_escuela']) ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
-          <?php else: ?>
-            <?php
-              $nombreEsc = '';
-              foreach ($escuelasAll as $e) if ((int)$e['Id_escuela'] === (int)($row['Id_escuela_prof']??0)) { $nombreEsc=$e['Nombre_escuela']; break; }
-            ?>
-            <input type="text" value="<?= htmlspecialchars($nombreEsc) ?>" disabled>
-          <?php endif; ?>
-        </div>
+      <div class="form-group">
+        <label>RUT <span class="text-danger">*</span></label>
+        <input type="text" name="Rut_profesional" value="<?= htmlspecialchars($row['Rut_profesional'] ?? '') ?>" required>
       </div>
-    </fieldset>
-
-    <!-- PREVISIÓN Y BANCO (solo ADMIN editable, ver decisión arriba) -->
-    <fieldset>
-      <legend>Previsión y Bancos</legend>
-      <div class="form-grid">
-        <div class="form-group">
-          <label>AFP <?= $canEditLabor?'<span class="text-danger">*</span>':'' ?></label>
-          <?php if ($canEditLabor): ?>
-            <select name="AFP_profesional" required>
-              <option value="">-- Selecciona --</option>
-              <?php foreach ($afps as $a): ?>
-                <option value="<?= htmlspecialchars($a) ?>" <?= ($row['AFP_profesional']??'')===$a?'selected':'' ?>>
-                  <?= htmlspecialchars($a) ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
-          <?php else: ?>
-            <input type="text" value="<?= htmlspecialchars($row['AFP_profesional'] ?? '') ?>" disabled>
-          <?php endif; ?>
-        </div>
-
-        <div class="form-group">
-          <label>Salud</label>
-          <input type="text" name="Salud_profesional" value="<?= htmlspecialchars($row['Salud_profesional'] ?? '') ?>" <?= $canEditLabor?'':'disabled' ?>>
-        </div>
-
-        <div class="form-group">
-          <label>Banco <?= $canEditLabor?'<span class="text-danger">*</span>':'' ?></label>
-          <?php if ($canEditLabor): ?>
-            <select name="Banco_profesional" required>
-              <option value="">-- Selecciona --</option>
-              <?php foreach ($bancos as $b): ?>
-                <option value="<?= htmlspecialchars($b) ?>" <?= ($row['Banco_profesional']??'')===$b?'selected':'' ?>>
-                  <?= htmlspecialchars($b) ?>
-                </option>
-              <?php endforeach; ?>
-            </select>
-          <?php else: ?>
-            <input type="text" value="<?= htmlspecialchars($row['Banco_profesional'] ?? '') ?>" disabled>
-          <?php endif; ?>
-        </div>
-
-        <div class="form-group">
-          <label>Tipo de cuenta</label>
-          <input type="text" name="Tipo_cuenta_profesional" value="<?= htmlspecialchars($row['Tipo_cuenta_profesional'] ?? '') ?>" <?= $canEditLabor?'':'disabled' ?>>
-        </div>
-
-        <div class="form-group">
-          <label>N° Cuenta</label>
-          <input type="text" name="Cuenta_B_profesional" value="<?= htmlspecialchars($row['Cuenta_B_profesional'] ?? '') ?>" <?= $canEditLabor?'':'disabled' ?>>
-        </div>
+      <div class="form-group">
+        <label>Fecha de nacimiento</label>
+        <input type="date" name="Nacimiento_profesional" value="<?= htmlspecialchars($row['Nacimiento_profesional'] ?? '') ?>">
       </div>
-    </fieldset>
-
-    <div class="mt-2">
-      <button class="btn btn-primary" type="submit">Guardar cambios</button>
+      <div class="form-group">
+        <label>Estado civil</label>
+        <input type="text" name="Estado_civil_profesional" value="<?= htmlspecialchars($row['Estado_civil_profesional'] ?? '') ?>">
+      </div>
     </div>
-  </form>
-<?php endif; ?>
+  </fieldset>
+
+  <!-- CONTACTO -->
+  <fieldset>
+    <legend>Contacto</legend>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Domicilio</label>
+        <input type="text" name="Domicilio_profesional" value="<?= htmlspecialchars($row['Domicilio_profesional'] ?? '') ?>">
+      </div>
+      <div class="form-group">
+        <label>Celular</label>
+        <input type="text" name="Celular_profesional" value="<?= htmlspecialchars($row['Celular_profesional'] ?? '') ?>">
+      </div>
+      <div class="form-group">
+        <label>Correo electrónico <span class="text-danger">*</span></label>
+        <input type="email" name="Correo_profesional" value="<?= htmlspecialchars($row['Correo_profesional'] ?? '') ?>" required>
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- DATOS LABORALES (solo ADMIN editable) -->
+  <?php $canEditLabor = !$soloAdminLabor; ?>
+  <fieldset>
+    <legend>Datos laborales</legend>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Cargo <?= $canEditLabor?'<span class="text-danger">*</span>':'' ?></label>
+        <?php if ($canEditLabor): ?>
+          <select name="Cargo_profesional" required title="Solo editable por Administrador">
+            <option value="">-- Selecciona --</option>
+            <?php foreach ($cargos as $c): ?>
+              <option value="<?= htmlspecialchars($c) ?>" <?= ($row['Cargo_profesional']??'')===$c?'selected':'' ?>><?= htmlspecialchars($c) ?></option>
+            <?php endforeach; ?>
+          </select>
+        <?php else: ?>
+          <input type="text" value="<?= htmlspecialchars($row['Cargo_profesional'] ?? '') ?>" disabled title="Solo editable por Administrador">
+        <?php endif; ?>
+      </div>
+
+      <div class="form-group">
+        <label>Tipo de profesional <?= $canEditLabor?'<span class="text-danger">*</span>':'' ?></label>
+        <?php if ($canEditLabor): ?>
+          <select name="Tipo_profesional" required title="Solo editable por Administrador">
+            <option value="">-- Selecciona --</option>
+            <?php foreach ($tiposPermitidos as $t): ?>
+              <option value="<?= htmlspecialchars($t) ?>" <?= ($row['Tipo_profesional']??'')===$t?'selected':'' ?>><?= htmlspecialchars($t) ?></option>
+            <?php endforeach; ?>
+          </select>
+        <?php else: ?>
+          <input type="text" value="<?= htmlspecialchars($row['Tipo_profesional'] ?? '') ?>" disabled title="Solo editable por Administrador">
+        <?php endif; ?>
+      </div>
+
+      <div class="form-group">
+        <label>Horas (semanales)</label>
+        <input type="number" name="Horas_profesional" min="0" step="1"
+               value="<?= htmlspecialchars($row['Horas_profesional'] ?? '') ?>" <?= $canEditLabor?'':'disabled' ?> title="<?= $canEditLabor?'':'Solo editable por Administrador' ?>">
+      </div>
+
+      <div class="form-group">
+        <label>Fecha de ingreso</label>
+        <input type="date" name="Fecha_ingreso"
+               value="<?= htmlspecialchars($row['Fecha_ingreso'] ?? '') ?>" <?= $canEditLabor?'':'disabled' ?> title="<?= $canEditLabor?'':'Solo editable por Administrador' ?>">
+      </div>
+
+      <div class="form-group">
+        <label>Escuela <?= $canEditLabor?'<span class="text-danger">*</span>':'' ?></label>
+        <?php if ($canEditLabor): ?>
+          <select name="Id_escuela_prof" required title="Solo editable por Administrador">
+            <option value="">-- Selecciona --</option>
+            <?php foreach ($escuelasAll as $e): ?>
+              <option value="<?= (int)$e['Id_escuela'] ?>" <?= ((int)($row['Id_escuela_prof']??0)===(int)$e['Id_escuela'])?'selected':'' ?>>
+                <?= htmlspecialchars($e['Nombre_escuela']) ?>
+              </option>
+            <?php endforeach; ?>
+          </select>
+        <?php else: ?>
+          <?php
+            $nombreEsc = '';
+            foreach ($escuelasAll as $e) if ((int)$e['Id_escuela'] === (int)($row['Id_escuela_prof']??0)) { $nombreEsc=$e['Nombre_escuela']; break; }
+          ?>
+          <input type="text" value="<?= htmlspecialchars($nombreEsc) ?>" disabled title="Solo editable por Administrador">
+        <?php endif; ?>
+      </div>
+    </div>
+  </fieldset>
+
+  <!-- PREVISIÓN Y BANCO (considerados laborales → solo ADMIN) -->
+  <fieldset>
+    <legend>Previsión y Bancos</legend>
+    <div class="form-grid">
+      <div class="form-group">
+        <label>AFP <?= $canEditLabor?'<span class="text-danger">*</span>':'' ?></label>
+        <?php if ($canEditLabor): ?>
+          <select name="AFP_profesional" required title="Solo editable por Administrador">
+            <option value="">-- Selecciona --</option>
+            <?php foreach ($afps as $a): ?>
+              <option value="<?= htmlspecialchars($a) ?>" <?= ($row['AFP_profesional']??'')===$a?'selected':'' ?>><?= htmlspecialchars($a) ?></option>
+            <?php endforeach; ?>
+          </select>
+        <?php else: ?>
+          <input type="text" value="<?= htmlspecialchars($row['AFP_profesional'] ?? '') ?>" disabled title="Solo editable por Administrador">
+        <?php endif; ?>
+      </div>
+
+      <div class="form-group">
+        <label>Salud</label>
+        <input type="text" name="Salud_profesional" value="<?= htmlspecialchars($row['Salud_profesional'] ?? '') ?>" <?= $canEditLabor?'':'disabled' ?> title="<?= $canEditLabor?'':'Solo editable por Administrador' ?>">
+      </div>
+
+      <div class="form-group">
+        <label>Banco <?= $canEditLabor?'<span class="text-danger">*</span>':'' ?></label>
+        <?php if ($canEditLabor): ?>
+          <select name="Banco_profesional" required title="Solo editable por Administrador">
+            <option value="">-- Selecciona --</option>
+            <?php foreach ($bancos as $b): ?>
+              <option value="<?= htmlspecialchars($b) ?>" <?= ($row['Banco_profesional']??'')===$b?'selected':'' ?>><?= htmlspecialchars($b) ?></option>
+            <?php endforeach; ?>
+          </select>
+        <?php else: ?>
+          <input type="text" value="<?= htmlspecialchars($row['Banco_profesional'] ?? '') ?>" disabled title="Solo editable por Administrador">
+        <?php endif; ?>
+      </div>
+
+      <div class="form-group">
+        <label>Tipo de cuenta</label>
+        <input type="text" name="Tipo_cuenta_profesional" value="<?= htmlspecialchars($row['Tipo_cuenta_profesional'] ?? '') ?>" <?= $canEditLabor?'':'disabled' ?> title="<?= $canEditLabor?'':'Solo editable por Administrador' ?>">
+      </div>
+
+      <div class="form-group">
+        <label>N° Cuenta</label>
+        <input type="text" name="Cuenta_B_profesional" value="<?= htmlspecialchars($row['Cuenta_B_profesional'] ?? '') ?>" <?= $canEditLabor?'':'disabled' ?> title="<?= $canEditLabor?'':'Solo editable por Administrador' ?>">
+      </div>
+    </div>
+  </fieldset>
+
+  <div class="mt-2">
+    <button class="btn btn-primary" type="submit">Guardar cambios</button>
+  </div>
+</form>
