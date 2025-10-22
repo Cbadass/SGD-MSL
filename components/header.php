@@ -13,15 +13,18 @@ $usuario = $_SESSION['usuario'] ?? null;
       </span>
       <button id="modoToggle" class="btn btn-sm btn-light toggle-darkmode mr-1">🌙</button>
 
-      <!-- Corrección mínima: usar un <a> con estilo de botón (no <a> dentro de <button>) -->
-      <a href="logout.php" class="btn btn-sm btn-outline-light btn-logout link-text" data-action="logout">
+      <!-- Usar <a> directo + confirm global. Sin JS extra de logout. -->
+      <a href="/logout.php"
+         class="btn btn-sm btn-outline-light link-text"
+         data-confirm="¿Cerrar sesión?">
         Cerrar sesión
       </a>
     <?php else: ?>
-      <a class="btn btn-sm btn-primary" href="login.php">Iniciar sesión</a>
+      <a class="btn btn-sm btn-primary" href="/login.php">Iniciar sesión</a>
     <?php endif; ?>
   </div>
 </header>
+
 <script>
 /**
  * Confirmación global para acciones que guardan/cambian datos.
@@ -38,6 +41,7 @@ $usuario = $_SESSION['usuario'] ?? null;
     const t = (btn.textContent||'').toLowerCase();
     return /guardar|crear|actualizar|eliminar|registrar/.test(t);
   }
+
   document.addEventListener('submit', function(e){
     const f = e.target;
     if (!(f instanceof HTMLFormElement)) return;
@@ -54,18 +58,8 @@ $usuario = $_SESSION['usuario'] ?? null;
   }, true);
 })();
 
-// Handler de logout (respeta tu estructura y añade confirmación)
-document.addEventListener('click', function(e){
-  const el = e.target.closest('[data-action="logout"], .btn-logout');
-  if (!el) return;
-  // si es <a>, dejamos que navegue; si no, redirigimos
-  if (el.tagName !== 'A') e.preventDefault();
-  const ok = confirm('¿Cerrar sesión?');
-  if (!ok) {
-    e.preventDefault();
-    return;
-  }
-  // Navegación hacia logout.php (el href ya lo hace; esto asegura compatibilidad si es botón sin href)
-  window.location.href = 'logout.php';
-});
+/* Importante:
+   Quitamos el handler JS específico de logout para evitar dobles manejos
+   y estados residuales entre cierre y nuevo inicio de sesión. El <a> con
+   href=/logout.php y el confirm global son suficientes. */
 </script>
