@@ -30,6 +30,7 @@ $grupoApoderados = ['apoderados', 'registrar_apoderado']; // removido 'modificar
 $grupoDocumentos = ['documentos', 'subir_documento']; // removido 'modificar_documento'
 $grupoAsignaciones = ['asignaciones'];
 $grupoActividad = ['actividad'];
+$grupoAuditoria = ['auditoria_vinculos'];
 $grupoCatalogos = ['tipos_documento', 'cargos', 'afps', 'bancos'];
 
 $showAdmin = ($rol === 'ADMIN');
@@ -198,7 +199,17 @@ $canSeeCatalogos = $showAdmin || $showDirector;
                           actividad</a>
                       </div>
                       </details>
-                    <?php endif; ?>
+                  <?php endif; ?>
+
+                  <!-- AUDITORÍA -->
+                  <?php if ($showAdmin): ?>
+                    <details<?= details_open($grupoAuditoria, $seccion) ?>>
+                      <summary>Auditoría</summary>
+                      <div class="group-links">
+                        <a href="index.php?seccion=auditoria_vinculos" class="<?= is_active('auditoria_vinculos', $seccion) ?>">Vínculos pendientes</a>
+                      </div>
+                    </details>
+                  <?php endif; ?>
 
                     <!-- CATÁLOGOS -->
                     <?php if ($canSeeCatalogos): ?>

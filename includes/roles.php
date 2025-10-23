@@ -397,13 +397,32 @@ function getAlcanceUsuario(PDO $conn, array $usuario): array {
   $rol = ensureRole($usuario['permisos'] ?? 'GUEST');
   $idProf = (int)($usuario['id_profesional'] ?? 0);
   $idEscuela = getEscuelaDelUsuario($conn, $usuario);
-  
+
+  $diagnosticos = [];
+  $userId = (int)($usuario['id'] ?? $usuario['Id_usuario'] ?? 0);
+  $userLogin = $usuario['Nombre_usuario'] ?? $usuario['usuario'] ?? '';
+
+  if ($rol === 'DIRECTOR' && !$idEscuela) {
+    error_log(sprintf('[SGD] Director sin escuela asociada (usuario %d, login "%s").', $userId, $userLogin));
+    $diagnosticos[] = 'Tu cuenta no está asociada a ninguna escuela. Comunícate con soporte para regularizar el vínculo.';
+  }
+
+  if ($rol === 'PROFESIONAL' && $idProf <= 0) {
+    error_log(sprintf('[SGD] Profesional sin Id_profesional vinculado (usuario %d, login "%s").', $userId, $userLogin));
+    $diagnosticos[] = 'Tu cuenta no está vinculada a un profesional activo. Solicita asistencia a soporte.';
+  }
+
   // Obtener estudiantes permitidos
   $idsEstudiantes = getEstudiantesPermitidos($conn, $rol, $idProf, $idEscuela);
-  
+
+  if ($rol === 'PROFESIONAL' && $idProf > 0 && ($idsEstudiantes === [0])) {
+    error_log(sprintf('[SGD] Profesional sin asignaciones activas (usuario %d, profesional %d).', $userId, $idProf));
+    $diagnosticos[] = 'No tienes estudiantes asignados actualmente. Contacta a la coordinación para revisar tus asignaciones.';
+  }
+
   // Obtener apoderados basados en estudiantes permitidos
   $idsApoderados = getApoderadosPermitidos($conn, $idsEstudiantes);
-  
+
   return [
     'estudiantes' => $idsEstudiantes,
     'profesionales' => getProfesionalesPermitidos($conn, $rol, $idEscuela),
@@ -411,7 +430,8 @@ function getAlcanceUsuario(PDO $conn, array $usuario): array {
     'apoderados' => $idsApoderados,
     'escuela_id' => $idEscuela,
     'rol' => $rol,
-    'id_profesional' => $idProf
+    'id_profesional' => $idProf,
+    'diagnosticos' => $diagnosticos,
   ];
 }
 

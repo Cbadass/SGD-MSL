@@ -8,18 +8,45 @@ try {
   // ========== Obtener alcance ==========
   $alcance = getAlcanceUsuario($conn, $_SESSION['usuario'] ?? []);
   $idsEstudiantesPermitidos = $alcance['estudiantes'];
+  $diagnosticos = $alcance['diagnosticos'] ?? [];
   // ====================================
 
   // ... código de paginación y filtros ...
 
-  $where = "1=1";
+  $whereParts = ['1=1'];
   $params = [];
 
   // ========== Aplicar filtro de estudiantes ==========
-  // Nota: documentos pueden no tener estudiante (documentos generales de profesionales)
+  // Nota: se reutilizan los helpers de includes/roles.php para evitar duplicar lógica.
   if ($idsEstudiantesPermitidos !== null) {
-    $where .= " AND (" . filtrarPorIDs($idsEstudiantesPermitidos, 'd.Id_estudiante_doc') . " OR d.Id_estudiante_doc IS NULL)";
-    agregarParametrosFiltro($params, $idsEstudiantesPermitidos);
+    $filtroEstudiantes = filtrarPorIDs($idsEstudiantesPermitidos, 'd.Id_estudiante_doc');
+
+    if ($alcance['rol'] === 'PROFESIONAL') {
+      $idProfesionalSesion = (int)($alcance['id_profesional'] ?? 0);
+
+      if ($idProfesionalSesion > 0) {
+        if ($filtroEstudiantes === '0=1') {
+          // Sin asignaciones: solo permitir documentos propios sin estudiante asociado.
+          $whereParts[] = '(d.Id_estudiante_doc IS NULL AND d.Id_prof_doc = ?)';
+          $params[] = $idProfesionalSesion;
+        } else {
+          $whereParts[] = '(' . $filtroEstudiantes . ' OR (d.Id_estudiante_doc IS NULL AND d.Id_prof_doc = ?))';
+          agregarParametrosFiltro($params, $idsEstudiantesPermitidos);
+          $params[] = $idProfesionalSesion;
+        }
+      } else {
+        // Profesional sin vínculo válido: se limita estrictamente a los estudiantes asignados (bloquea si 0=1).
+        $whereParts[] = $filtroEstudiantes;
+        agregarParametrosFiltro($params, $idsEstudiantesPermitidos);
+      }
+    } else {
+      if ($filtroEstudiantes === '0=1') {
+        $whereParts[] = '0=1';
+      } else {
+        $whereParts[] = '(' . $filtroEstudiantes . ' OR d.Id_estudiante_doc IS NULL)';
+        agregarParametrosFiltro($params, $idsEstudiantesPermitidos);
+      }
+    }
   }
   // Normaliza un RUT eliminando todo menos dígitos y K
   function normalizarRut($rut)
@@ -41,30 +68,38 @@ try {
   $id_est = intval($_GET['id_estudiante'] ?? 0);
   $sin_profes = isset($_GET['sin_profesional']) && $_GET['sin_profesional'] == 1;
 
-  // Construcción inicial del WHERE dinámico
-  $where = "1=1";
-  $params = [];
+  if ($id_prof > 0 && !puedeAccederProfesional($conn, $alcance, $id_prof)) {
+    http_response_code(403);
+    require __DIR__ . '/error403.php';
+    return;
+  }
 
-  // Helper para LIKE
-  function agregarFiltro(&$where, &$params, $campo, $valor)
+  if ($id_est > 0 && !puedeAccederEstudiante($conn, $alcance, $id_est)) {
+    http_response_code(403);
+    require __DIR__ . '/error403.php';
+    return;
+  }
+
+  // Helper para LIKE sobre el arreglo de condiciones existente
+  function agregarFiltro(array &$whereParts, array &$params, string $campo, string $valor): void
   {
     if ($valor !== '') {
-      $where .= " AND $campo LIKE ?";
+      $whereParts[] = "$campo LIKE ?";
       $params[] = "%{$valor}%";
     }
   }
 
   // Filtros básicos
-  agregarFiltro($where, $params, 'd.Nombre_documento', $_GET['nombre'] ?? '');
-  agregarFiltro($where, $params, 'd.Tipo_documento', $_GET['tipo_documento'] ?? '');
+  agregarFiltro($whereParts, $params, 'd.Nombre_documento', $_GET['nombre'] ?? '');
+  agregarFiltro($whereParts, $params, 'd.Tipo_documento', $_GET['tipo_documento'] ?? '');
 
   // Filtros de fechas
   if (!empty($_GET['fecha_subida_desde'])) {
-    $where .= " AND d.Fecha_subido >= ?";
+    $whereParts[] = 'd.Fecha_subido >= ?';
     $params[] = $_GET['fecha_subida_desde'];
   }
   if (!empty($_GET['fecha_subida_hasta'])) {
-    $where .= " AND d.Fecha_subido <= ?";
+    $whereParts[] = 'd.Fecha_subido <= ?';
     $params[] = $_GET['fecha_subida_hasta'];
   }
 
@@ -80,20 +115,22 @@ try {
 
   // Filtro “desde profesional”
   if ($id_prof > 0) {
-    $where .= " AND d.Id_prof_doc = ?";
+    $whereParts[] = 'd.Id_prof_doc = ?';
     $params[] = $id_prof;
     if ($sin_estud) {
-      $where .= " AND d.Id_estudiante_doc IS NULL";
+      $whereParts[] = 'd.Id_estudiante_doc IS NULL';
     }
   }
   // Filtro “desde estudiante”
   if ($id_est > 0) {
-    $where .= " AND d.Id_estudiante_doc = ?";
+    $whereParts[] = 'd.Id_estudiante_doc = ?';
     $params[] = $id_est;
     if ($sin_profes) {
-      $where .= " AND d.Id_prof_doc IS NULL";
+      $whereParts[] = 'd.Id_prof_doc IS NULL';
     }
   }
+
+  $where = implode(' AND ', $whereParts);
 
   // Conteo total para paginación
   $stmtTotal = $conn->prepare("
@@ -359,6 +396,14 @@ try {
     </div>
   </form>
 </div>
+
+<?php if (!empty($diagnosticos)): ?>
+  <div class="alert alert-info">
+    <?php foreach ($diagnosticos as $diag): ?>
+      <p class="mb-1"><?= htmlspecialchars($diag) ?></p>
+    <?php endforeach; ?>
+  </div>
+<?php endif; ?>
 
 <?php if (!empty($errorMsg)): ?>
   <div class="alert alert-danger"><?= htmlspecialchars($errorMsg) ?></div>
