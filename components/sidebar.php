@@ -1,6 +1,7 @@
 <?php
 // components/sidebar.php (actualizado: se ocultan ítems solicitados)
 // La sesión ya está abierta desde index.php
+
 if (session_status() !== PHP_SESSION_ACTIVE) {
   session_start();
 }
