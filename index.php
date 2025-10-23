@@ -19,6 +19,7 @@ $ALLOWED = [
   'asignaciones',
   'actividad',
   'administrar_contraseña',
+  'auditoria_vinculos',
 
   // ======== AGREGADOS (Catálogos) ========
   'tipos_documento','cargos','afps','bancos',
@@ -51,6 +52,7 @@ $SECTION_ROLES = [
   'asignaciones'             => ['ADMIN','DIRECTOR'],
   'actividad'                => ['ADMIN','DIRECTOR'],
   'administrar_contraseña'   => ['ADMIN','DIRECTOR','PROFESIONAL'],
+  'auditoria_vinculos'       => ['ADMIN'],
 
   // ======== AGREGADOS (Catálogos) ========
   'tipos_documento'          => ['ADMIN','DIRECTOR'],

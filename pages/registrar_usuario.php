@@ -154,6 +154,9 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // ===== Rol desde cargo =====
     $permiso = rolDesdeCargo($cargo);
+    if ($permiso === 'DIRECTOR' && $escuelaId <= 0) {
+      throw new RuntimeException('Los directores deben quedar asociados a una escuela válida. Selecciona una escuela antes de continuar.');
+    }
 
     $conn->beginTransaction();
 
@@ -187,6 +190,13 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
     $stmtU = $conn->prepare($sqlU);
     $stmtU->execute([$usuarioLogin, $hash, 1, $idProf, $permiso]);
     $idUser = (int)$conn->lastInsertId();
+
+    $stmtVerifica = $conn->prepare('SELECT Id_profesional FROM usuarios WHERE Id_usuario = ?');
+    $stmtVerifica->execute([$idUser]);
+    $vinculoUsuario = (int)$stmtVerifica->fetchColumn();
+    if ($vinculoUsuario !== $idProf) {
+      throw new RuntimeException('No fue posible vincular la cuenta de acceso con el profesional creado. El registro se canceló.');
+    }
 
     // Vincular FK en profesionales si existe la columna
     try {
