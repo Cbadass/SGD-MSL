@@ -1,32 +1,41 @@
 <?php
 // pages/estudiantes.php
 require_once 'includes/db.php';
+require_once 'includes/roles.php';
 session_start();
+
 if (!isset($_SESSION['usuario'])) {
     header("Location: login.php");
     exit;
 }
 
-// 1) Recoger filtros
-$filtro_escuela      = $_GET['escuela']                 ?? '';
-$filtro_estado       = $_GET['estado']                  ?? '';
-$filtro_estudiante   = intval($_GET['Id_estudiante']    ?? 0);
+// ========== NUEVO: Obtener alcance del usuario ==========
+$alcance = getAlcanceUsuario($conn, $_SESSION['usuario']);
+$idsEstudiantesPermitidos = $alcance['estudiantes'];
+// =======================================================
 
-// 2) Formulario de búsqueda avanzada
+// 1) Recoger filtros
+$filtro_escuela      = $_GET['escuela'] ?? '';
+$filtro_estado       = $_GET['estado'] ?? '';
+$filtro_estudiante   = intval($_GET['Id_estudiante'] ?? 0);
+
+// 2) Formulario de búsqueda
 echo "<h2 class='mb-4'>Visualización de Estudiantes</h2>";
 echo "<form method='GET' style='display:flex; gap:8rem ; margin: 2rem 0; align-items: flex-end;'>";
 echo "  <input type='hidden' name='seccion' value='estudiantes'>";
 
-// Escuela
-echo "<div>
-        <label>Escuela</label>
-        <select name='escuela' class='form-select'>
-          <option value=''>Todas</option>
-          <option value='1'".($filtro_escuela=='1'?' selected':'').">Sendero</option>
-          <option value='2'".($filtro_escuela=='2'?' selected':'').">Multiverso</option>
-          <option value='3'".($filtro_escuela=='3'?' selected':'').">Luz de Luna</option>
-        </select>
-      </div>";
+// Escuela (solo mostrar si es ADMIN)
+if ($alcance['rol'] === 'ADMIN') {
+    echo "<div>
+            <label>Escuela</label>
+            <select name='escuela' class='form-select'>
+              <option value=''>Todas</option>
+              <option value='1'".($filtro_escuela=='1'?' selected':'').">Sendero</option>
+              <option value='2'".($filtro_escuela=='2'?' selected':'').">Multiverso</option>
+              <option value='3'".($filtro_escuela=='3'?' selected':'').">Luz de Luna</option>
+            </select>
+          </div>";
+}
 
 // Estado
 echo "<div>
@@ -46,28 +55,11 @@ echo "<div style='flex:1; position:relative;'>
         <div id='resultados_estudiante' class='border mt-1' style='position:absolute; width:100%; z-index:10; background:#fff;'></div>
       </div>";
 
-// Botones
 echo "<button type='submit' class='btn btn-primary btn-height mt-4'>Buscar</button>
       <button type='button' class='btn btn-secondary btn-height mt-4' onclick=\"window.location='?seccion=estudiantes'\">Limpiar filtros</button>";
 echo "</form>";
 
-// 3) Construir consulta dinámica
-$where  = "1=1";
-$params = [];
-
-if ($filtro_escuela !== '') {
-    $where   .= " AND e.Id_escuela = ?";
-    $params[] = $filtro_escuela;
-}
-if ($filtro_estado !== '') {
-    $where   .= " AND e.Estado_estudiante = ?";
-    $params[] = $filtro_estado;
-}
-if ($filtro_estudiante > 0) {
-    $where   .= " AND e.Id_estudiante = ?";
-    $params[] = $filtro_estudiante;
-}
-
+// 3) Construir consulta con filtro de alcance
 $sql = "
   SELECT
     e.Id_estudiante,
@@ -87,9 +79,27 @@ $sql = "
   LEFT JOIN cursos      c   ON e.Id_curso     = c.Id_curso
   LEFT JOIN escuelas    esc ON e.Id_escuela   = esc.Id_escuela
   LEFT JOIN apoderados  a   ON e.Id_apoderado = a.Id_apoderado
-  WHERE $where
-  ORDER BY e.Id_estudiante ASC
-";
+  WHERE " . filtrarPorIDs($idsEstudiantesPermitidos, 'e.Id_estudiante');
+
+$params = [];
+agregarParametrosFiltro($params, $idsEstudiantesPermitidos);
+
+// Filtros adicionales
+if ($filtro_escuela !== '' && $alcance['rol'] === 'ADMIN') {
+    $sql .= " AND e.Id_escuela = ?";
+    $params[] = $filtro_escuela;
+}
+if ($filtro_estado !== '') {
+    $sql .= " AND e.Estado_estudiante = ?";
+    $params[] = $filtro_estado;
+}
+if ($filtro_estudiante > 0) {
+    $sql .= " AND e.Id_estudiante = ?";
+    $params[] = $filtro_estudiante;
+}
+
+$sql .= " ORDER BY e.Id_estudiante ASC";
+
 $stmt = $conn->prepare($sql);
 $stmt->execute($params);
 $estudiantes = $stmt->fetchAll(PDO::FETCH_ASSOC);
@@ -114,10 +124,10 @@ echo "<div style='max-height:400px; overflow-y:auto; border-radius:10px;'>
 
 $hoy = new DateTime();
 foreach($estudiantes as $row){
-    $nac          = new DateTime($row['Fecha_nacimiento']);
-    $edad         = $hoy->diff($nac)->y;
-    $nombreComp   = "{$row['Nombre_estudiante']} {$row['Apellido_estudiante']}";
-    $cursoComp    = "{$row['Tipo_curso']}-{$row['Grado_curso']}-{$row['seccion_curso']}";
+    $nac = new DateTime($row['Fecha_nacimiento']);
+    $edad = $hoy->diff($nac)->y;
+    $nombreComp = "{$row['Nombre_estudiante']} {$row['Apellido_estudiante']}";
+    $cursoComp = "{$row['Tipo_curso']}-{$row['Grado_curso']}-{$row['seccion_curso']}";
     $apoderadoFull = trim("{$row['Nombre_apoderado']} {$row['Apellido_apoderado']}");
 
     echo "<tr>
@@ -129,16 +139,22 @@ foreach($estudiantes as $row){
             <td>".($apoderadoFull?:'-')."</td>
             <td>".htmlspecialchars($row['Numero_apoderado'] ?? '-')."</td>
             <td>".htmlspecialchars($row['Correo_apoderado'] ?? '-')."</td>
-            <td style='text-align:center;'>
-              <a href=\"index.php?seccion=modificar_estudiante&Id_estudiante={$row['Id_estudiante']}\" 
-                class=\"btn btn-sm btn-warning link-text\">Editar</a>
-              <a href=\"index.php?seccion=documentos&id_estudiante={$row['Id_estudiante']}&sin_profesional=1\" 
-                 class=\"btn btn-sm btn-info link-text\">Documentos</a>
-              <a href=\"index.php?seccion=perfil&Id_estudiante={$row['Id_estudiante']}\"
-                 class=\"btn btn-sm btn-primary link-text\">Ver apoderado</a> 
-            </td>  
-          </tr>";
+            <td style='text-align:center;'>";
+    
+    // Solo ADMIN y DIRECTOR pueden editar
+    if (in_array($alcance['rol'], ['ADMIN', 'DIRECTOR'], true)) {
+        echo "<a href=\"index.php?seccion=modificar_estudiante&Id_estudiante={$row['Id_estudiante']}\" 
+                class=\"btn btn-sm btn-warning link-text\">Editar</a>";
+    }
+    
+    echo "<a href=\"index.php?seccion=documentos&id_estudiante={$row['Id_estudiante']}&sin_profesional=1\" 
+             class=\"btn btn-sm btn-info link-text\">Documentos</a>
+          <a href=\"index.php?seccion=perfil&Id_estudiante={$row['Id_estudiante']}\"
+             class=\"btn btn-sm btn-primary link-text\">Ver apoderado</a> 
+        </td>  
+      </tr>";
 }
+
 if (empty($estudiantes)) {
     echo "<tr><td colspan='9'>No se encontraron estudiantes.</td></tr>";
 }
@@ -149,7 +165,7 @@ echo "    </tbody>
 ?>
 
 <script>
-// Autocomplete para Estudiantes
+// Autocomplete
 function buscarEstudiante(endpoint, query, cont, idInput) {
   if (query.length < 3) {
     cont.innerHTML = '';

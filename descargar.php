@@ -1,9 +1,9 @@
 <?php
-
+// descargar.php
 session_start();
-require_once 'includes/db.php'; // Tu conexión PDO
+require_once 'includes/db.php';
+require_once 'includes/roles.php';
 
-// Verificar login
 if (!isset($_SESSION['usuario'])) {
     http_response_code(401);
     die("No autorizado.");
@@ -16,6 +16,7 @@ if ($id_documento <= 0) {
 }
 
 $usuario = $_SESSION['usuario'];
+$alcance = getAlcanceUsuario($conn, $usuario);
 
 // Obtener el documento
 $sql = "SELECT * FROM documentos WHERE Id_documento = ?";
@@ -28,26 +29,61 @@ if (!$documento) {
     die("Documento no encontrado.");
 }
 
-// Verificar permisos
-if (
-    $usuario['permisos'] !== 'ADMIN' && 
-    $documento['Id_prof_doc'] != $usuario['id_profesional']
-) {
+// ========== Validar permisos según rol ==========
+$puedeDescargar = false;
+
+if ($alcance['rol'] === 'ADMIN') {
+    $puedeDescargar = true;
+    
+} elseif ($alcance['rol'] === 'DIRECTOR') {
+    // Validar que el documento sea de su escuela
+    if ($documento['Id_estudiante_doc']) {
+        // Documento de estudiante: verificar que el estudiante sea de la escuela del director
+        $stmt = $conn->prepare("
+            SELECT 1 FROM estudiantes e
+            INNER JOIN cursos c ON e.Id_curso = c.Id_curso
+            WHERE e.Id_estudiante = ? AND c.Id_escuela = ?
+        ");
+        $stmt->execute([$documento['Id_estudiante_doc'], $alcance['escuela_id']]);
+        $puedeDescargar = (bool)$stmt->fetchColumn();
+    } elseif ($documento['Id_prof_doc']) {
+        // Documento de profesional: verificar que el profesional sea de la escuela
+        $stmt = $conn->prepare("
+            SELECT 1 FROM profesionales WHERE Id_profesional = ? AND Id_escuela_prof = ?
+        ");
+        $stmt->execute([$documento['Id_prof_doc'], $alcance['escuela_id']]);
+        $puedeDescargar = (bool)$stmt->fetchColumn();
+    }
+    
+} else { // PROFESIONAL
+    // Solo puede descargar si:
+    // 1. Es su propio documento (Id_prof_doc)
+    // 2. Es de un estudiante que tiene asignado
+    if ($documento['Id_prof_doc'] == $alcance['id_profesional']) {
+        $puedeDescargar = true;
+    } elseif ($documento['Id_estudiante_doc']) {
+        $stmt = $conn->prepare("
+            SELECT 1 FROM Asignaciones 
+            WHERE Id_profesional = ? AND Id_estudiante = ?
+        ");
+        $stmt->execute([$alcance['id_profesional'], $documento['Id_estudiante_doc']]);
+        $puedeDescargar = (bool)$stmt->fetchColumn();
+    }
+}
+
+if (!$puedeDescargar) {
     http_response_code(403);
     die("No tienes permisos para descargar este archivo.");
 }
+// ================================================
 
-// Obtener la extensión real del archivo (a partir de la URL)
+// Obtener la extensión real del archivo
 $ext = pathinfo($documento['Url_documento'], PATHINFO_EXTENSION);
-
-// Armar el nombre final para la descarga (con extensión)
-$nombreUsuario = pathinfo($documento['Nombre_documento'], PATHINFO_FILENAME); // solo nombre, sin extensión
-$nombreDescarga = $nombreUsuario . ($ext ? '.' . $ext : ''); // agrega extensión real
+$nombreUsuario = pathinfo($documento['Nombre_documento'], PATHINFO_FILENAME);
+$nombreDescarga = $nombreUsuario . ($ext ? '.' . $ext : '');
 
 // Descargar el archivo desde la URL pública
 $urlBlobPublico = $documento['Url_documento'];
-
-// Descargar el archivo a un archivo temporal
 $tempFile = tempnam(sys_get_temp_dir(), 'blob_');
 file_put_contents($tempFile, file_get_contents($urlBlobPublico));
 

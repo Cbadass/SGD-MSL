@@ -1,96 +1,117 @@
 <?php
 try {
-    require_once 'includes/db.php';
-    require_once 'includes/storage.php';
+  require_once 'includes/db.php';
+  require_once 'includes/storage.php';
+  require_once 'includes/roles.php';
+  session_start();
 
-    // Normaliza un RUT eliminando todo menos dígitos y K
-    function normalizarRut($rut) {
-        return preg_replace('/[^0-9kK]/', '', $rut);
+  // ========== Obtener alcance ==========
+  $alcance = getAlcanceUsuario($conn, $_SESSION['usuario'] ?? []);
+  $idsEstudiantesPermitidos = $alcance['estudiantes'];
+  // ====================================
+
+  // ... código de paginación y filtros ...
+
+  $where = "1=1";
+  $params = [];
+
+  // ========== Aplicar filtro de estudiantes ==========
+  // Nota: documentos pueden no tener estudiante (documentos generales de profesionales)
+  if ($idsEstudiantesPermitidos !== null) {
+    $where .= " AND (" . filtrarPorIDs($idsEstudiantesPermitidos, 'd.Id_estudiante_doc') . " OR d.Id_estudiante_doc IS NULL)";
+    agregarParametrosFiltro($params, $idsEstudiantesPermitidos);
+  }
+  // Normaliza un RUT eliminando todo menos dígitos y K
+  function normalizarRut($rut)
+  {
+    return preg_replace('/[^0-9kK]/', '', $rut);
+  }
+
+  $azure = new AzureBlobStorage();
+  $errorMsg = '';
+  $documentos = [];
+
+  // Parámetros de paginación
+  $porPagina = 10;
+  $pagina = max((int) ($_GET['pagina'] ?? 1), 1);
+
+  // Parámetros de filtro específicos
+  $id_prof = intval($_GET['id_prof'] ?? 0);
+  $sin_estud = isset($_GET['sin_estudiante']) && $_GET['sin_estudiante'] == 1;
+  $id_est = intval($_GET['id_estudiante'] ?? 0);
+  $sin_profes = isset($_GET['sin_profesional']) && $_GET['sin_profesional'] == 1;
+
+  // Construcción inicial del WHERE dinámico
+  $where = "1=1";
+  $params = [];
+
+  // Helper para LIKE
+  function agregarFiltro(&$where, &$params, $campo, $valor)
+  {
+    if ($valor !== '') {
+      $where .= " AND $campo LIKE ?";
+      $params[] = "%{$valor}%";
     }
+  }
 
-    $azure      = new AzureBlobStorage();
-    $errorMsg   = '';
-    $documentos = [];
+  // Filtros básicos
+  agregarFiltro($where, $params, 'd.Nombre_documento', $_GET['nombre'] ?? '');
+  agregarFiltro($where, $params, 'd.Tipo_documento', $_GET['tipo_documento'] ?? '');
 
-    // Parámetros de paginación
-    $porPagina = 10;
-    $pagina    = max((int)($_GET['pagina'] ?? 1), 1);
+  // Filtros de fechas
+  if (!empty($_GET['fecha_subida_desde'])) {
+    $where .= " AND d.Fecha_subido >= ?";
+    $params[] = $_GET['fecha_subida_desde'];
+  }
+  if (!empty($_GET['fecha_subida_hasta'])) {
+    $where .= " AND d.Fecha_subido <= ?";
+    $params[] = $_GET['fecha_subida_hasta'];
+  }
 
-    // Parámetros de filtro específicos
-    $id_prof    = intval($_GET['id_prof']       ?? 0);
-    $sin_estud  = isset($_GET['sin_estudiante']) && $_GET['sin_estudiante'] == 1;
-    $id_est     = intval($_GET['id_estudiante'] ?? 0);
-    $sin_profes = isset($_GET['sin_profesional']) && $_GET['sin_profesional'] == 1;
+  // Opciones de orden
+  $ordenOpciones = [
+    'subido_desc' => 'd.Fecha_subido DESC',
+    'subido_asc' => 'd.Fecha_subido ASC',
+    'modificado_desc' => 'd.Fecha_modificacion DESC',
+    'modificado_asc' => 'd.Fecha_modificacion ASC',
+  ];
+  $orden = $ordenOpciones[$_GET['orden'] ?? 'subido_desc']
+    ?? $ordenOpciones['subido_desc'];
 
-    // Construcción inicial del WHERE dinámico
-    $where  = "1=1";
-    $params = [];
-
-    // Helper para LIKE
-    function agregarFiltro(&$where, &$params, $campo, $valor) {
-        if ($valor !== '') {
-            $where   .= " AND $campo LIKE ?";
-            $params[] = "%{$valor}%";
-        }
+  // Filtro “desde profesional”
+  if ($id_prof > 0) {
+    $where .= " AND d.Id_prof_doc = ?";
+    $params[] = $id_prof;
+    if ($sin_estud) {
+      $where .= " AND d.Id_estudiante_doc IS NULL";
     }
-
-    // Filtros básicos
-    agregarFiltro($where, $params, 'd.Nombre_documento', $_GET['nombre'] ?? '');
-    agregarFiltro($where, $params, 'd.Tipo_documento',   $_GET['tipo_documento'] ?? '');
-
-    // Filtros de fechas
-    if (!empty($_GET['fecha_subida_desde'])) {
-        $where   .= " AND d.Fecha_subido >= ?";
-        $params[] = $_GET['fecha_subida_desde'];
+  }
+  // Filtro “desde estudiante”
+  if ($id_est > 0) {
+    $where .= " AND d.Id_estudiante_doc = ?";
+    $params[] = $id_est;
+    if ($sin_profes) {
+      $where .= " AND d.Id_prof_doc IS NULL";
     }
-    if (!empty($_GET['fecha_subida_hasta'])) {
-        $where   .= " AND d.Fecha_subido <= ?";
-        $params[] = $_GET['fecha_subida_hasta'];
-    }
+  }
 
-    // Opciones de orden
-    $ordenOpciones = [
-        'subido_desc'     => 'd.Fecha_subido DESC',
-        'subido_asc'      => 'd.Fecha_subido ASC',
-        'modificado_desc' => 'd.Fecha_modificacion DESC',
-        'modificado_asc'  => 'd.Fecha_modificacion ASC',
-    ];
-    $orden = $ordenOpciones[$_GET['orden'] ?? 'subido_desc']
-           ?? $ordenOpciones['subido_desc'];
-
-    // Filtro “desde profesional”
-    if ($id_prof > 0) {
-        $where   .= " AND d.Id_prof_doc = ?";
-        $params[] = $id_prof;
-        if ($sin_estud) {
-            $where .= " AND d.Id_estudiante_doc IS NULL";
-        }
-    }
-    // Filtro “desde estudiante”
-    if ($id_est > 0) {
-        $where   .= " AND d.Id_estudiante_doc = ?";
-        $params[] = $id_est;
-        if ($sin_profes) {
-            $where .= " AND d.Id_prof_doc IS NULL";
-        }
-    }
-
-    // Conteo total para paginación
-    $stmtTotal = $conn->prepare("
+  // Conteo total para paginación
+  $stmtTotal = $conn->prepare("
         SELECT COUNT(*)
           FROM documentos d
      LEFT JOIN estudiantes   e ON d.Id_estudiante_doc = e.Id_estudiante
      LEFT JOIN profesionales p ON d.Id_prof_doc       = p.Id_profesional
         WHERE $where
     ");
-    $stmtTotal->execute($params);
-    $total    = (int)$stmtTotal->fetchColumn();
-    $totalPag = max(1, ceil($total / $porPagina));
-    if ($pagina > $totalPag) $pagina = $totalPag;
-    $offset = ($pagina - 1) * $porPagina;
+  $stmtTotal->execute($params);
+  $total = (int) $stmtTotal->fetchColumn();
+  $totalPag = max(1, ceil($total / $porPagina));
+  if ($pagina > $totalPag)
+    $pagina = $totalPag;
+  $offset = ($pagina - 1) * $porPagina;
 
-    // Consulta principal con joins
-    $sql = "
+  // Consulta principal con joins
+  $sql = "
         SELECT
           d.Id_documento,
           d.Nombre_documento,
@@ -109,23 +130,23 @@ try {
         ORDER BY $orden
         OFFSET $offset ROWS FETCH NEXT $porPagina ROWS ONLY
     ";
-    $stmt = $conn->prepare($sql);
-    $stmt->execute($params);
-    $documentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
+  $stmt = $conn->prepare($sql);
+  $stmt->execute($params);
+  $documentos = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// Para el select de tipos únicos
-    $stmtTipos = $conn->query("SELECT DISTINCT Tipo_documento FROM documentos");
-    $tiposDb   = $stmtTipos->fetchAll(PDO::FETCH_COLUMN);
+  // Para el select de tipos únicos
+  $stmtTipos = $conn->query("SELECT DISTINCT Tipo_documento FROM documentos");
+  $tiposDb = $stmtTipos->fetchAll(PDO::FETCH_COLUMN);
 
 } catch (Exception $e) {
-    $errorMsg = $e->getMessage();
+  $errorMsg = $e->getMessage();
 }
 ?>
 
 <style>
   /* pagination */
 
-.pagination {
+  .pagination {
     --bs-pagination-padding-x: 0.75rem;
     --bs-pagination-padding-y: 0.375rem;
     --bs-pagination-font-size: 1rem;
@@ -149,26 +170,31 @@ try {
     display: flex;
     padding-left: 0;
     list-style: none;
-}
-dl, ol, ul {
+  }
+
+  dl,
+  ol,
+  ul {
     margin-top: 0;
     margin-bottom: 1rem;
-}
+  }
 
-.justify-content-center {
+  .justify-content-center {
     justify-content: center !important;
-}
+  }
 
-.page-item:first-child .page-link {
+  .page-item:first-child .page-link {
     border-top-left-radius: var(--bs-pagination-border-radius);
     border-bottom-left-radius: var(--bs-pagination-border-radius);
-}
-@media (prefers-reduced-motion: reduce) {
+  }
+
+  @media (prefers-reduced-motion: reduce) {
     .page-link {
-        transition: none;
+      transition: none;
     }
-}
-.page-link {
+  }
+
+  .page-link {
     position: relative;
     display: block;
     padding: var(--bs-pagination-padding-y) var(--bs-pagination-padding-x);
@@ -178,30 +204,38 @@ dl, ol, ul {
     background-color: var(--bs-pagination-bg);
     border: var(--bs-pagination-border-width) solid var(--bs-pagination-border-color);
     transition: color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out;
-}
-a {
+  }
+
+  a {
     color: rgba(var(--bs-link-color-rgb), var(--bs-link-opacity, 1));
     text-decoration: underline;
-}
-*, ::after, ::before {
-    box-sizing: border-box;
-}
+  }
 
-.page-item:not(:first-child) .page-link {
+  *,
+  ::after,
+  ::before {
+    box-sizing: border-box;
+  }
+
+  .page-item:not(:first-child) .page-link {
     margin-left: calc(var(--bs-border-width) * -1);
-}
-.active>.page-link, .page-link.active {
+  }
+
+  .active>.page-link,
+  .page-link.active {
     z-index: 3;
     color: var(--bs-pagination-active-color);
     background-color: var(--bs-pagination-active-bg);
     border-color: var(--bs-pagination-active-border-color);
-}
-@media (prefers-reduced-motion: reduce) {
+  }
+
+  @media (prefers-reduced-motion: reduce) {
     .page-link {
-        transition: none;
+      transition: none;
     }
-}
-.page-link {
+  }
+
+  .page-link {
     position: relative;
     display: block;
     padding: var(--bs-pagination-padding-y) var(--bs-pagination-padding-x);
@@ -211,34 +245,38 @@ a {
     background-color: var(--bs-pagination-bg);
     border: var(--bs-pagination-border-width) solid var(--bs-pagination-border-color);
     transition: color .15s ease-in-out, background-color .15s ease-in-out, border-color .15s ease-in-out, box-shadow .15s ease-in-out;
-}
-a {
+  }
+
+  a {
     color: rgba(var(--bs-link-color-rgb), var(--bs-link-opacity, 1));
     text-decoration: underline;
-}
-*, ::after, ::before {
+  }
+
+  *,
+  ::after,
+  ::before {
     box-sizing: border-box;
-}
-user agent stylesheet
-a:-webkit-any-link {
+  }
+
+  user agent stylesheet a:-webkit-any-link {
     color: -webkit-link;
     cursor: pointer;
     text-decoration: underline;
-}
+  }
 </style>
 
 <h2 class="mb-4">
   <?php
-    if ($id_prof > 0) {
-      echo "Documentos del Profesional #{$id_prof}"
-         . ($sin_estud ? " (sin estudiante)" : "");
-    } elseif ($id_est > 0) {
-      echo "Documentos del Estudiante #{$id_est}"
-         . ($sin_profes ? " (sin profesional)" : "");
-    } else {
-      echo "Lista de Documentos";
-    }
-    echo " ({$total} encontrados)";
+  if ($id_prof > 0) {
+    echo "Documentos del Profesional #{$id_prof}"
+      . ($sin_estud ? " (sin estudiante)" : "");
+  } elseif ($id_est > 0) {
+    echo "Documentos del Estudiante #{$id_est}"
+      . ($sin_profes ? " (sin profesional)" : "");
+  } else {
+    echo "Lista de Documentos";
+  }
+  echo " ({$total} encontrados)";
   ?>
 </h2>
 
@@ -246,8 +284,8 @@ a:-webkit-any-link {
 <div class="card profile">
   <form method="GET" class="form-grid">
     <input type="hidden" name="seccion" value="documentos">
-    <input type="hidden" name="pagina"      value="<?= $pagina ?>">
-    <input type="hidden" name="id_prof"      id="id_prof"      value="<?= htmlspecialchars($id_prof) ?>">
+    <input type="hidden" name="pagina" value="<?= $pagina ?>">
+    <input type="hidden" name="id_prof" id="id_prof" value="<?= htmlspecialchars($id_prof) ?>">
     <input type="hidden" name="sin_estudiante" id="sin_estudiante" value="<?= $sin_estud ? 1 : 0 ?>">
     <input type="hidden" name="id_estudiante" id="id_estudiante" value="<?= htmlspecialchars($id_est) ?>">
     <input type="hidden" name="sin_profesional" id="sin_profesional" value="<?= $sin_profes ? 1 : 0 ?>">
@@ -260,9 +298,9 @@ a:-webkit-any-link {
       <label>Tipo de documento</label>
       <select name="tipo_documento" class="form-select">
         <option value="">Todos</option>
-        <?php foreach ($tiposDb as $t): 
+        <?php foreach ($tiposDb as $t):
           $sel = ($_GET['tipo_documento'] ?? '') === $t ? 'selected' : '';
-        ?>
+          ?>
           <option value="<?= htmlspecialchars($t) ?>" <?= $sel ?>><?= htmlspecialchars($t) ?></option>
         <?php endforeach; ?>
       </select>
@@ -295,18 +333,20 @@ a:-webkit-any-link {
 
     <div>
       <label>Fecha subida (desde)</label>
-      <input type="date" name="fecha_subida_desde" value="<?= htmlspecialchars($_GET['fecha_subida_desde'] ?? '') ?>" class="form-control">
+      <input type="date" name="fecha_subida_desde" value="<?= htmlspecialchars($_GET['fecha_subida_desde'] ?? '') ?>"
+        class="form-control">
     </div>
     <div>
       <label>Fecha subida (hasta)</label>
-      <input type="date" name="fecha_subida_hasta" value="<?= htmlspecialchars($_GET['fecha_subida_hasta'] ?? '') ?>" class="form-control">
+      <input type="date" name="fecha_subida_hasta" value="<?= htmlspecialchars($_GET['fecha_subida_hasta'] ?? '') ?>"
+        class="form-control">
     </div>
     <div>
       <label>Ordenar por</label>
       <select name="orden" class="form-select">
         <?php foreach ($ordenOpciones as $key => $o): ?>
           <option value="<?= $key ?>" <?= ($_GET['orden'] ?? '') === $key ? 'selected' : '' ?>>
-            <?= ucwords(str_replace(['_','desc','asc'], [' ',' más reciente primero',' más antiguo primero'], $key)) ?>
+            <?= ucwords(str_replace(['_', 'desc', 'asc'], [' ', ' más reciente primero', ' más antiguo primero'], $key)) ?>
           </option>
         <?php endforeach; ?>
       </select>
@@ -342,136 +382,141 @@ a:-webkit-any-link {
       </thead>
       <tbody>
         <?php foreach ($documentos as $d):
-          $fs   = new DateTime($d['Fecha_subido']);
+          $fs = new DateTime($d['Fecha_subido']);
           $diff = (new DateTime())->diff($fs);
-          if      ($diff->y) $t = $diff->y . ' año' . ($diff->y>1?'s':'');
-          elseif  ($diff->m) $t = $diff->m . ' mes' . ($diff->m>1?'es':'');
-          elseif  ($diff->d) $t = $diff->d . ' día' . ($diff->d>1?'s':'');
-          elseif  ($diff->h) $t = $diff->h . ' hora' . ($diff->h>1?'s':'');
-          else               $t = 'momento';
-        ?>
-        <tr>
-          <td><?= htmlspecialchars($d['Nombre_documento']) ?></td>
-          <td><?= htmlspecialchars($d['Tipo_documento']) ?></td>
-          <td><?= $fs->format('d-m-Y') ?><br><small>Hace <?= $t ?></small></td>
-          <td>
-            <?= !empty($d['Fecha_modificacion'])
-               ? (new DateTime($d['Fecha_modificacion']))->format('d-m-Y')
-               : 'No Modificado' ?>
-          </td>
-          <td><?= htmlspecialchars($d['Descripcion']) ?></td>
-          <td><?= htmlspecialchars($d['Nombre_estudiante']  ?: '-') ?></td>
-          <td><?= htmlspecialchars($d['Nombre_profesional'] ?: '-') ?></td>
-          <td><?= htmlspecialchars($d['Usuario_subio']) ?></td>
-          <td style="text-align:center;">
-            <a href="index.php?seccion=modificar_documento&id_documento=<?= $d['Id_documento'] ?>"
-               class="btn btn-warning btn-sm link-text">Modificar</a>
-            <a href="descargar.php?id_documento=<?= $d['Id_documento'] ?>"
-               class="btn btn-primary btn-sm link-text">Descargar</a>
-          </td>
-        </tr>
+          if ($diff->y)
+            $t = $diff->y . ' año' . ($diff->y > 1 ? 's' : '');
+          elseif ($diff->m)
+            $t = $diff->m . ' mes' . ($diff->m > 1 ? 'es' : '');
+          elseif ($diff->d)
+            $t = $diff->d . ' día' . ($diff->d > 1 ? 's' : '');
+          elseif ($diff->h)
+            $t = $diff->h . ' hora' . ($diff->h > 1 ? 's' : '');
+          else
+            $t = 'momento';
+          ?>
+          <tr>
+            <td><?= htmlspecialchars($d['Nombre_documento']) ?></td>
+            <td><?= htmlspecialchars($d['Tipo_documento']) ?></td>
+            <td><?= $fs->format('d-m-Y') ?><br><small>Hace <?= $t ?></small></td>
+            <td>
+              <?= !empty($d['Fecha_modificacion'])
+                ? (new DateTime($d['Fecha_modificacion']))->format('d-m-Y')
+                : 'No Modificado' ?>
+            </td>
+            <td><?= htmlspecialchars($d['Descripcion']) ?></td>
+            <td><?= htmlspecialchars($d['Nombre_estudiante'] ?: '-') ?></td>
+            <td><?= htmlspecialchars($d['Nombre_profesional'] ?: '-') ?></td>
+            <td><?= htmlspecialchars($d['Usuario_subio']) ?></td>
+            <td style="text-align:center;">
+              <a href="index.php?seccion=modificar_documento&id_documento=<?= $d['Id_documento'] ?>"
+                class="btn btn-warning btn-sm link-text">Modificar</a>
+              <a href="descargar.php?id_documento=<?= $d['Id_documento'] ?>"
+                class="btn btn-primary btn-sm link-text">Descargar</a>
+            </td>
+          </tr>
         <?php endforeach; ?>
       </tbody>
     </table>
   </div>
-    <!-- ------------- NUEVO BLOQUE DE PAGINACIÓN ------------- -->
-    <nav style="margin-top:1.5rem">
+  <!-- ------------- NUEVO BLOQUE DE PAGINACIÓN ------------- -->
+  <nav style="margin-top:1.5rem">
     <ul class="pagination justify-content-center">
-    <?php
+      <?php
       $baseURL = 'index.php?seccion=documentos&';
-      $params  = $_GET;               // conserva todos los filtros
+      $params = $_GET;               // conserva todos los filtros
       unset($params['pagina']);       // lo fijaremos manualmente
       $ventana = 2;                   // nº de páginas a la izquierda y derecha
-
+    
       // primera / anterior
       if ($pagina > 1) {
-          $params['pagina'] = 1;
-          echo '<li class="page-item"><a class="page-link" href="'.$baseURL.http_build_query($params).'">« Primera</a></li>';
+        $params['pagina'] = 1;
+        echo '<li class="page-item"><a class="page-link" href="' . $baseURL . http_build_query($params) . '">« Primera</a></li>';
 
-          $params['pagina'] = $pagina - 1;
-          echo '<li class="page-item"><a class="page-link" href="'.$baseURL.http_build_query($params).'">‹ Anterior</a></li>';
+        $params['pagina'] = $pagina - 1;
+        echo '<li class="page-item"><a class="page-link" href="' . $baseURL . http_build_query($params) . '">‹ Anterior</a></li>';
       }
 
       // rango de números
       $inicio = max(1, $pagina - $ventana);
-      $fin    = min($totalPag, $pagina + $ventana);
+      $fin = min($totalPag, $pagina + $ventana);
       for ($p = $inicio; $p <= $fin; $p++) {
-          $params['pagina'] = $p;
-          $act = $p == $pagina ? ' active' : '';
-          echo '<li class="page-item'.$act.'"><a class="page-link" href="'.$baseURL.http_build_query($params).'">'.$p.'</a></li>';
+        $params['pagina'] = $p;
+        $act = $p == $pagina ? ' active' : '';
+        echo '<li class="page-item' . $act . '"><a class="page-link" href="' . $baseURL . http_build_query($params) . '">' . $p . '</a></li>';
       }
 
       // siguiente / última
       if ($pagina < $totalPag) {
-          $params['pagina'] = $pagina + 1;
-          echo '<li class="page-item"><a class="page-link" href="'.$baseURL.http_build_query($params).'">Siguiente ›</a></li>';
+        $params['pagina'] = $pagina + 1;
+        echo '<li class="page-item"><a class="page-link" href="' . $baseURL . http_build_query($params) . '">Siguiente ›</a></li>';
 
-          $params['pagina'] = $totalPag;
-          echo '<li class="page-item"><a class="page-link" href="'.$baseURL.http_build_query($params).'">Última »</a></li>';
+        $params['pagina'] = $totalPag;
+        echo '<li class="page-item"><a class="page-link" href="' . $baseURL . http_build_query($params) . '">Última »</a></li>';
       }
-    ?>
+      ?>
     </ul>
   </nav>
 <?php endif; ?>
 
 <script>
-// alterna visibilidad de bloques y actualiza hidden inputs
-function toggleBlock(checkbox, blockId, hiddenName) {
-  const block  = document.getElementById(blockId);
-  const hidden = document.getElementById(hiddenName);
-  block.style.display = checkbox.checked ? 'none' : '';
-  hidden.value        = checkbox.checked ? '1' : '0';
-}
+  // alterna visibilidad de bloques y actualiza hidden inputs
+  function toggleBlock(checkbox, blockId, hiddenName) {
+    const block = document.getElementById(blockId);
+    const hidden = document.getElementById(hiddenName);
+    block.style.display = checkbox.checked ? 'none' : '';
+    hidden.value = checkbox.checked ? '1' : '0';
+  }
 
-// genérico de autocomplete
-function buscar(endpoint, query, cont, idInput) {
-  if (query.length < 3) { cont.innerHTML = ''; return; }
-  fetch(endpoint + '?q=' + encodeURIComponent(query))
-    .then(r => r.json())
-    .then(data => {
-      cont.innerHTML = '';
-      if (!data.length) {
-        cont.innerHTML = '<div class="p-2 text-muted">Sin resultados</div>';
-        return;
-      }
-      data.forEach(item => {
-        const div = document.createElement('div');
-        div.className = 'resultado';
-        div.textContent = `${item.rut} — ${item.nombre} ${item.apellido}`;
-        div.onclick = () => {
-          document.getElementById(idInput).value = item.id;
-          cont.innerHTML = `<div class="resultado seleccionado">${div.textContent} (Seleccionado)</div>`;
-        };
-        cont.appendChild(div);
+  // genérico de autocomplete
+  function buscar(endpoint, query, cont, idInput) {
+    if (query.length < 3) { cont.innerHTML = ''; return; }
+    fetch(endpoint + '?q=' + encodeURIComponent(query))
+      .then(r => r.json())
+      .then(data => {
+        cont.innerHTML = '';
+        if (!data.length) {
+          cont.innerHTML = '<div class="p-2 text-muted">Sin resultados</div>';
+          return;
+        }
+        data.forEach(item => {
+          const div = document.createElement('div');
+          div.className = 'resultado';
+          div.textContent = `${item.rut} — ${item.nombre} ${item.apellido}`;
+          div.onclick = () => {
+            document.getElementById(idInput).value = item.id;
+            cont.innerHTML = `<div class="resultado seleccionado">${div.textContent} (Seleccionado)</div>`;
+          };
+          cont.appendChild(div);
+        });
       });
-    });
-}
+  }
 
-document.addEventListener('DOMContentLoaded', () => {
-  // toggles
-  const chkEst  = document.getElementById('toggle_est');
-  const chkProf = document.getElementById('toggle_prof');
-  chkEst .addEventListener('change', () => toggleBlock(chkEst,  'block_est',  'sin_estudiante'));
-  chkProf.addEventListener('change', () => toggleBlock(chkProf, 'block_prof', 'sin_profesional'));
-  toggleBlock(chkEst,  'block_est',  'sin_estudiante');
-  toggleBlock(chkProf, 'block_prof', 'sin_profesional');
+  document.addEventListener('DOMContentLoaded', () => {
+    // toggles
+    const chkEst = document.getElementById('toggle_est');
+    const chkProf = document.getElementById('toggle_prof');
+    chkEst.addEventListener('change', () => toggleBlock(chkEst, 'block_est', 'sin_estudiante'));
+    chkProf.addEventListener('change', () => toggleBlock(chkProf, 'block_prof', 'sin_profesional'));
+    toggleBlock(chkEst, 'block_est', 'sin_estudiante');
+    toggleBlock(chkProf, 'block_prof', 'sin_profesional');
 
-  // autocomplete estudiante
-  document.getElementById('buscar_estudiante')
-    .addEventListener('input', e => {
-      buscar('buscar_estudiantes.php',
-             e.target.value.trim(),
-             document.getElementById('resultados_estudiante'),
-             'id_estudiante');
-    });
+    // autocomplete estudiante
+    document.getElementById('buscar_estudiante')
+      .addEventListener('input', e => {
+        buscar('buscar_estudiantes.php',
+          e.target.value.trim(),
+          document.getElementById('resultados_estudiante'),
+          'id_estudiante');
+      });
 
-  // autocomplete profesional
-  document.getElementById('buscar_profesional')
-    .addEventListener('input', e => {
-      buscar('buscar_profesionales.php',
-             e.target.value.trim(),
-             document.getElementById('resultados_profesional'),
-             'id_prof');
-    });
-});
+    // autocomplete profesional
+    document.getElementById('buscar_profesional')
+      .addEventListener('input', e => {
+        buscar('buscar_profesionales.php',
+          e.target.value.trim(),
+          document.getElementById('resultados_profesional'),
+          'id_prof');
+      });
+  });
 </script>

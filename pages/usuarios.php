@@ -1,21 +1,25 @@
 <?php
 // pages/usuarios.php
 require_once 'includes/db.php';
+require_once 'includes/roles.php';
 session_start();
 
-// Protege la página
 if (!isset($_SESSION['usuario'])) {
     header("Location: login.php");
     exit;
 }
 
-// 1) Recoger filtros
-$escuela_filtro     = $_GET['escuela']            ?? '';
-$estado_filtro      = $_GET['estado']             ?? '';
-$cargo_filtro       = $_GET['cargo']              ?? '';
-$filtro_prof_id     = intval($_GET['Id_profesional'] ?? 0);
+// ========== Obtener alcance ==========
+$alcance = getAlcanceUsuario($conn, $_SESSION['usuario']);
+$idsProfesionalesPermitidos = $alcance['profesionales'];
+// ====================================
 
-// 2) Cargos permitidos
+// 1) Recoger filtros
+$escuela_filtro = $_GET['escuela'] ?? '';
+$estado_filtro = $_GET['estado'] ?? '';
+$cargo_filtro = $_GET['cargo'] ?? '';
+$filtro_prof_id = intval($_GET['Id_profesional'] ?? 0);
+
 $allowed_cargos = [
     'Administradora','Directora',
     'Profesor(a) Diferencial','Profesor(a)',
@@ -24,21 +28,23 @@ $allowed_cargos = [
     'Kinesiologo','Terapeuta Ocupacional'
 ];
 
-// 3) Formulario de búsqueda avanzada
-echo "<h2 class='mb-4'>Visualización de Profesionales</h2> 
-        <form method='GET' style='display:flex; gap:8rem ; margin: 2rem 0; align-items: flex-end;'>
-          <input type='hidden' name='seccion' value='usuarios'>";
+// 2) Formulario de búsqueda
+echo "<h2 class='mb-4'>Visualización de Profesionales</h2>";
+echo "<form method='GET' style='display:flex; gap:8rem ; margin: 2rem 0; align-items: flex-end;'>
+        <input type='hidden' name='seccion' value='usuarios'>";
 
-// Escuela
-echo "<div>
-        <label>Escuela</label>
-        <select name='escuela' class='form-select'>
-          <option value=''>Todas</option>
-          <option value='1'".($escuela_filtro=='1'?' selected':'').">Sendero</option>
-          <option value='2'".($escuela_filtro=='2'?' selected':'').">Multiverso</option>
-          <option value='3'".($escuela_filtro=='3'?' selected':'').">Luz de Luna</option>
-        </select>
-      </div>";
+// Escuela (solo ADMIN)
+if ($alcance['rol'] === 'ADMIN') {
+    echo "<div>
+            <label>Escuela</label>
+            <select name='escuela' class='form-select'>
+              <option value=''>Todas</option>
+              <option value='1'".($escuela_filtro=='1'?' selected':'').">Sendero</option>
+              <option value='2'".($escuela_filtro=='2'?' selected':'').">Multiverso</option>
+              <option value='3'".($escuela_filtro=='3'?' selected':'').">Luz de Luna</option>
+            </select>
+          </div>";
+}
 
 // Estado
 echo "<div>
@@ -59,7 +65,7 @@ foreach ($allowed_cargos as $c) {
     $s = $cargo_filtro === $c ? ' selected' : '';
     echo "<option value=\"".htmlspecialchars($c)."\"{$s}>".htmlspecialchars($c)."</option>";
 }
-echo   "</select>
+echo "  </select>
       </div>";
 
 // Autocomplete Profesional
@@ -70,14 +76,11 @@ echo "<div style='flex:1; position:relative;'>
         <div id='resultados_profesional' class='border mt-1' style='position:absolute; width:100%; z-index:10; background:#fff;'></div>
       </div>";
 
-// Botones
-
 echo "<button type='submit' class='btn btn-primary btn-height mt-4'>Buscar</button>
-      <button type='button' class='btn btn-secondary btn-height mt-4' onclick=\"window.location='?seccion=usuarios'\">Limpiar filtros</button>";
+      <button type='button' class='btn btn-secondary btn-height mt-4' onclick=\"window.location='?seccion=usuarios'\">Limpiar filtros</button>
+      </form>";
 
-echo "</form>";
-
-// 4) Construir consulta dinámica
+// 3) Construir consulta con filtro de alcance
 $sql = "
   SELECT
     u.Id_usuario,
@@ -93,25 +96,26 @@ $sql = "
   FROM usuarios u
   LEFT JOIN profesionales p ON u.Id_profesional = p.Id_profesional
   LEFT JOIN escuelas      e ON p.Id_escuela_prof = e.Id_escuela
-  WHERE 1=1
-";
-$params = [];
+  WHERE " . filtrarPorIDs($idsProfesionalesPermitidos, 'p.Id_profesional');
 
-if ($escuela_filtro !== '') {
-    $sql      .= " AND p.Id_escuela_prof = ?";
-    $params[]  = $escuela_filtro;
+$params = [];
+agregarParametrosFiltro($params, $idsProfesionalesPermitidos);
+
+if ($escuela_filtro !== '' && $alcance['rol'] === 'ADMIN') {
+    $sql .= " AND p.Id_escuela_prof = ?";
+    $params[] = $escuela_filtro;
 }
 if ($estado_filtro !== '') {
-    $sql      .= " AND u.Estado_usuario = ?";
-    $params[]  = $estado_filtro;
+    $sql .= " AND u.Estado_usuario = ?";
+    $params[] = $estado_filtro;
 }
 if ($cargo_filtro !== '') {
-    $sql      .= " AND p.Cargo_profesional = ?";
-    $params[]  = $cargo_filtro;
+    $sql .= " AND p.Cargo_profesional = ?";
+    $params[] = $cargo_filtro;
 }
 if ($filtro_prof_id > 0) {
-    $sql      .= " AND p.Id_profesional = ?";
-    $params[]  = $filtro_prof_id;
+    $sql .= " AND p.Id_profesional = ?";
+    $params[] = $filtro_prof_id;
 }
 
 $sql .= " ORDER BY u.Id_usuario DESC
@@ -121,6 +125,7 @@ $stmt = $conn->prepare($sql);
 $stmt->execute($params);
 $usuarios = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+// ... resto del código de la tabla sin cambios ...
 // 5) Mostrar tabla
 echo "<div style='max-height:400px; overflow-y:auto; border-radius:10px;'>
         <table class='table table-striped table-bordered'>

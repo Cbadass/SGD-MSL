@@ -2,19 +2,22 @@
 // pages/apoderados.php
 session_start();
 require_once __DIR__ . '/../includes/db.php';
+require_once __DIR__ . '/../includes/roles.php';
 
-// 1) Protege la página
 if (!isset($_SESSION['usuario'])) {
     header("Location: login.php");
     exit;
 }
 
-// 2) Recoger filtro único por selección
+// ========== Obtener alcance ==========
+$alcance = getAlcanceUsuario($conn, $_SESSION['usuario']);
+$idsEstudiantesPermitidos = $alcance['estudiantes'];
+// ====================================
+
 $filtro_id = intval($_GET['Id_apoderado'] ?? 0);
 
-// 3) Formulario de búsqueda con autocomplete
 echo "<h2 class='mb-4'>Visualización de Apoderados</h2>";
-echo "<form method='GET' style='display:flex; gap:8rem ; margin: 2rem 0; align-items: flex-end;'";
+echo "<form method='GET' style='display:flex; gap:8rem ; margin: 2rem 0; align-items: flex-end;'>";
 echo "  <input type='hidden' name='seccion' value='apoderados'>";
 echo "  <div style='flex:1; position:relative;'>";
 echo "    <label>Apoderado</label>";
@@ -26,13 +29,30 @@ echo "  <button type='submit' class='btn btn-primary btn-height mt-4'>Buscar</bu
 echo "  <button type='button' class='btn btn-secondary btn-height mt-4' onclick=\"window.location='?seccion=apoderados'\">Limpiar</button>";
 echo "</form>";
 
-// 4) Construir consulta dinámica
-$where  = "1=1";
+// Construir consulta: apoderados solo de estudiantes permitidos
+$where = "1=1";
 $params = [];
+
 if ($filtro_id > 0) {
-    $where   .= " AND Id_apoderado = ?";
+    $where .= " AND Id_apoderado = ?";
     $params[] = $filtro_id;
 }
+
+// ========== Filtrar por estudiantes permitidos ==========
+if ($idsEstudiantesPermitidos !== null) {
+    if (empty($idsEstudiantesPermitidos) || $idsEstudiantesPermitidos === [0]) {
+        $where .= " AND 0=1 "; // Sin estudiantes = sin apoderados
+    } else {
+        $placeholders = implode(',', array_fill(0, count($idsEstudiantesPermitidos), '?'));
+        $where .= " AND Id_apoderado IN (
+            SELECT DISTINCT Id_apoderado 
+            FROM estudiantes 
+            WHERE Id_estudiante IN ($placeholders) AND Id_apoderado IS NOT NULL
+        ) ";
+        $params = array_merge($params, $idsEstudiantesPermitidos);
+    }
+}
+// =======================================================
 
 $sql = "
     SELECT
@@ -55,7 +75,7 @@ $stmt = $conn->prepare($sql);
 $stmt->execute($params);
 $apoderados = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-// 5) Mostrar tabla
+// Mostrar tabla
 echo "<div style='max-height:400px; overflow-y:auto; border-radius:10px;'>";
 echo "  <table class='table table-striped table-bordered'>";
 echo "    <thead class='table-dark'>
@@ -86,12 +106,16 @@ if ($apoderados) {
                 <td>".htmlspecialchars($row['Ocupacion_padre'])."</td>
                 <td>".htmlspecialchars($row['Ocupacion_madre'])."</td>
                 <td>".htmlspecialchars($row['Correo_apoderado'])."</td>
-                <td>
-                  <a href='index.php?seccion=modificar_apoderado&Id_apoderado={$row['Id_apoderado']}' 
-                    class='btn btn-sm btn-warning link-text'>Editar</a>
-                  <a href=\"index.php?seccion=perfil&Id_apoderado={$row['Id_apoderado']}\"
-                    class=\"btn btn-sm btn-primary link-text\">Ver perfil</a> 
-                     
+                <td>";
+        
+        // Solo ADMIN y DIRECTOR pueden editar
+        if (in_array($alcance['rol'], ['ADMIN', 'DIRECTOR'], true)) {
+            echo "<a href='index.php?seccion=modificar_apoderado&Id_apoderado={$row['Id_apoderado']}' 
+                    class='btn btn-sm btn-warning link-text'>Editar</a>";
+        }
+        
+        echo "<a href=\"index.php?seccion=perfil&Id_apoderado={$row['Id_apoderado']}\"
+                class=\"btn btn-sm btn-primary link-text\">Ver perfil</a> 
                 </td>
               </tr>";
     }
@@ -103,8 +127,8 @@ echo "    </tbody>
         </table>
       </div>";
 ?>
+
 <script>
-// Función de autocomplete usando buscar_apoderados.php
 function buscar(endpoint, query, cont, idInput) {
   if (query.length < 3) {
     cont.innerHTML = '';
