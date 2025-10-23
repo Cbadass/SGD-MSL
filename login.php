@@ -11,7 +11,13 @@ if (!empty($_SESSION['usuario'])) {
   header('Location: /index.php');
   exit;
 }
-
+session_name('SGDMSLSESSID');
+session_start();
+error_log("=== DEBUG LOGIN ===");
+error_log("Session ID: " . session_id());
+error_log("Session data: " . print_r($_SESSION, true));
+error_log("Cookies: " . print_r($_COOKIE, true));
+// ==================================
 $error = '';
 
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {

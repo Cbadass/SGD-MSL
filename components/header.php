@@ -1,6 +1,5 @@
 <?php
 // components/header.php
-// La sesión ya está abierta por includes/session.php desde index.php
 $usuario = $_SESSION['usuario'] ?? null;
 ?>
 <header class="header">
@@ -13,10 +12,8 @@ $usuario = $_SESSION['usuario'] ?? null;
       </span>
       <button id="modoToggle" class="btn btn-sm btn-light toggle-darkmode mr-1">🌙</button>
 
-      <!-- Usar <a> directo + confirm global. Sin JS extra de logout. -->
-      <a href="/logout.php"
-         class="btn btn-sm btn-outline-light link-text"
-         data-confirm="¿Cerrar sesión?">
+      <!-- CORRECCIÓN: Ruta absoluta desde raíz -->
+      <a href="/logout.php" class="btn btn-sm btn-outline-light btn-logout link-text" id="btnLogout">
         Cerrar sesión
       </a>
     <?php else: ?>
@@ -41,7 +38,6 @@ $usuario = $_SESSION['usuario'] ?? null;
     const t = (btn.textContent||'').toLowerCase();
     return /guardar|crear|actualizar|eliminar|registrar/.test(t);
   }
-
   document.addEventListener('submit', function(e){
     const f = e.target;
     if (!(f instanceof HTMLFormElement)) return;
@@ -58,8 +54,20 @@ $usuario = $_SESSION['usuario'] ?? null;
   }, true);
 })();
 
-/* Importante:
-   Quitamos el handler JS específico de logout para evitar dobles manejos
-   y estados residuales entre cierre y nuevo inicio de sesión. El <a> con
-   href=/logout.php y el confirm global son suficientes. */
+// ========== CORRECCIÓN: Handler de logout simplificado ==========
+document.addEventListener('DOMContentLoaded', function() {
+  const btnLogout = document.getElementById('btnLogout');
+  
+  if (btnLogout) {
+    btnLogout.addEventListener('click', function(e) {
+      e.preventDefault(); // Prevenir navegación inmediata
+      
+      if (confirm('¿Cerrar sesión?')) {
+        // Solo navegar UNA VEZ si el usuario confirma
+        window.location.href = '/logout.php';
+      }
+    });
+  }
+});
+// ===============================================================
 </script>
