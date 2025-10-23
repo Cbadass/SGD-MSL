@@ -2,7 +2,8 @@
 // guardar_modificacion_profesional.php
 session_start();
 require_once 'includes/db.php';
-require_once 'includes/auditoria.php';  
+require_once 'includes/auditoria.php';
+require_once 'includes/roles.php';
 try {
     if (!isset($_SESSION['usuario'])) {
         throw new Exception("No autorizado.");
@@ -30,12 +31,22 @@ try {
     $cuenta      = trim($_POST['cuenta']            ?? '');
     $afp         = $_POST['afp']                    ?? '';
     $salud       = $_POST['salud']                  ?? '';
-    $permiso     = $_POST['permiso']                ?? '';
+    $permiso     = ensureRole($_POST['permiso']                ?? '');
     $estado_usr  = intval($_POST['estado_usuario']  ?? 1);
     $escuela     = intval($_POST['escuela']         ?? 0);
 
-    // 3) Validaciones (RUT, teléfono, listas permitidas…)  
+    // 3) Validaciones (RUT, teléfono, listas permitidas…)
     //    Reúne las mismas comprobaciones que en create_profesional
+    if ($permiso === 'DIRECTOR' && $escuela <= 0) {
+        throw new Exception('Los directores deben mantener una escuela asignada. Selecciona una escuela antes de guardar.');
+    }
+
+    $stmtUsuario = $conn->prepare('SELECT Id_usuario, Id_profesional FROM usuarios WHERE Id_profesional = ?');
+    $stmtUsuario->execute([$id]);
+    $usuarioAsociado = $stmtUsuario->fetch(PDO::FETCH_ASSOC);
+    if (!$usuarioAsociado || (int)$usuarioAsociado['Id_profesional'] !== $id) {
+        throw new Exception('No se encontró un usuario vinculado a este profesional. Contacta a soporte para regularizar el vínculo antes de editar.');
+    }
 
     // 4) Transaction para UPDATE en dos tablas
     $conn->beginTransaction();
