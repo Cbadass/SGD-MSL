@@ -1,13 +1,10 @@
 <?php
 // descargar.php
-session_start();
+require_once 'includes/session.php'; // unifica nombre/flags de cookie y abre la sesión
 require_once 'includes/db.php';
 require_once 'includes/roles.php';
 
-if (!isset($_SESSION['usuario'])) {
-    http_response_code(401);
-    die("No autorizado.");
-}
+require_login();
 
 $id_documento = intval($_GET['id_documento'] ?? 0);
 if ($id_documento <= 0) {
@@ -15,7 +12,7 @@ if ($id_documento <= 0) {
     die("ID de documento inválido.");
 }
 
-$usuario = $_SESSION['usuario'];
+$usuario = current_user();
 $alcance = getAlcanceUsuario($conn, $usuario);
 $diagnosticos = $alcance['diagnosticos'] ?? [];
 $idsEstudiantesPermitidos = $alcance['estudiantes'] ?? null;
