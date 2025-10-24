@@ -126,11 +126,8 @@ if ($id_prof > 0) {
         );
         $puedeVerDocumentos = $alcance['rol'] !== 'PROFESIONAL'
           || (int)($alcance['id_profesional'] ?? 0) === (int)$prof['Id_profesional'];
-        $puedeResetearClave = !empty($prof['UidUsuario']) && canResetPassword(
-          $alcance['rol'],
-          $alcance['escuela_id'] ?? null,
-          isset($prof['Id_escuela_prof']) ? (int)$prof['Id_escuela_prof'] : null
-        );
+        $esPerfilPropio = !empty($prof['UidUsuario']) && $actorUserId
+          && (int)$prof['UidUsuario'] === (int)$actorUserId;
       ?>
       <h2 class="mb-4">Perfil Profesional</h2>
       <div class="card p-4 mb-4 profile">
@@ -168,9 +165,9 @@ if ($id_prof > 0) {
               <a class="link-text" href="index.php?seccion=documentos&id_prof=<?= $id_prof ?>&sin_estudiante=1">Documentos</a>
             </button>
           <?php endif; ?>
-          <?php if ($puedeResetearClave): ?>
+          <?php if ($esPerfilPropio): ?>
             <button class="btn btn-sm btn-height btn-warning">
-              <a class="link-text" href="index.php?seccion=administrar_contraseña&id=<?= (int)$prof['UidUsuario'] ?>">🔑 Administrar contraseña</a>
+              <a class="link-text" href="index.php?seccion=mi_password_update">🔑 Cambiar contraseña</a>
             </button>
           <?php endif; ?>
         </div>

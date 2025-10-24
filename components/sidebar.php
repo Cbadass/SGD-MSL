@@ -22,8 +22,8 @@ if (!function_exists('details_open')) {
   }
 }
 
-$grupoPerfil = ['perfil'];
-$grupoUsuarios = ['usuarios', 'registrar_usuario']; // removido modificar_profesional
+$grupoPerfil = ['perfil', 'mi_password_update'];
+$grupoUsuarios = ['usuarios', 'registrar_usuario', 'administrar_contraseña']; // removido modificar_profesional
 $grupoCursos = ['cursos', 'registrar_curso']; // removido 'modificar_curso'
 $grupoEstudiantes = ['estudiantes', 'registrar_estudiante']; // removido 'modificar_estudiante'
 $grupoApoderados = ['apoderados', 'registrar_apoderado']; // removido 'modificar_apoderado'
@@ -108,6 +108,7 @@ $canSeeCatalogos = $showAdmin || $showDirector;
       <summary>Mi Perfil</summary>
       <div class="group-links">
         <a href="index.php?seccion=perfil" class="<?= is_active('perfil', $seccion) ?>">Perfil</a>
+        <a href="index.php?seccion=mi_password_update" class="<?= is_active('mi_password_update', $seccion) ?>">Cambiar contraseña</a>
       </div>
       </details>
 
@@ -119,6 +120,9 @@ $canSeeCatalogos = $showAdmin || $showDirector;
             <a href="index.php?seccion=usuarios" class="<?= is_active('usuarios', $seccion) ?>">Visualizar Profesionales</a>
             <a href="index.php?seccion=registrar_usuario"
               class="<?= is_active('registrar_usuario', $seccion) ?>">Registrar Profesional</a>
+            <?php if ($showAdmin || $showDirector): ?>
+              <a href="index.php?seccion=administrar_contraseña" class="<?= is_active('administrar_contraseña', $seccion) ?>">Gestionar contraseñas</a>
+            <?php endif; ?>
           </div>
           </details>
         <?php endif; ?>

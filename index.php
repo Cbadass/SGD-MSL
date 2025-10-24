@@ -8,6 +8,7 @@ $rolActual   = strtoupper($_SESSION['usuario']['permisos'] ?? 'GUEST');
 // --- Lista blanca de secciones
 $ALLOWED = [
   'perfil',
+  'mi_password_update',
 
   'usuarios','registrar_usuario','modificar_profesional',
   'cursos','registrar_curso','modificar_curso',
@@ -28,6 +29,7 @@ $ALLOWED = [
 // --- Mapa secciones -> roles permitidos (403 si no coincide)
 $SECTION_ROLES = [
   'perfil'                   => ['ADMIN','DIRECTOR','PROFESIONAL'],
+  'mi_password_update'       => ['ADMIN','DIRECTOR','PROFESIONAL'],
 
   'usuarios'                 => ['ADMIN','DIRECTOR'],
   'registrar_usuario'        => ['ADMIN','DIRECTOR'],
@@ -51,7 +53,7 @@ $SECTION_ROLES = [
 
   'asignaciones'             => ['ADMIN','DIRECTOR'],
   'actividad'                => ['ADMIN','DIRECTOR'],
-  'administrar_contraseña'   => ['ADMIN','DIRECTOR','PROFESIONAL'],
+  'administrar_contraseña'   => ['ADMIN','DIRECTOR'],
   'auditoria_vinculos'       => ['ADMIN'],
 
   // ======== AGREGADOS (Catálogos) ========

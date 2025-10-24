@@ -12,6 +12,7 @@ if (!isset($_SESSION['usuario'])) {
 // ========== Obtener alcance ==========
 $alcance = getAlcanceUsuario($conn, $_SESSION['usuario']);
 $idsProfesionalesPermitidos = $alcance['profesionales'];
+$puedeGestionarContrasenas = in_array($alcance['rol'], ['ADMIN', 'DIRECTOR'], true);
 // ====================================
 
 // 1) Recoger filtros
@@ -29,7 +30,12 @@ $allowed_cargos = [
 ];
 
 // 2) Formulario de búsqueda
-echo "<h2 class='mb-4'>Visualización de Profesionales</h2>";
+echo "<div class='d-flex align-items-center justify-content-between mb-4'>";
+echo "  <h2 class='mb-0'>Visualización de Profesionales</h2>";
+if ($puedeGestionarContrasenas) {
+    echo "  <a href='index.php?seccion=administrar_contraseña' class='btn btn-sm btn-outline-primary btn-height'>Gestionar contraseñas</a>";
+}
+echo "</div>";
 echo "<form method='GET' style='display:flex; gap:8rem ; margin: 2rem 0; align-items: flex-end;'>
         <input type='hidden' name='seccion' value='usuarios'>";
 
