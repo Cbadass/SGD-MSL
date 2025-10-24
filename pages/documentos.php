@@ -63,6 +63,7 @@ try {
       }
 
       if (empty($clauses)) {
+        // Sin estudiantes ni profesionales válidos, el director no puede listar documentos ajenos.
         $whereParts[] = '0=1';
       } else {
         $whereParts[] = '(' . implode(' OR ', $clauses) . ')';
