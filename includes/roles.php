@@ -140,16 +140,23 @@ function canEditProfile(
 
 /**
  * ¿Puede restablecer contraseñas?
- * - ADMIN: cualquier usuario.
- * - DIRECTOR: solo usuarios de su escuela.
+ * - ADMIN: solo usuarios que no sean ADMIN/DIRECTOR.
+ * - DIRECTOR: solo profesionales de su escuela.
  * - PROFESIONAL: no.
  */
 function canResetPassword(
   string $rol,
   ?int $actorSchoolId,
-  ?int $targetSchoolId
+  ?int $targetSchoolId,
+  string $targetRol = 'PROFESIONAL'
 ): bool {
   $r = ensureRole($rol);
+  $t = ensureRole($targetRol);
+
+  if ($t === 'ADMIN' || $t === 'DIRECTOR') {
+    return false;
+  }
+
   if ($r === 'ADMIN') return true;
   if ($r === 'DIRECTOR') {
     return $actorSchoolId !== null && $targetSchoolId !== null && (int)$actorSchoolId === (int)$targetSchoolId;

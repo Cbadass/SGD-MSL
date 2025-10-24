@@ -129,7 +129,8 @@ if ($id_prof > 0) {
         $puedeResetearClave = !empty($prof['UidUsuario']) && canResetPassword(
           $alcance['rol'],
           $alcance['escuela_id'] ?? null,
-          isset($prof['Id_escuela_prof']) ? (int)$prof['Id_escuela_prof'] : null
+          isset($prof['Id_escuela_prof']) ? (int)$prof['Id_escuela_prof'] : null,
+          (string)($prof['Permisos'] ?? 'PROFESIONAL')
         );
       ?>
       <h2 class="mb-4">Perfil Profesional</h2>
