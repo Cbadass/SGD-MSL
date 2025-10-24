@@ -5,6 +5,7 @@ declare(strict_types=1);
 session_start();
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/auditoria.php';
+require_once __DIR__ . '/../includes/roles.php';
 
 if (!isset($_SESSION['usuario'])) { http_response_code(401); exit('No autorizado'); }
 $rolActual = strtoupper($_SESSION['usuario']['permisos'] ?? 'GUEST');
@@ -13,6 +14,7 @@ $idUsuarioSesion = (int)($_SESSION['usuario']['id'] ?? $_SESSION['usuario']['Id_
 $isAdmin    = ($rolActual === 'ADMIN');
 $isDirector = ($rolActual === 'DIRECTOR');
 $isPro      = ($rolActual === 'PROFESIONAL');
+$puedeGestionar = $isAdmin || $isDirector;
 
 // === Helpers ===
 function escuelaDeUsuario(PDO $conn, int $idUsuario): ?int {
@@ -74,43 +76,56 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     // 2) Restablecer contraseña (ADMIN / DIRECTOR)
     if (isset($_POST['action']) && $_POST['action'] === 'reset_other') {
-      if (!$isAdmin && !$isDirector) throw new RuntimeException('No autorizado.');
-      $idTarget = (int)($_POST['Id_usuario'] ?? 0);
-      if ($idTarget <= 0) throw new RuntimeException('Objetivo inválido.');
-
-      // Verificar alcance: si director, el target debe pertenecer a su escuela
-      if ($isDirector) {
-        $chk = $conn->prepare("
-          SELECT 1
-          FROM usuarios u
-          JOIN profesionales p ON p.Id_profesional = u.Id_profesional
-          WHERE u.Id_usuario = ? AND p.Id_escuela_prof = ?
-        ");
-        $chk->execute([$idTarget, (int)$escuelaDirectorId]);
-        if (!$chk->fetchColumn()) {
-          throw new RuntimeException('No puedes restablecer contraseñas fuera de tu escuela.');
-        }
+      if (!$puedeGestionar) {
+        throw new RuntimeException('No tienes permisos para restablecer otras contraseñas.');
       }
 
-      // Generar temporal
+      $idTarget = (int)($_POST['Id_usuario'] ?? 0);
+      if ($idTarget <= 0) {
+        throw new RuntimeException('Usuario objetivo inválido.');
+      }
+
+      if ($isDirector && $escuelaDirectorId === null) {
+        throw new RuntimeException('No se pudo determinar tu escuela para validar el alcance.');
+      }
+
+      $stmtTarget = $conn->prepare("
+        SELECT u.Id_usuario, u.Nombre_usuario, u.Permisos, u.Contraseña, p.Id_escuela_prof
+          FROM usuarios u
+     LEFT JOIN profesionales p ON p.Id_profesional = u.Id_profesional
+         WHERE u.Id_usuario = ?
+      ");
+      $stmtTarget->execute([$idTarget]);
+      $target = $stmtTarget->fetch(PDO::FETCH_ASSOC);
+      if (!$target) {
+        throw new RuntimeException('El usuario solicitado no existe.');
+      }
+
+      $targetRol = ensureRole((string)($target['Permisos'] ?? 'PROFESIONAL'));
+      $targetSchoolId = isset($target['Id_escuela_prof']) ? (int)$target['Id_escuela_prof'] : null;
+
+      if (!canResetPassword($rolActual, $escuelaDirectorId, $targetSchoolId, $targetRol)) {
+        if (in_array($targetRol, ['ADMIN', 'DIRECTOR'], true)) {
+          throw new RuntimeException('No puedes restablecer la contraseña de administradores o directores.');
+        }
+        if ($isDirector && $escuelaDirectorId !== null && $targetSchoolId !== null && (int)$escuelaDirectorId !== (int)$targetSchoolId) {
+          throw new RuntimeException('No puedes restablecer contraseñas fuera de tu escuela.');
+        }
+        throw new RuntimeException('No tienes permisos para restablecer la contraseña de este usuario.');
+      }
+
       $tempPwd = substr(bin2hex(random_bytes(10)), 0, 10);
       $hash = password_hash($tempPwd, PASSWORD_DEFAULT);
-
-      // Estado anterior para auditoría
-      $stmtU = $conn->prepare("SELECT * FROM usuarios WHERE Id_usuario = ?");
-      $stmtU->execute([$idTarget]);
-      $old = $stmtU->fetch(PDO::FETCH_ASSOC);
-      if (!$old) throw new RuntimeException('Usuario no encontrado.');
 
       $conn->beginTransaction();
       $conn->prepare("UPDATE usuarios SET Contraseña = ? WHERE Id_usuario = ?")->execute([$hash, $idTarget]);
 
       registrarAuditoria($conn, $idUsuarioSesion, 'usuarios', $idTarget, 'UPDATE',
-        ['Contraseña' => $old['Contraseña']], ['Contraseña' => $hash]);
+        ['Contraseña' => $target['Contraseña']], ['Contraseña' => $hash]);
 
       $conn->commit();
 
-      $uName = htmlspecialchars($old['Nombre_usuario'] ?? '', ENT_QUOTES, 'UTF-8');
+      $uName = htmlspecialchars($target['Nombre_usuario'] ?? '', ENT_QUOTES, 'UTF-8');
       $pTmp  = htmlspecialchars($tempPwd, ENT_QUOTES, 'UTF-8');
 
       $okCard = '
@@ -136,7 +151,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 // === Listado para reset (solo admin/director) ===
 $q = trim($_GET['q'] ?? '');
 $list = [];
-if ($isAdmin || $isDirector) {
+if ($puedeGestionar) {
   $sql = "
     SELECT u.Id_usuario, u.Nombre_usuario, u.Permisos, p.Nombre_profesional, p.Apellido_profesional, e.Nombre_escuela
     FROM usuarios u
@@ -152,6 +167,7 @@ if ($isAdmin || $isDirector) {
   if ($isDirector) {
     $cond[] = "p.Id_escuela_prof = ?";
     $par[]  = (int)$escuelaDirectorId;
+    $cond[] = "(u.Permisos IS NULL OR UPPER(u.Permisos) NOT IN ('ADMIN','DIRECTOR'))";
   }
   if ($cond) { $sql .= " WHERE ".implode(' AND ', $cond); }
   $sql .= " ORDER BY p.Apellido_profesional, p.Nombre_profesional";
@@ -160,13 +176,13 @@ if ($isAdmin || $isDirector) {
   $list = $st->fetchAll(PDO::FETCH_ASSOC);
 }
 ?>
-<h2>Gestión de contraseñas</h2>
+<h2><?= $puedeGestionar ? 'Gestión de contraseñas' : 'Actualizar mi contraseña' ?></h2>
 
 <?php if ($err): ?><div class="alert alert-danger"><?= $err ?></div><?php endif; ?>
 <?php if ($ok):  ?><div class="alert alert-success"><?= $ok ?></div><?php endif; ?>
 <?php if ($okCard): ?><div><?= $okCard ?></div><?php endif; ?>
 
-<?php if ($isAdmin || $isDirector): ?>
+<?php if ($puedeGestionar): ?>
   <section class="mb-3">
     <h3>Restablecer contraseña (temporal)</h3>
     <form method="get" class="mb-2">
@@ -201,10 +217,12 @@ if ($isAdmin || $isDirector) {
       </table>
     <?php endif; ?>
   </section>
+<?php else: ?>
+  <div class="alert alert-info">Solo puedes actualizar tu propia contraseña desde esta pantalla.</div>
 <?php endif; ?>
 
 <section>
-  <h3>Cambiar mi contraseña</h3>
+  <h3><?= $puedeGestionar ? 'Cambiar mi contraseña' : 'Actualizar mi contraseña' ?></h3>
   <form method="post" autocomplete="off" data-requires-confirm>
     <input type="hidden" name="action" value="change_self">
     <div class="form-grid">
