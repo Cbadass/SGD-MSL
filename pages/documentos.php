@@ -8,6 +8,9 @@ try {
   // ========== Obtener alcance ==========
   $alcance = getAlcanceUsuario($conn, $_SESSION['usuario'] ?? []);
   $idsEstudiantesPermitidos = $alcance['estudiantes'];
+  $idsProfesionalesPermitidos = $alcance['profesionales'] ?? null;
+  $rolActual = $alcance['rol'] ?? 'PROFESIONAL';
+  $idProfesionalSesion = (int)($alcance['id_profesional'] ?? 0);
   $diagnosticos = $alcance['diagnosticos'] ?? [];
   // ====================================
 
@@ -16,35 +19,59 @@ try {
   $whereParts = ['1=1'];
   $params = [];
 
-  // ========== Aplicar filtro de estudiantes ==========
-  // Nota: se reutilizan los helpers de includes/roles.php para evitar duplicar lógica.
-  if ($idsEstudiantesPermitidos !== null) {
-    $filtroEstudiantes = filtrarPorIDs($idsEstudiantesPermitidos, 'd.Id_estudiante_doc');
+  // ========== Aplicar alcance a documentos ==========
+  if ($rolActual !== 'ADMIN') {
+    if ($rolActual === 'PROFESIONAL') {
+      $clauses = [];
+      $agregarEstudiantes = false;
 
-    if ($alcance['rol'] === 'PROFESIONAL') {
-      $idProfesionalSesion = (int)($alcance['id_profesional'] ?? 0);
+      if ($idsEstudiantesPermitidos !== null && !empty($idsEstudiantesPermitidos) && $idsEstudiantesPermitidos !== [0]) {
+        $clauses[] = filtrarPorIDs($idsEstudiantesPermitidos, 'd.Id_estudiante_doc');
+        $agregarEstudiantes = true;
+      }
 
       if ($idProfesionalSesion > 0) {
-        if ($filtroEstudiantes === '0=1') {
-          // Sin asignaciones: solo permitir documentos propios sin estudiante asociado.
-          $whereParts[] = '(d.Id_estudiante_doc IS NULL AND d.Id_prof_doc = ?)';
-          $params[] = $idProfesionalSesion;
-        } else {
-          $whereParts[] = '(' . $filtroEstudiantes . ' OR (d.Id_estudiante_doc IS NULL AND d.Id_prof_doc = ?))';
-          agregarParametrosFiltro($params, $idsEstudiantesPermitidos);
-          $params[] = $idProfesionalSesion;
-        }
-      } else {
-        // Profesional sin vínculo válido: se limita estrictamente a los estudiantes asignados (bloquea si 0=1).
-        $whereParts[] = $filtroEstudiantes;
-        agregarParametrosFiltro($params, $idsEstudiantesPermitidos);
+        $clauses[] = 'd.Id_prof_doc = ?';
       }
-    } else {
-      if ($filtroEstudiantes === '0=1') {
+
+      if (empty($clauses)) {
+        // Sin alcance válido: se devuelve lista vacía y se muestran diagnósticos.
         $whereParts[] = '0=1';
       } else {
-        $whereParts[] = '(' . $filtroEstudiantes . ' OR d.Id_estudiante_doc IS NULL)';
-        agregarParametrosFiltro($params, $idsEstudiantesPermitidos);
+        $whereParts[] = '(' . implode(' OR ', $clauses) . ')';
+        if ($agregarEstudiantes) {
+          agregarParametrosFiltro($params, $idsEstudiantesPermitidos);
+        }
+        if ($idProfesionalSesion > 0) {
+          $params[] = $idProfesionalSesion;
+        }
+      }
+    } else {
+      // DIRECTOR: necesita coincidencia por estudiante o por profesional de su escuela.
+      $clauses = [];
+      $agregarEstudiantes = false;
+      $agregarProfesionales = false;
+
+      if ($idsEstudiantesPermitidos !== null && !empty($idsEstudiantesPermitidos) && $idsEstudiantesPermitidos !== [0]) {
+        $clauses[] = filtrarPorIDs($idsEstudiantesPermitidos, 'd.Id_estudiante_doc');
+        $agregarEstudiantes = true;
+      }
+
+      if ($idsProfesionalesPermitidos !== null && !empty($idsProfesionalesPermitidos) && $idsProfesionalesPermitidos !== [0]) {
+        $clauses[] = filtrarPorIDs($idsProfesionalesPermitidos, 'd.Id_prof_doc');
+        $agregarProfesionales = true;
+      }
+
+      if (empty($clauses)) {
+        $whereParts[] = '0=1';
+      } else {
+        $whereParts[] = '(' . implode(' OR ', $clauses) . ')';
+        if ($agregarEstudiantes) {
+          agregarParametrosFiltro($params, $idsEstudiantesPermitidos);
+        }
+        if ($agregarProfesionales) {
+          agregarParametrosFiltro($params, $idsProfesionalesPermitidos);
+        }
       }
     }
   }
