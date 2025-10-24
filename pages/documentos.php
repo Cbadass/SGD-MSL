@@ -11,6 +11,7 @@ try {
   $idsProfesionalesPermitidos = $alcance['profesionales'] ?? null;
   $rolActual = $alcance['rol'] ?? 'PROFESIONAL';
   $idProfesionalSesion = (int)($alcance['id_profesional'] ?? 0);
+  $idUsuarioSesion = (int)($_SESSION['usuario']['id'] ?? $_SESSION['usuario']['Id_usuario'] ?? 0);
   $diagnosticos = $alcance['diagnosticos'] ?? [];
   // ====================================
 
@@ -24,6 +25,8 @@ try {
     if ($rolActual === 'PROFESIONAL') {
       $clauses = [];
       $agregarEstudiantes = false;
+      $agregarProfesionalSesion = false;
+      $agregarUsuarioSesion = false;
 
       if ($idsEstudiantesPermitidos !== null && !empty($idsEstudiantesPermitidos) && $idsEstudiantesPermitidos !== [0]) {
         $clauses[] = filtrarPorIDs($idsEstudiantesPermitidos, 'd.Id_estudiante_doc');
@@ -32,6 +35,12 @@ try {
 
       if ($idProfesionalSesion > 0) {
         $clauses[] = 'd.Id_prof_doc = ?';
+        $agregarProfesionalSesion = true;
+      }
+
+      if ($idUsuarioSesion > 0) {
+        $clauses[] = 'd.Id_usuario_subido = ?';
+        $agregarUsuarioSesion = true;
       }
 
       if (empty($clauses)) {
@@ -42,8 +51,11 @@ try {
         if ($agregarEstudiantes) {
           agregarParametrosFiltro($params, $idsEstudiantesPermitidos);
         }
-        if ($idProfesionalSesion > 0) {
+        if ($agregarProfesionalSesion) {
           $params[] = $idProfesionalSesion;
+        }
+        if ($agregarUsuarioSesion) {
+          $params[] = $idUsuarioSesion;
         }
       }
     } else {
@@ -51,6 +63,8 @@ try {
       $clauses = [];
       $agregarEstudiantes = false;
       $agregarProfesionales = false;
+      $agregarProfesionalSesion = false;
+      $agregarUsuarioSesion = false;
 
       if ($idsEstudiantesPermitidos !== null && !empty($idsEstudiantesPermitidos) && $idsEstudiantesPermitidos !== [0]) {
         $clauses[] = filtrarPorIDs($idsEstudiantesPermitidos, 'd.Id_estudiante_doc');
@@ -60,6 +74,16 @@ try {
       if ($idsProfesionalesPermitidos !== null && !empty($idsProfesionalesPermitidos) && $idsProfesionalesPermitidos !== [0]) {
         $clauses[] = filtrarPorIDs($idsProfesionalesPermitidos, 'd.Id_prof_doc');
         $agregarProfesionales = true;
+      }
+
+      if ($idProfesionalSesion > 0) {
+        $clauses[] = 'd.Id_prof_doc = ?';
+        $agregarProfesionalSesion = true;
+      }
+
+      if ($idUsuarioSesion > 0) {
+        $clauses[] = 'd.Id_usuario_subido = ?';
+        $agregarUsuarioSesion = true;
       }
 
       if (empty($clauses)) {
@@ -72,6 +96,12 @@ try {
         }
         if ($agregarProfesionales) {
           agregarParametrosFiltro($params, $idsProfesionalesPermitidos);
+        }
+        if ($agregarProfesionalSesion) {
+          $params[] = $idProfesionalSesion;
+        }
+        if ($agregarUsuarioSesion) {
+          $params[] = $idUsuarioSesion;
         }
       }
     }
