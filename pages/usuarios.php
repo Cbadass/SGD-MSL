@@ -29,7 +29,12 @@ $allowed_cargos = [
 ];
 
 // 2) Formulario de búsqueda
-echo "<h2 class='mb-4'>Visualización de Profesionales</h2>";
+echo "<h2 class='mb-2'>Visualización de Profesionales</h2>";
+if (in_array($alcance['rol'], ['ADMIN', 'DIRECTOR'], true)) {
+    echo "<div class='mb-4'>".
+         "<a class='btn btn-warning btn-height' href='index.php?seccion=administrar_contraseña'>Gestionar contraseñas</a>".
+         "</div>";
+}
 echo "<form method='GET' style='display:flex; gap:8rem ; margin: 2rem 0; align-items: flex-end;'>
         <input type='hidden' name='seccion' value='usuarios'>";
 

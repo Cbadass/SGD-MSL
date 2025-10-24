@@ -15,6 +15,14 @@ $isAdmin    = ($rolActual === 'ADMIN');
 $isDirector = ($rolActual === 'DIRECTOR');
 $isPro      = ($rolActual === 'PROFESIONAL');
 $puedeGestionar = $isAdmin || $isDirector;
+$soloGestionPropia = !empty($soloGestionPropia);
+if ($soloGestionPropia) {
+  $puedeGestionar = false;
+}
+
+$tituloPrincipal = $puedeGestionar
+  ? 'Gestión de contraseñas'
+  : ($soloGestionPropia ? 'Cambiar mi contraseña' : 'Actualizar mi contraseña');
 
 // === Helpers ===
 function escuelaDeUsuario(PDO $conn, int $idUsuario): ?int {
@@ -176,7 +184,7 @@ if ($puedeGestionar) {
   $list = $st->fetchAll(PDO::FETCH_ASSOC);
 }
 ?>
-<h2><?= $puedeGestionar ? 'Gestión de contraseñas' : 'Actualizar mi contraseña' ?></h2>
+<h2><?= htmlspecialchars($tituloPrincipal) ?></h2>
 
 <?php if ($err): ?><div class="alert alert-danger"><?= $err ?></div><?php endif; ?>
 <?php if ($ok):  ?><div class="alert alert-success"><?= $ok ?></div><?php endif; ?>
@@ -217,12 +225,12 @@ if ($puedeGestionar) {
       </table>
     <?php endif; ?>
   </section>
-<?php else: ?>
+<?php elseif (!$soloGestionPropia): ?>
   <div class="alert alert-info">Solo puedes actualizar tu propia contraseña desde esta pantalla.</div>
 <?php endif; ?>
 
 <section>
-  <h3><?= $puedeGestionar ? 'Cambiar mi contraseña' : 'Actualizar mi contraseña' ?></h3>
+  <h3><?= ($puedeGestionar || $soloGestionPropia) ? 'Cambiar mi contraseña' : 'Actualizar mi contraseña' ?></h3>
   <form method="post" autocomplete="off" data-requires-confirm>
     <input type="hidden" name="action" value="change_self">
     <div class="form-grid">
