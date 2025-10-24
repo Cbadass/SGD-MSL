@@ -1,13 +1,10 @@
 <?php
 // descargar.php
-session_start();
+require_once 'includes/session.php'; // unifica nombre/flags de cookie y abre la sesión
 require_once 'includes/db.php';
 require_once 'includes/roles.php';
 
-if (!isset($_SESSION['usuario'])) {
-    http_response_code(401);
-    die("No autorizado.");
-}
+require_login();
 
 $id_documento = intval($_GET['id_documento'] ?? 0);
 if ($id_documento <= 0) {
@@ -15,8 +12,10 @@ if ($id_documento <= 0) {
     die("ID de documento inválido.");
 }
 
-$usuario = $_SESSION['usuario'];
+$usuario = current_user();
 $alcance = getAlcanceUsuario($conn, $usuario);
+$diagnosticos = $alcance['diagnosticos'] ?? [];
+$idsEstudiantesPermitidos = $alcance['estudiantes'] ?? null;
 
 // Obtener el documento
 $sql = "SELECT * FROM documentos WHERE Id_documento = ?";
@@ -73,7 +72,25 @@ if ($alcance['rol'] === 'ADMIN') {
 
 if (!$puedeDescargar) {
     http_response_code(403);
-    die("No tienes permisos para descargar este archivo.");
+
+    if (!empty($diagnosticos)) {
+        die(implode(' ', $diagnosticos));
+    }
+
+    if ($alcance['rol'] === 'DIRECTOR' && empty($alcance['escuela_id'])) {
+        die('Tu cuenta no está asociada a una escuela. Comunícate con soporte para completar el registro.');
+    }
+
+    if ($alcance['rol'] === 'PROFESIONAL') {
+        if ((int)($alcance['id_profesional'] ?? 0) <= 0) {
+            die('Tu cuenta no está vinculada a un profesional activo. Solicita asistencia a soporte.');
+        }
+        if ($idsEstudiantesPermitidos === [0]) {
+            die('No tienes estudiantes asignados actualmente, por lo que no puedes descargar documentos vinculados.');
+        }
+    }
+
+    die('No tienes permisos para descargar este archivo.');
 }
 // ================================================
 
