@@ -27,52 +27,13 @@ function escuelaDeUsuario(PDO $conn, int $idUsuario): ?int {
   return $id ? (int)$id : null;
 }
 
-function idProfesionalDeUsuario(PDO $conn, int $idUsuario): ?int {
-  $stmt = $conn->prepare("SELECT Id_profesional FROM usuarios WHERE Id_usuario = ?");
-  $stmt->execute([$idUsuario]);
-  $id = $stmt->fetchColumn();
-  return $id ? (int)$id : null;
-}
-
 $escuelaDirectorId = $isDirector ? escuelaDeUsuario($conn, $idUsuarioSesion) : null;
-$miIdProfesional   = idProfesionalDeUsuario($conn, $idUsuarioSesion);
-
 $err = null; $ok = null; $okCard = '';
 
 // === Acciones POST ===
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   try {
-    // 1) Cambiar mi contraseña
-    if (isset($_POST['action']) && $_POST['action'] === 'change_self' && $miIdProfesional) {
-      $actual   = (string)($_POST['actual'] ?? '');
-      $nueva    = (string)($_POST['nueva'] ?? '');
-      $confirm  = (string)($_POST['confirm'] ?? '');
-
-      if ($actual === '' || $nueva === '' || $confirm === '') throw new RuntimeException('Completa todos los campos.');
-      if ($nueva !== $confirm) throw new RuntimeException('La nueva contraseña y la confirmación no coinciden.');
-      if (strlen($nueva) < 8)  throw new RuntimeException('La nueva contraseña debe tener al menos 8 caracteres.');
-
-      // Buscar usuario actual
-      $row = $conn->prepare("SELECT * FROM usuarios WHERE Id_usuario = ?");
-      $row->execute([$idUsuarioSesion]);
-      $u = $row->fetch(PDO::FETCH_ASSOC);
-      if (!$u) throw new RuntimeException('Usuario no encontrado.');
-
-      if (!password_verify($actual, $u['Contraseña'])) throw new RuntimeException('La contraseña actual no es válida.');
-
-      $hash = password_hash($nueva, PASSWORD_DEFAULT);
-
-      $conn->beginTransaction();
-      $conn->prepare("UPDATE usuarios SET Contraseña = ? WHERE Id_usuario = ?")->execute([$hash, $idUsuarioSesion]);
-
-      registrarAuditoria($conn, $idUsuarioSesion, 'usuarios', $idUsuarioSesion, 'UPDATE',
-        ['Contraseña' => $u['Contraseña']], ['Contraseña' => $hash]);
-
-      $conn->commit();
-      $ok = 'Contraseña actualizada correctamente.';
-    }
-
-    // 2) Restablecer contraseña (ADMIN / DIRECTOR)
+    // Restablecer contraseña (ADMIN / DIRECTOR)
     if (isset($_POST['action']) && $_POST['action'] === 'reset_other') {
       if (!$isAdmin && !$isDirector) throw new RuntimeException('No autorizado.');
       $idTarget = (int)($_POST['Id_usuario'] ?? 0);
@@ -203,22 +164,26 @@ if ($isAdmin || $isDirector) {
   </section>
 <?php endif; ?>
 
-<section>
+<section id="cambiar-mi-password">
   <h3>Cambiar mi contraseña</h3>
-  <form method="post" autocomplete="off" data-requires-confirm>
-    <input type="hidden" name="action" value="change_self">
+  <p class="text-muted" style="max-width: 640px;">
+    Actualiza tu contraseña personal sin salir del sistema. La nueva clave debe tener
+    al menos 8 caracteres y se aplicará de inmediato.
+  </p>
+  <div class="alert d-none" role="alert" data-self-password-alert></div>
+  <form method="post" action="mi_password_update.php" autocomplete="off" data-self-password-form>
     <div class="form-grid">
       <div class="form-group">
         <label>Contraseña actual <span class="text-danger">*</span></label>
-        <input type="password" name="actual" required>
+        <input type="password" name="pwd_actual" required autocomplete="current-password">
       </div>
       <div class="form-group">
         <label>Nueva contraseña <span class="text-danger">*</span></label>
-        <input type="password" name="nueva" minlength="8" required>
+        <input type="password" name="pwd_nueva" minlength="8" required autocomplete="new-password">
       </div>
       <div class="form-group">
         <label>Repetir nueva contraseña <span class="text-danger">*</span></label>
-        <input type="password" name="confirm" minlength="8" required>
+        <input type="password" name="pwd_conf" minlength="8" required autocomplete="new-password">
       </div>
     </div>
     <button class="btn btn-primary mt-2" type="submit">Actualizar contraseña</button>
@@ -241,4 +206,64 @@ document.addEventListener('click', function (e) {
     alert('No se pudieron copiar las credenciales. Copia manualmente.');
   });
 });
+
+(function () {
+  const forms = document.querySelectorAll('form[data-self-password-form]');
+  forms.forEach((form) => {
+    if (form.dataset.enhanced === '1') return;
+    form.dataset.enhanced = '1';
+
+    const alertBox = form.parentElement.querySelector('[data-self-password-alert]');
+    const submitBtn = form.querySelector('[type="submit"]');
+
+    const showAlert = (type, message) => {
+      if (!alertBox) return;
+      alertBox.className = `alert alert-${type}`;
+      alertBox.textContent = message;
+      alertBox.classList.remove('d-none');
+    };
+
+    form.addEventListener('submit', async (ev) => {
+      ev.preventDefault();
+      if (alertBox) {
+        alertBox.classList.add('d-none');
+        alertBox.textContent = '';
+      }
+
+      const formData = new FormData(form);
+      if (submitBtn) {
+        submitBtn.disabled = true;
+        submitBtn.dataset.originalText = submitBtn.textContent;
+        submitBtn.textContent = 'Guardando…';
+      }
+
+      try {
+        const response = await fetch(form.action, {
+          method: 'POST',
+          body: formData,
+          credentials: 'same-origin',
+          headers: { 'X-Requested-With': 'XMLHttpRequest' }
+        });
+
+        const data = await response.json().catch(() => null);
+
+        if (!response.ok || !data) {
+          const msg = data && data.msg ? data.msg : 'Ocurrió un error inesperado.';
+          throw new Error(msg);
+        }
+
+        showAlert('success', data.msg || 'Contraseña actualizada correctamente.');
+        form.reset();
+      } catch (error) {
+        const message = error instanceof Error ? error.message : 'No se pudo actualizar la contraseña.';
+        showAlert('danger', message);
+      } finally {
+        if (submitBtn) {
+          submitBtn.disabled = false;
+          submitBtn.textContent = submitBtn.dataset.originalText || 'Actualizar contraseña';
+        }
+      }
+    });
+  });
+})();
 </script>

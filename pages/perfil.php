@@ -111,6 +111,23 @@ if ($id_prof > 0) {
       </div>
     <?php endif; ?>
 
+    <div class="card mb-4" style="border-radius: 12px; box-shadow: 0 12px 24px rgba(0,0,0,0.05);">
+      <div class="card-body">
+        <h3 class="mb-2">Gestión de tu contraseña</h3>
+        <p class="mb-3 text-muted" style="max-width: 640px;">
+          Mantén segura tu cuenta actualizando tu contraseña de manera periódica. Podrás hacerlo en tres pasos:
+        </p>
+        <ol class="mb-3" style="padding-left: 18px;">
+          <li>Ingresa tu contraseña actual.</li>
+          <li>Define una nueva clave de al menos 8 caracteres y confírmala.</li>
+          <li>Guarda los cambios para aplicarlos inmediatamente.</li>
+        </ol>
+        <a class="btn btn-primary" href="index.php?seccion=administrar_contraseña#cambiar-mi-password">
+          Cambiar contraseña
+        </a>
+      </div>
+    </div>
+
     <?php if ($mensaje): ?>
       <div class="alert alert-warning"><?= htmlspecialchars($mensaje) ?></div>
     <?php endif; ?>
