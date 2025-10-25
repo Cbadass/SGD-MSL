@@ -6,6 +6,7 @@ session_start();
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/auditoria.php';
 require_once __DIR__ . '/../includes/roles.php';
+require_once __DIR__ . '/../includes/password_utils.php';
 
 if (!isset($_SESSION['usuario'])) { http_response_code(401); exit('No autorizado'); }
 $rolActual = strtoupper($_SESSION['usuario']['permisos'] ?? 'GUEST');
@@ -58,28 +59,24 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
       $nueva    = (string)($_POST['nueva'] ?? '');
       $confirm  = (string)($_POST['confirm'] ?? '');
 
-      if ($actual === '' || $nueva === '' || $confirm === '') throw new RuntimeException('Completa todos los campos.');
-      if ($nueva !== $confirm) throw new RuntimeException('La nueva contraseña y la confirmación no coinciden.');
-      if (strlen($nueva) < 8)  throw new RuntimeException('La nueva contraseña debe tener al menos 8 caracteres.');
-
-      // Buscar usuario actual
-      $row = $conn->prepare("SELECT * FROM usuarios WHERE Id_usuario = ?");
-      $row->execute([$idUsuarioSesion]);
-      $u = $row->fetch(PDO::FETCH_ASSOC);
-      if (!$u) throw new RuntimeException('Usuario no encontrado.');
-
-      if (!password_verify($actual, $u['Contraseña'])) throw new RuntimeException('La contraseña actual no es válida.');
-
-      $hash = password_hash($nueva, PASSWORD_DEFAULT);
-
       $conn->beginTransaction();
-      $conn->prepare("UPDATE usuarios SET Contraseña = ? WHERE Id_usuario = ?")->execute([$hash, $idUsuarioSesion]);
+      $resultadoCambio = cambiarContrasenaPropia($conn, $idUsuarioSesion, $actual, $nueva, $confirm);
+      if (!$resultadoCambio['ok']) {
+        throw new RuntimeException($resultadoCambio['msg']);
+      }
 
-      registrarAuditoria($conn, $idUsuarioSesion, 'usuarios', $idUsuarioSesion, 'UPDATE',
-        ['Contraseña' => $u['Contraseña']], ['Contraseña' => $hash]);
+      registrarAuditoria(
+        $conn,
+        $idUsuarioSesion,
+        'usuarios',
+        $idUsuarioSesion,
+        'UPDATE',
+        ['Contraseña' => $resultadoCambio['hashAnterior'] ?? null],
+        ['Contraseña' => $resultadoCambio['hashNueva'] ?? null]
+      );
 
       $conn->commit();
-      $ok = 'Contraseña actualizada correctamente.';
+      $ok = $resultadoCambio['msg'];
     }
 
     // 2) Restablecer contraseña (ADMIN / DIRECTOR)
