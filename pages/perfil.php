@@ -126,7 +126,8 @@ if ($id_prof > 0) {
         );
         $puedeVerDocumentos = $alcance['rol'] !== 'PROFESIONAL'
           || (int)($alcance['id_profesional'] ?? 0) === (int)$prof['Id_profesional'];
-        $esPerfilPropio = !empty($prof['UidUsuario']) && $actorUserId === (int)$prof['UidUsuario'];
+        $esPerfilPropio = !empty($prof['UidUsuario']) && $actorUserId
+          && (int)$prof['UidUsuario'] === (int)$actorUserId;
       ?>
       <h2 class="mb-4">Perfil Profesional</h2>
       <div class="card p-4 mb-4 profile">
@@ -162,6 +163,11 @@ if ($id_prof > 0) {
           <?php if ($puedeVerDocumentos): ?>
             <button class="btn btn-sm btn-height btn-info mr-1">
               <a class="link-text" href="index.php?seccion=documentos&id_prof=<?= $id_prof ?>&sin_estudiante=1">Documentos</a>
+            </button>
+          <?php endif; ?>
+          <?php if ($esPerfilPropio): ?>
+            <button class="btn btn-sm btn-height btn-warning">
+              <a class="link-text" href="index.php?seccion=mi_password_update">🔑 Cambiar contraseña</a>
             </button>
           <?php endif; ?>
         </div>

@@ -7,7 +7,8 @@ $rolActual   = strtoupper($_SESSION['usuario']['permisos'] ?? 'GUEST');
 
 // --- Lista blanca de secciones
 $ALLOWED = [
-  'perfil','mi_password_update',
+  'perfil',
+  'mi_password_update',
 
   'usuarios','registrar_usuario','modificar_profesional',
   'cursos','registrar_curso','modificar_curso',
