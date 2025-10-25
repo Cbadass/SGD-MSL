@@ -171,6 +171,20 @@ if ($id_prof > 0) {
             </button>
           <?php endif; ?>
         </div>
+        <?php if ($esPerfilPropio): ?>
+          <div class="card border-info mt-3" style="max-width:480px;">
+            <div class="card-body">
+              <h3 class="h5">Protege tu cuenta</h3>
+              <p class="mb-2">Actualiza tu contraseña de forma segura siguiendo estos pasos:</p>
+              <ul class="mb-3 pl-3">
+                <li>Ingresa tu contraseña actual para confirmar tu identidad.</li>
+                <li>Define una nueva contraseña distinta, con al menos 8 caracteres.</li>
+                <li>Confirma la nueva contraseña antes de guardar los cambios.</li>
+              </ul>
+              <a class="btn btn-warning btn-sm" href="index.php?seccion=mi_password_update">🔒 Cambiar contraseña</a>
+            </div>
+          </div>
+        <?php endif; ?>
       </div>
     <?php elseif ($apo): ?>
       <h2 class="mb-4">Perfil Apoderado</h2>

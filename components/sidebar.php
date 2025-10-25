@@ -121,7 +121,8 @@ $canSeeCatalogos = $showAdmin || $showDirector;
             <a href="index.php?seccion=registrar_usuario"
               class="<?= is_active('registrar_usuario', $seccion) ?>">Registrar Profesional</a>
             <?php if ($showAdmin || $showDirector): ?>
-              <a href="index.php?seccion=administrar_contraseña" class="<?= is_active('administrar_contraseña', $seccion) ?>">Gestionar contraseñas</a>
+              <a href="index.php?seccion=administrar_contraseña"
+                class="<?= is_active('administrar_contraseña', $seccion) ?>">Gestionar contraseñas</a>
             <?php endif; ?>
           </div>
           </details>
