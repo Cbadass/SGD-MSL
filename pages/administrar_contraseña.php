@@ -6,6 +6,7 @@ session_start();
 require_once __DIR__ . '/../includes/db.php';
 require_once __DIR__ . '/../includes/auditoria.php';
 require_once __DIR__ . '/../includes/roles.php';
+require_once __DIR__ . '/../includes/password_utils.php';
 
 if (!isset($_SESSION['usuario'])) { http_response_code(401); exit('No autorizado'); }
 $rolActual = strtoupper($_SESSION['usuario']['permisos'] ?? 'GUEST');
@@ -44,7 +45,33 @@ $err = null; $ok = null; $resetDialogData = null;
 // === Acciones POST ===
 if ($_SERVER['REQUEST_METHOD'] === 'POST') {
   try {
-    // 1) Restablecer contraseña (ADMIN / DIRECTOR)
+    // 1) Cambiar mi contraseña
+    if (isset($_POST['action']) && $_POST['action'] === 'change_self' && $miIdProfesional) {
+      $actual   = (string)($_POST['actual'] ?? '');
+      $nueva    = (string)($_POST['nueva'] ?? '');
+      $confirm  = (string)($_POST['confirm'] ?? '');
+
+      $conn->beginTransaction();
+      $resultadoCambio = cambiarContrasenaPropia($conn, $idUsuarioSesion, $actual, $nueva, $confirm);
+      if (!$resultadoCambio['ok']) {
+        throw new RuntimeException($resultadoCambio['msg']);
+      }
+
+      registrarAuditoria(
+        $conn,
+        $idUsuarioSesion,
+        'usuarios',
+        $idUsuarioSesion,
+        'UPDATE',
+        ['Contraseña' => $resultadoCambio['hashAnterior'] ?? null],
+        ['Contraseña' => $resultadoCambio['hashNueva'] ?? null]
+      );
+
+      $conn->commit();
+      $ok = $resultadoCambio['msg'];
+    }
+
+    // 2) Restablecer contraseña (ADMIN / DIRECTOR)
     if (isset($_POST['action']) && $_POST['action'] === 'reset_other') {
       if (!$puedeGestionar) {
         throw new RuntimeException('No tienes permisos para restablecer otras contraseñas.');
